@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase/client';
 import type { Store } from '../../types/common';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import Location from '../../components/map/MapLocation';
 
 const StoreSelection: React.FC = () => {
   const [stores, setStores] = useState<Store[]>([]);
@@ -81,6 +82,7 @@ const StoreSelection: React.FC = () => {
     }
   };
 
+  // devices에서 위치 정보 가져오기
   const getUserLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -153,6 +155,7 @@ const StoreSelection: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
+        <Location width="100%" height="600px" />
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">지점 선택</h1>
           <p className="text-gray-600">가까운 편의점을 선택해주세요</p>
