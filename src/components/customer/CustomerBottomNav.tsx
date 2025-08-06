@@ -6,7 +6,7 @@ const CustomerBottomNav: React.FC = () => {
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
       <div className="flex justify-around">
         <NavLink
-          to="/"
+          to="/customer/home"
           className={({ isActive }) =>
             `flex flex-col items-center py-2 px-3 text-xs ${
               isActive ? 'text-primary-600' : 'text-gray-500'

@@ -77,7 +77,7 @@ const CustomerOrders: React.FC = () => {
                 </button>
               )}
               <button
-                onClick={() => navigate('/customer/products')}
+                onClick={() => navigate('/customer/store')}
                 className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
               >
                 쇼핑 계속하기

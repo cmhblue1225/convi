@@ -11,6 +11,7 @@ import NotFoundPage from './pages/NotFoundPage';
 
 
 // Customer Pages
+import CustomerHome from './pages/customer/CustomerHome';
 import CustomerLayout from './pages/customer/CustomerLayout';
 import StoreSelection from './pages/customer/StoreSelection';
 import ProductCatalog from './pages/customer/ProductCatalog';
@@ -101,7 +102,9 @@ function App() {
             
             {/* Customer Routes */}
             <Route path="/customer" element={<CustomerLayout />}>
-              <Route index element={<StoreSelection />} />
+              <Route index element={<CustomerHome />} />
+              <Route path="home" element={<CustomerHome />} />
+              <Route path="store" element={<StoreSelection />} />
               <Route path="products" element={<ProductCatalog />} />
               <Route path="checkout" element={<Checkout />} />
               <Route path="orders" element={<CustomerOrders />} />
