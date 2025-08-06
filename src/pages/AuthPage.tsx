@@ -149,14 +149,14 @@ const AuthPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 relative overflow-hidden">
       {/* 배경 애니메이션 요소들 */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse-slow"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-indigo-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse-slow delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-cyan-400/10 to-blue-400/10 rounded-full blur-3xl animate-float"></div>
-        <div className="absolute top-20 left-20 w-32 h-32 bg-gradient-to-br from-yellow-400/15 to-orange-400/15 rounded-full blur-2xl animate-float delay-500"></div>
-        <div className="absolute bottom-20 right-20 w-24 h-24 bg-gradient-to-br from-green-400/15 to-teal-400/15 rounded-full blur-2xl animate-float delay-1000"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-slate-300/20 to-blue-300/20 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-indigo-300/20 to-slate-300/20 rounded-full blur-3xl animate-pulse-slow delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-slate-200/10 to-blue-200/10 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute top-20 left-20 w-32 h-32 bg-gradient-to-br from-slate-300/15 to-blue-300/15 rounded-full blur-2xl animate-float delay-500"></div>
+        <div className="absolute bottom-20 right-20 w-24 h-24 bg-gradient-to-br from-indigo-300/15 to-slate-300/15 rounded-full blur-2xl animate-float delay-1000"></div>
       </div>
 
       {/* 메인 컨테이너 */}
@@ -164,19 +164,19 @@ const AuthPage: React.FC = () => {
         <div className="max-w-md w-full">
           {/* 로고 섹션 */}
           <div className="text-center mb-8 animate-fade-in">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-2xl mb-6 shadow-2xl animate-glow">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-slate-600 via-blue-600 to-indigo-600 rounded-2xl mb-6 shadow-2xl animate-glow">
               <span className="text-3xl animate-bounce-gentle">🏪</span>
             </div>
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-3 animate-fade-in">
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-slate-700 via-blue-700 to-indigo-700 bg-clip-text text-transparent mb-3 animate-fade-in">
               편의점 솔루션
             </h1>
             <p className="text-gray-600 text-lg font-medium">
               {isLogin ? '다시 만나서 반가워요! 👋' : '함께 시작해요! 🚀'}
             </p>
             <div className="mt-4 flex justify-center space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse-slow"></div>
-              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse-slow delay-300"></div>
-              <div className="w-2 h-2 bg-pink-500 rounded-full animate-pulse-slow delay-600"></div>
+              <div className="w-2 h-2 bg-slate-500 rounded-full animate-pulse-slow"></div>
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse-slow delay-300"></div>
+              <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse-slow delay-600"></div>
             </div>
           </div>
 
@@ -250,7 +250,7 @@ const AuthPage: React.FC = () => {
 
                 <Button
                   type="submit"
-                  className="w-full py-4 text-lg font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 transform hover:scale-105 transition-all duration-300 shadow-xl hover:shadow-2xl animate-glow"
+                  className="w-full py-4 text-lg font-bold bg-gradient-to-r from-slate-600 via-blue-600 to-indigo-600 hover:from-slate-700 hover:via-blue-700 hover:to-indigo-700 transform hover:scale-105 transition-all duration-300 shadow-xl hover:shadow-2xl animate-glow"
                   disabled={isLoading}
                   loading={isLoading}
                 >
@@ -447,7 +447,7 @@ const AuthPage: React.FC = () => {
 
                 <Button
                   type="submit"
-                  className="w-full py-4 text-lg font-bold bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 hover:from-green-600 hover:via-blue-600 hover:to-purple-600 transform hover:scale-105 transition-all duration-300 shadow-xl hover:shadow-2xl animate-glow"
+                  className="w-full py-4 text-lg font-bold bg-gradient-to-r from-slate-600 via-blue-600 to-indigo-600 hover:from-slate-700 hover:via-blue-700 hover:to-indigo-700 transform hover:scale-105 transition-all duration-300 shadow-xl hover:shadow-2xl animate-glow"
                   disabled={isLoading}
                   loading={isLoading}
                 >
@@ -470,7 +470,7 @@ const AuthPage: React.FC = () => {
               <button
                 type="button"
                 onClick={switchMode}
-                className="mt-4 w-full py-4 px-6 border-2 border-gradient-to-r from-blue-300 to-purple-300 rounded-xl text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:border-blue-400 hover:border-purple-400 transition-all duration-300 font-bold transform hover:scale-105 shadow-lg hover:shadow-xl"
+                className="mt-4 w-full py-4 px-6 border-2 border-gradient-to-r from-slate-300 to-blue-300 rounded-xl text-gray-700 hover:bg-gradient-to-r hover:from-slate-50 hover:to-blue-50 hover:border-slate-400 hover:border-blue-400 transition-all duration-300 font-bold transform hover:scale-105 shadow-lg hover:shadow-xl"
                 disabled={isLoading || isAnimating}
               >
                 {isLogin ? '🆕 새 계정 만들기' : '🔐 기존 계정으로 로그인'}
@@ -483,9 +483,9 @@ const AuthPage: React.FC = () => {
             <p className="font-medium">편의점 솔루션 v2.0</p>
             <p className="text-xs mt-1 opacity-75">최신 기술로 만든 스마트 편의점 관리 시스템 ✨</p>
             <div className="mt-3 flex justify-center space-x-1">
-              <div className="w-1 h-1 bg-blue-400 rounded-full animate-pulse-slow"></div>
-              <div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse-slow delay-200"></div>
-              <div className="w-1 h-1 bg-pink-400 rounded-full animate-pulse-slow delay-400"></div>
+              <div className="w-1 h-1 bg-slate-400 rounded-full animate-pulse-slow"></div>
+              <div className="w-1 h-1 bg-blue-400 rounded-full animate-pulse-slow delay-200"></div>
+              <div className="w-1 h-1 bg-indigo-400 rounded-full animate-pulse-slow delay-400"></div>
             </div>
           </div>
         </div>
