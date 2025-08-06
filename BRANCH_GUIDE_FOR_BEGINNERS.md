@@ -49,7 +49,7 @@
 
 ### 🔐 **백엔드/인증 개발자 - "보안 전문가"**
 
-#### **담당 브랜치**: `feature/auth-system`
+#### **담당 브랜치**: `feature/auth-login`, `feature/auth-register`, `feature/auth-profile`, `feature/common-api`
 
 #### **🎯 주요 임무**
 - 사용자 로그인/회원가입 시스템
@@ -76,8 +76,8 @@
 git checkout develop
 git pull origin develop
 
-# 2. 내 작업 브랜치로 이동
-git checkout feature/auth-system
+# 2. 내 작업 브랜치로 이동 (로그인 기능 작업 예시)
+git checkout feature/auth-login
 git rebase develop  # develop의 최신 내용을 내 브랜치에 반영
 
 # 3. 새로운 기능 개발 시작
@@ -116,24 +116,29 @@ git commit -m "feat(auth): add Google OAuth login functionality
 - Add error handling for login failures"
 
 # 6. 서버에 올리기
-git push origin feature/auth-system
+git push origin feature/auth-login
 
 # 7. develop 브랜치에 직접 merge
 git checkout develop
 git pull origin develop  # 최신 상태 확인
-git merge feature/auth-system  # 내 작업 merge
+git merge feature/auth-login  # 내 작업 merge
 git push origin develop
 
 # 8. 내 브랜치로 복귀 및 다음 작업 준비
-git checkout feature/auth-system
+git checkout feature/auth-login
 git rebase develop  # 최신 develop 내용 반영
+
+# 다른 인증 기능 작업을 위해 브랜치 전환
+git checkout feature/auth-register  # 회원가입 기능 작업
+# 또는
+git checkout feature/auth-profile   # 프로필 관리 기능 작업
 ```
 
 ---
 
 ### 👤 **고객 개발자 A - "주문 & 결제 전문가"**
 
-#### **담당 브랜치**: `feature/customer-orders`
+#### **담당 브랜치**: `feature/customer-cart`, `feature/customer-payment`, `feature/customer-checkout`, `feature/customer-tracking`
 
 #### **🎯 주요 임무**
 - 고객이 상품을 주문하는 모든 과정
@@ -160,7 +165,7 @@ git rebase develop  # 최신 develop 내용 반영
 # 1. 작업 준비
 git checkout develop
 git pull origin develop
-git checkout feature/customer-orders
+git checkout feature/customer-payment  # 결제 기능 작업 예시
 git rebase develop
 
 # 2. 네이버페이 API 파일 생성
@@ -220,24 +225,26 @@ git commit -m "feat(payment): add Naver Pay integration
 - Add error handling for Naver Pay failures
 - Test integration with sandbox environment"
 
-git push origin feature/customer-orders
+git push origin feature/customer-payment
 
 # 7. develop에 직접 merge
 git checkout develop
 git pull origin develop
-git merge feature/customer-orders
+git merge feature/customer-payment
 git push origin develop
 
 # 8. 내 브랜치로 복귀
-git checkout feature/customer-orders
-git rebase develop
+git checkout feature/customer-payment
+# 또는 다른 주문 관련 브랜치로 전환
+# git checkout feature/customer-cart     # 장바구니 기능
+# git checkout feature/customer-checkout # 주문 결제 프로세스
 ```
 
 ---
 
 ### 👤 **고객 개발자 B - "대시보드 전문가"**
 
-#### **담당 브랜치**: `feature/customer-dashboard`
+#### **담당 브랜치**: `feature/customer-home`, `feature/customer-orders`, `feature/customer-profile`, `feature/customer-navigation`
 
 #### **🎯 주요 임무**
 - 고객이 보는 홈 화면
@@ -263,7 +270,7 @@ git rebase develop
 # 1. 작업 준비
 git checkout develop
 git pull origin develop
-git checkout feature/customer-dashboard
+git checkout feature/customer-home  # 홈 대시보드 작업 예시
 git rebase develop
 
 # 2. 실시간 알림 컴포넌트 개발

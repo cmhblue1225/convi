@@ -39,7 +39,8 @@
 
 ### 🔐 **2. 백엔드/인증 개발자**
 **이름**: `[할당 예정]`  
-**GitHub**: `[GitHub ID]`
+**GitHub**: `[GitHub ID]`  
+**담당 브랜치**: `feature/auth-login`, `feature/auth-register`, `feature/auth-profile`, `feature/common-api`
 
 #### **핵심 책임**
 - 사용자 인증 및 권한 시스템

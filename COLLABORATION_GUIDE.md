@@ -19,53 +19,76 @@
 
 ### 🔐 **2. 백엔드/인증 개발자**
 - **역할**: 인증 시스템, 데이터베이스, API 연동
+- **담당 브랜치**: `feature/auth-*`, `feature/common-api`
 - **담당 영역**:
   ```
+  # 인증 시스템
   src/stores/common/authStore.ts
-  src/lib/supabase/
-  src/components/common/ProtectedRoute.tsx
+  src/components/common/ProtectedRoute.tsx  
   src/pages/AuthPage.tsx
+  
+  # 공통 API
+  src/lib/supabase/
   supabase-setup/ (데이터베이스 스키마)
   ```
 
-### 👤 **3. 고객 기능 개발자 A**
+### 👤 **3. 고객 기능 개발자 A** - 주문 & 결제 전문가
 - **역할**: 주문 & 결제 시스템
+- **담당 브랜치**: `feature/customer-cart`, `feature/customer-payment`, `feature/customer-checkout`, `feature/customer-tracking`
 - **담당 영역**:
   ```
+  # 주문 프로세스
   src/pages/customer/StoreSelection.tsx
-  src/pages/customer/ProductCatalog.tsx
+  src/pages/customer/ProductCatalog.tsx  
   src/pages/customer/Checkout.tsx
+  src/pages/customer/OrderTracking.tsx
+  
+  # 결제 & 장바구니
   src/components/payment/
   src/lib/payment/
   src/stores/cartStore.ts
   ```
 
-### 👤 **4. 고객 기능 개발자 B**
-- **역할**: 고객 대시보드 & 프로필
+### 👤 **4. 고객 기능 개발자 B** - 대시보드 & UI 전문가
+- **역할**: 고객 대시보드 & UI/UX
+- **담당 브랜치**: `feature/customer-home`, `feature/customer-orders`, `feature/customer-profile`, `feature/customer-navigation`
 - **담당 영역**:
   ```
+  # 고객 대시보드
   src/pages/customer/CustomerHome.tsx
   src/pages/customer/CustomerOrders.tsx
   src/pages/customer/CustomerProfile.tsx
-  src/pages/customer/OrderTracking.tsx
+  
+  # UI 컴포넌트
   src/components/customer/
+  src/components/common/ (일부)
   ```
 
 ### 🏪 **5. 점주 기능 개발자**
 - **역할**: 점주 관련 모든 기능
+- **담당 브랜치**: `feature/store-*` (전체 5개)
 - **담당 영역**:
   ```
+  # 점주 기능 전체
   src/pages/store/
   src/components/store/
   src/stores/orderStore.ts (점주 관점)
+  src/stores/inventoryStore.ts
   ```
 
 ### 🏢 **6. 본사 기능 개발자**
-- **역할**: 본사 관련 모든 기능
+- **역할**: 본사 관련 모든 기능 + 공통 컴포넌트
+- **담당 브랜치**: `feature/hq-*` (전체 5개), `feature/common-components`, `feature/common-utils`
 - **담당 영역**:
   ```
+  # 본사 기능
   src/pages/hq/
   src/components/hq/
+  
+  # 공통 컴포넌트
+  src/components/common/ (대부분)
+  src/lib/utils/
+  src/types/common.ts
   ```
 
 ---
@@ -79,14 +102,60 @@ main              # 운영 배포용 (보호된 브랜치)
 └── release/v2.x  # 릴리즈 준비 브랜치
 ```
 
-### **기능별 브랜치**
+### **세분화된 기능별 브랜치**
+
+#### **🔐 인증 시스템 (Auth)**
 ```
-feature/auth-system          # 백엔드/인증 개발자
-feature/customer-orders      # 고객 개발자 A
-feature/customer-dashboard   # 고객 개발자 B
-feature/store-management     # 점주 개발자
-feature/hq-analytics         # 본사 개발자
+feature/auth-login           # 로그인/로그아웃 기능
+feature/auth-register        # 회원가입 기능
+feature/auth-profile         # 프로필 관리 & 권한 처리
+```
+
+#### **🛒 고객 주문 시스템 (Customer Orders)**
+```
+feature/customer-cart        # 장바구니 기능
+feature/customer-payment     # 결제 시스템 (토스, 카카오페이 등)
+feature/customer-checkout    # 주문 결제 프로세스
+feature/customer-tracking    # 주문 추적 & 상태 관리
+```
+
+#### **👤 고객 대시보드 (Customer Dashboard)**
+```
+feature/customer-home        # 홈 대시보드 & 매장 선택
+feature/customer-orders      # 주문 내역 관리
+feature/customer-profile     # 고객 프로필 & 설정
+feature/customer-navigation  # 하단 네비게이션 & 라우팅
+```
+
+#### **🏪 점주 관리 (Store Management)**
+```
+feature/store-dashboard      # 점주 대시보드
+feature/store-orders         # 주문 관리 & 처리
+feature/store-inventory      # 재고 관리
+feature/store-supply         # 발주 시스템
+feature/store-analytics      # 점주용 매출 분석
+```
+
+#### **🏢 본사 관리 (HQ Management)**
+```
+feature/hq-dashboard         # 본사 통합 대시보드
+feature/hq-stores            # 지점 관리 & 승인
+feature/hq-products          # 상품 카탈로그 관리
+feature/hq-supply            # 발주 승인 & 관리
+feature/hq-analytics         # 전사 분석 & 리포트
+```
+
+#### **⚙️ 공통 기능 (Common)**
+```
+feature/common-components    # 공통 UI 컴포넌트
+feature/common-api           # API 연동 & 데이터베이스
+feature/common-utils         # 유틸리티 & 공통 로직
+```
+
+#### **🚨 긴급 수정**
+```
 hotfix/critical-bug-fix      # 긴급 수정용
+hotfix/security-patch        # 보안 패치용
 ```
 
 ---
@@ -210,6 +279,29 @@ git rebase develop  # 최신 develop 내용 반영
 ### **3. Main 브랜치 배포**
 - **develop → main**: 릴리즈 시에만 팀 리더가 수행
 - **각 개발자**: develop까지만 merge, main은 건드리지 않음
+
+### **4. 세분화된 브랜치 활용법**
+
+#### **🤝 협업 시나리오**
+```bash
+# 시나리오 1: 한 사람이 여러 기능 작업
+김개발자가 인증과 관련된 여러 기능 작업
+→ feature/auth-login, feature/auth-register 모두 사용
+
+# 시나리오 2: 여러 사람이 한 영역 협업
+이개발 + 박개발이 고객 기능 협업
+→ 이개발: feature/customer-cart, feature/customer-payment
+→ 박개발: feature/customer-home, feature/customer-orders
+```
+
+#### **⚡ 빠른 협업 규칙**
+```bash
+🤝 여러 명이 한 브랜치 작업 시:
+1. 팀 채널에 "customer-cart 브랜치 작업 시작" 공지
+2. 작업 완료 후 "customer-cart 푸시 완료" 알림
+3. 다른 사람이 "받아서 계속 작업하겠습니다" 응답
+4. 충돌 시 실시간 소통으로 해결
+```
 
 ---
 
