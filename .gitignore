@@ -11,6 +11,10 @@ node_modules
 dist
 dist-ssr
 .env
+need.txt
+design.txt
+plan.txt
+console.txt
 *.local
 
 # Editor directories and files

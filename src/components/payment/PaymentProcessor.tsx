@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { requestCardPayment, requestEasyPayment, requestTossPayment } from '../../lib/payment/tossPayments';
-import { openKakaoPayment } from '../../lib/payment/kakaoPay';
+import { initKakaoPaySDK, initiateKakaoPayPayment } from '../../lib/payment/kakaoPay';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import TossPaymentWindow from './TossPaymentWidget';
 
@@ -131,34 +131,7 @@ const PaymentProcessor: React.FC<PaymentProcessorProps> = ({
     setShowTossWidget(true);
   };
 
-  const handleKakaoPayment = async () => {
-    setProcessingMessage('카카오페이 결제를 처리하고 있습니다...');
-    
-    // 카카오페이 결제 시뮬레이션
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const result = {
-          paymentKey: `kakao_payment_${Date.now()}`,
-          orderId: orderInfo.orderId,
-          orderName: orderInfo.orderName,
-          amount: orderInfo.amount,
-          method: '카카오페이',
-          status: 'DONE',
-          requestedAt: new Date().toISOString(),
-          approvedAt: new Date().toISOString(),
-          useEscrow: false,
-          easyPay: {
-            provider: 'KAKAOPAY',
-            amount: orderInfo.amount,
-            discountAmount: 0
-          }
-        };
-        
-        console.log('✅ 카카오페이 결제 시뮬레이션 성공:', result);
-        onPaymentSuccess(result);
-      }, 3000);
-    });
-  };
+  
 
   const handleOtherPayment = async () => {
     setProcessingMessage(`${getPaymentMethodName(paymentMethod)} 결제를 처리하고 있습니다...`);
