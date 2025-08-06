@@ -196,10 +196,18 @@ git commit -m "feat: add developer info to team structure
 git push origin feature/your-feature-name
 ```
 
-### **4단계: 첫 번째 Pull Request**
-1. GitHub에서 Pull Request 생성
-2. 템플릿에 맞춰 설명 작성
-3. 팀 리더에게 리뷰 요청
+### **4단계: develop에 직접 Merge**
+```bash
+# develop에 직접 merge
+git checkout develop
+git pull origin develop
+git merge feature/your-feature-name
+git push origin develop
+
+# 내 브랜치로 복귀
+git checkout feature/your-feature-name
+git rebase develop
+```
 
 ---
 
@@ -281,7 +289,7 @@ npx eslint src/pages/customer/CustomerHome.tsx
 
 ### **단계별 문제 해결**
 1. **구글링**: 에러 메시지로 검색
-2. **문서 확인**: README.md, COLLABORATION_GUIDE.md
+2. **문서 확인**: README.md, COLLABORATION_GUIDE.md, BRANCH_GUIDE_FOR_BEGINNERS.md
 3. **팀 채널**: Slack/Discord에 질문
 4. **GitHub Issue**: 버그 리포트 또는 질문 이슈 생성
 5. **팀 리더**: 직접 연락
@@ -312,9 +320,9 @@ npx eslint src/pages/customer/CustomerHome.tsx
 
 ### **협업 규칙 숙지**
 - [ ] 커밋 메시지 컨벤션 이해
-- [ ] PR 템플릿 확인
 - [ ] 브랜치 전략 이해
-- [ ] 코드 리뷰 프로세스 숙지
+- [ ] 직접 merge 프로세스 숙지
+- [ ] 빠른 협업 워크플로우 이해
 
 ---
 

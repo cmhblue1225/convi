@@ -146,14 +146,22 @@ npm run dev
 # 1. 코드 품질 검사
 npm run lint
 npm run type-check
-
-# 2. 빌드 테스트
 npm run build
 
-# 3. 커밋 & 푸시
+# 2. 본인 브랜치에 커밋 & 푸시
 git add .
 git commit -m "feat(customer): add order tracking functionality"
 git push origin feature/your-area
+
+# 3. develop에 직접 merge
+git checkout develop
+git pull origin develop
+git merge feature/your-area
+git push origin develop
+
+# 4. 본인 브랜치로 복귀 및 최신화
+git checkout feature/your-area
+git rebase develop
 ```
 
 ---
@@ -178,26 +186,30 @@ fix(store): resolve inventory update issue
 refactor(auth): improve login flow
 ```
 
-### **2. 풀 리퀘스트 (PR) 템플릿**
-```markdown
-## 📋 작업 내용
-- 구현한 기능에 대한 간단한 설명
+### **2. 브랜치 Merge 프로세스**
 
-## 🧪 테스트 방법
-1. 테스트 절차 단계별 설명
-2. 예상 결과
+**단순화된 워크플로우 (코드 리뷰 생략)**
 
-## ✅ 체크리스트
-- [ ] 코드 리뷰 완료
-- [ ] 테스트 통과
-- [ ] 빌드 성공
-- [ ] 문서 업데이트
+```bash
+# 1. 본인 브랜치에서 작업 완료 후
+git add .
+git commit -m "feat(customer): add new feature"
+git push origin feature/your-area
+
+# 2. develop 브랜치에 직접 merge
+git checkout develop
+git pull origin develop  # 최신 상태 확인
+git merge feature/your-area  # 본인 브랜치 merge
+git push origin develop
+
+# 3. 계속 작업을 위해 본인 브랜치로 복귀
+git checkout feature/your-area
+git rebase develop  # 최신 develop 내용 반영
 ```
 
-### **3. 코드 리뷰 프로세스**
-- **필수 승인**: 팀 리더 + 관련 영역 개발자 최소 2명
-- **리뷰 포인트**: 코드 품질, 타입 안전성, 성능, 보안
-- **승인 후**: develop 브랜치로 merge
+### **3. Main 브랜치 배포**
+- **develop → main**: 릴리즈 시에만 팀 리더가 수행
+- **각 개발자**: develop까지만 merge, main은 건드리지 않음
 
 ---
 
@@ -292,8 +304,8 @@ npm run test:e2e         # E2E 테스트
 ### **DON'T ❌**
 1. 다른 영역 파일 무단 수정
 2. 대용량 파일 커밋
-3. 브랜치 직접 merge (PR 필수)
-4. 테스트 없이 푸시
+3. main 브랜치 직접 수정 (팀 리더만 가능)
+4. 테스트 없이 merge
 5. 데이터베이스 스키마 임의 변경
 
 ---
@@ -303,7 +315,7 @@ npm run test:e2e         # E2E 테스트
 ### **스테이징 배포**
 ```
 develop 브랜치 → 스테이징 환경
-1. 모든 PR이 develop에 merge
+1. 각 개발자가 develop에 직접 merge
 2. 자동 빌드 및 테스트
 3. 스테이징 환경 배포
 4. QA 테스트 진행
