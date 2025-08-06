@@ -46,6 +46,7 @@ const AuthPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { signIn, signUp, isLoading, isAuthenticated, user } = useAuthStore();
@@ -136,299 +137,356 @@ const AuthPage: React.FC = () => {
   };
 
   const switchMode = () => {
-    setIsLogin(!isLogin);
-    setError(null);
-    setSuccess(null);
-    loginForm.reset();
-    signupForm.reset();
+    setIsAnimating(true);
+    setTimeout(() => {
+      setIsLogin(!isLogin);
+      setError(null);
+      setSuccess(null);
+      loginForm.reset();
+      signupForm.reset();
+      setIsAnimating(false);
+    }, 300);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            편의점 솔루션
-          </h1>
-          <p className="text-gray-600">
-            {isLogin ? '계정에 로그인하세요' : '새 계정을 만드세요'}
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 relative overflow-hidden">
+      {/* 배경 애니메이션 요소들 */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-indigo-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse-slow delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-cyan-400/10 to-blue-400/10 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute top-20 left-20 w-32 h-32 bg-gradient-to-br from-yellow-400/15 to-orange-400/15 rounded-full blur-2xl animate-float delay-500"></div>
+        <div className="absolute bottom-20 right-20 w-24 h-24 bg-gradient-to-br from-green-400/15 to-teal-400/15 rounded-full blur-2xl animate-float delay-1000"></div>
+      </div>
 
-        {/* Auth Form */}
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-red-600 text-sm">{error}</p>
+      {/* 메인 컨테이너 */}
+      <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          {/* 로고 섹션 */}
+          <div className="text-center mb-8 animate-fade-in">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-2xl mb-6 shadow-2xl animate-glow">
+              <span className="text-3xl animate-bounce-gentle">🏪</span>
             </div>
-          )}
-
-          {success && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
-              <p className="text-green-600 text-sm">{success}</p>
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-3 animate-fade-in">
+              편의점 솔루션
+            </h1>
+            <p className="text-gray-600 text-lg font-medium">
+              {isLogin ? '다시 만나서 반가워요! 👋' : '함께 시작해요! 🚀'}
+            </p>
+            <div className="mt-4 flex justify-center space-x-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse-slow"></div>
+              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse-slow delay-300"></div>
+              <div className="w-2 h-2 bg-pink-500 rounded-full animate-pulse-slow delay-600"></div>
             </div>
-          )}
+          </div>
 
-          {isLogin ? (
-            // 로그인 폼
-            <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-6">
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  이메일
-                </label>
-                <input
-                  {...loginForm.register('email')}
-                  type="email"
-                  id="email"
-                  className="input w-full"
-                  placeholder="이메일을 입력하세요"
-                  disabled={isLoading}
-                />
-                {loginForm.formState.errors.email && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {loginForm.formState.errors.email.message}
-                  </p>
-                )}
+          {/* Auth Form Card */}
+          <div className={`bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/20 transition-all duration-500 ${
+            isAnimating ? 'scale-95 opacity-50' : 'scale-100 opacity-100'
+          }`}>
+            {/* 상태 메시지 */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl animate-shake">
+                <div className="flex items-center">
+                  <span className="text-red-500 mr-2">⚠️</span>
+                  <p className="text-red-600 text-sm font-medium">{error}</p>
+                </div>
               </div>
+            )}
 
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  비밀번호
-                </label>
-                <input
-                  {...loginForm.register('password')}
-                  type="password"
-                  id="password"
-                  className="input w-full"
-                  placeholder="비밀번호를 입력하세요"
-                  disabled={isLoading}
-                />
-                {loginForm.formState.errors.password && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {loginForm.formState.errors.password.message}
-                  </p>
-                )}
+            {success && (
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl animate-bounce-gentle">
+                <div className="flex items-center">
+                  <span className="text-green-500 mr-2">✅</span>
+                  <p className="text-green-600 text-sm font-medium">{success}</p>
+                </div>
               </div>
+            )}
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading}
-                loading={isLoading}
-              >
-                로그인
-              </Button>
-            </form>
-          ) : (
-            // 회원가입 폼
-            <form onSubmit={signupForm.handleSubmit(onSignupSubmit)} className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
-                    이름
+            {isLogin ? (
+              // 로그인 폼
+              <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-6">
+                <div className="space-y-2">
+                  <label htmlFor="email" className="block text-sm font-semibold text-gray-700">
+                    📧 이메일
                   </label>
-                  <input
-                    {...signupForm.register('firstName')}
-                    type="text"
-                    id="firstName"
-                    className="input w-full"
-                    placeholder="이름"
-                    disabled={isLoading}
-                  />
-                  {signupForm.formState.errors.firstName && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {signupForm.formState.errors.firstName.message}
+                  <div className="relative">
+                    <input
+                      {...loginForm.register('email')}
+                      type="email"
+                      id="email"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                      placeholder="이메일을 입력하세요"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  {loginForm.formState.errors.email && (
+                    <p className="text-sm text-red-500 animate-pulse">
+                      {loginForm.formState.errors.email.message}
                     </p>
                   )}
                 </div>
 
-                <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
-                    성
+                <div className="space-y-2">
+                  <label htmlFor="password" className="block text-sm font-semibold text-gray-700">
+                    🔒 비밀번호
                   </label>
-                  <input
-                    {...signupForm.register('lastName')}
-                    type="text"
-                    id="lastName"
-                    className="input w-full"
-                    placeholder="성"
-                    disabled={isLoading}
-                  />
-                  {signupForm.formState.errors.lastName && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {signupForm.formState.errors.lastName.message}
+                  <div className="relative">
+                    <input
+                      {...loginForm.register('password')}
+                      type="password"
+                      id="password"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                      placeholder="비밀번호를 입력하세요"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  {loginForm.formState.errors.password && (
+                    <p className="text-sm text-red-500 animate-pulse">
+                      {loginForm.formState.errors.password.message}
                     </p>
                   )}
                 </div>
-              </div>
 
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  이메일
-                </label>
-                <input
-                  {...signupForm.register('email')}
-                  type="email"
-                  id="email"
-                  className="input w-full"
-                  placeholder="이메일을 입력하세요"
+                <Button
+                  type="submit"
+                  className="w-full py-4 text-lg font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 transform hover:scale-105 transition-all duration-300 shadow-xl hover:shadow-2xl animate-glow"
                   disabled={isLoading}
-                />
-                {signupForm.formState.errors.email && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {signupForm.formState.errors.email.message}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  비밀번호
-                </label>
-                <input
-                  {...signupForm.register('password')}
-                  type="password"
-                  id="password"
-                  className="input w-full"
-                  placeholder="비밀번호를 입력하세요"
-                  disabled={isLoading}
-                />
-                {signupForm.formState.errors.password && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {signupForm.formState.errors.password.message}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                  비밀번호 확인
-                </label>
-                <input
-                  {...signupForm.register('confirmPassword')}
-                  type="password"
-                  id="confirmPassword"
-                  className="input w-full"
-                  placeholder="비밀번호를 다시 입력하세요"
-                  disabled={isLoading}
-                />
-                {signupForm.formState.errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {signupForm.formState.errors.confirmPassword.message}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
-                  역할
-                </label>
-                <select
-                  {...signupForm.register('role')}
-                  id="role"
-                  className="input w-full"
-                  disabled={isLoading}
+                  loading={isLoading}
                 >
-                  <option value="customer">고객</option>
-                  <option value="store_owner">점주</option>
-                  <option value="headquarters">본사 관리자</option>
-                </select>
-                {signupForm.formState.errors.role && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {signupForm.formState.errors.role.message}
-                  </p>
-                )}
-              </div>
-
-              {/* 점주 회원가입 시 지점 정보 입력 필드 */}
-              {signupForm.watch('role') === 'store_owner' && (
-                <div className="space-y-4 border-t pt-4">
-                  <h3 className="text-lg font-semibold text-gray-900">지점 정보</h3>
-                  
-                  <div>
-                    <label htmlFor="storeName" className="block text-sm font-medium text-gray-700 mb-2">
-                      지점명 *
+                  {isLoading ? '로그인 중...' : '🚀 로그인'}
+                </Button>
+              </form>
+            ) : (
+              // 회원가입 폼
+              <form onSubmit={signupForm.handleSubmit(onSignupSubmit)} className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label htmlFor="firstName" className="block text-sm font-semibold text-gray-700">
+                      👤 이름
                     </label>
                     <input
-                      {...signupForm.register('storeName')}
+                      {...signupForm.register('firstName')}
                       type="text"
-                      id="storeName"
-                      className="input w-full"
-                      placeholder="예: 강남점, 홍대점"
+                      id="firstName"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                      placeholder="이름"
                       disabled={isLoading}
                     />
-                    {signupForm.formState.errors.storeName && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {signupForm.formState.errors.storeName.message}
+                    {signupForm.formState.errors.firstName && (
+                      <p className="text-sm text-red-500 animate-pulse">
+                        {signupForm.formState.errors.firstName.message}
                       </p>
                     )}
                   </div>
 
-                  <div>
-                    <label htmlFor="storeAddress" className="block text-sm font-medium text-gray-700 mb-2">
-                      지점 주소 *
+                  <div className="space-y-2">
+                    <label htmlFor="lastName" className="block text-sm font-semibold text-gray-700">
+                      👤 성
                     </label>
                     <input
-                      {...signupForm.register('storeAddress')}
+                      {...signupForm.register('lastName')}
                       type="text"
-                      id="storeAddress"
-                      className="input w-full"
-                      placeholder="지점 주소를 입력하세요"
+                      id="lastName"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                      placeholder="성"
                       disabled={isLoading}
                     />
-                    {signupForm.formState.errors.storeAddress && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {signupForm.formState.errors.storeAddress.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label htmlFor="storePhone" className="block text-sm font-medium text-gray-700 mb-2">
-                      지점 전화번호 *
-                    </label>
-                    <input
-                      {...signupForm.register('storePhone')}
-                      type="tel"
-                      id="storePhone"
-                      className="input w-full"
-                      placeholder="02-1234-5678"
-                      disabled={isLoading}
-                    />
-                    {signupForm.formState.errors.storePhone && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {signupForm.formState.errors.storePhone.message}
+                    {signupForm.formState.errors.lastName && (
+                      <p className="text-sm text-red-500 animate-pulse">
+                        {signupForm.formState.errors.lastName.message}
                       </p>
                     )}
                   </div>
                 </div>
-              )}
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading}
-                loading={isLoading}
-              >
-                회원가입
-              </Button>
-            </form>
-          )}
+                <div className="space-y-2">
+                  <label htmlFor="email" className="block text-sm font-semibold text-gray-700">
+                    📧 이메일
+                  </label>
+                  <input
+                    {...signupForm.register('email')}
+                    type="email"
+                    id="email"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                    placeholder="이메일을 입력하세요"
+                    disabled={isLoading}
+                  />
+                  {signupForm.formState.errors.email && (
+                    <p className="text-sm text-red-500 animate-pulse">
+                      {signupForm.formState.errors.email.message}
+                    </p>
+                  )}
+                </div>
 
-          {/* Switch Mode */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              {isLogin ? '계정이 없으신가요?' : '이미 계정이 있으신가요?'}
+                <div className="space-y-2">
+                  <label htmlFor="password" className="block text-sm font-semibold text-gray-700">
+                    🔒 비밀번호
+                  </label>
+                  <input
+                    {...signupForm.register('password')}
+                    type="password"
+                    id="password"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                    placeholder="비밀번호를 입력하세요"
+                    disabled={isLoading}
+                  />
+                  {signupForm.formState.errors.password && (
+                    <p className="text-sm text-red-500 animate-pulse">
+                      {signupForm.formState.errors.password.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700">
+                    🔐 비밀번호 확인
+                  </label>
+                  <input
+                    {...signupForm.register('confirmPassword')}
+                    type="password"
+                    id="confirmPassword"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                    placeholder="비밀번호를 다시 입력하세요"
+                    disabled={isLoading}
+                  />
+                  {signupForm.formState.errors.confirmPassword && (
+                    <p className="text-sm text-red-500 animate-pulse">
+                      {signupForm.formState.errors.confirmPassword.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="role" className="block text-sm font-semibold text-gray-700">
+                    🎭 역할 선택
+                  </label>
+                  <select
+                    {...signupForm.register('role')}
+                    id="role"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                    disabled={isLoading}
+                  >
+                    <option value="customer">🛒 고객</option>
+                    <option value="store_owner">🏪 점주</option>
+                    <option value="headquarters">🏢 본사 관리자</option>
+                  </select>
+                  {signupForm.formState.errors.role && (
+                    <p className="text-sm text-red-500 animate-pulse">
+                      {signupForm.formState.errors.role.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* 점주 회원가입 시 지점 정보 입력 필드 */}
+                {signupForm.watch('role') === 'store_owner' && (
+                  <div className="space-y-4 border-t border-gray-200 pt-6 animate-slide-down">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-2xl">🏪</span>
+                      <h3 className="text-lg font-semibold text-gray-900">지점 정보</h3>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label htmlFor="storeName" className="block text-sm font-semibold text-gray-700">
+                        🏷️ 지점명 *
+                      </label>
+                      <input
+                        {...signupForm.register('storeName')}
+                        type="text"
+                        id="storeName"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                        placeholder="예: 강남점, 홍대점"
+                        disabled={isLoading}
+                      />
+                      {signupForm.formState.errors.storeName && (
+                        <p className="text-sm text-red-500 animate-pulse">
+                          {signupForm.formState.errors.storeName.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label htmlFor="storeAddress" className="block text-sm font-semibold text-gray-700">
+                        📍 지점 주소 *
+                      </label>
+                      <input
+                        {...signupForm.register('storeAddress')}
+                        type="text"
+                        id="storeAddress"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                        placeholder="지점 주소를 입력하세요"
+                        disabled={isLoading}
+                      />
+                      {signupForm.formState.errors.storeAddress && (
+                        <p className="text-sm text-red-500 animate-pulse">
+                          {signupForm.formState.errors.storeAddress.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label htmlFor="storePhone" className="block text-sm font-semibold text-gray-700">
+                        📞 지점 전화번호 *
+                      </label>
+                      <input
+                        {...signupForm.register('storePhone')}
+                        type="tel"
+                        id="storePhone"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                        placeholder="02-1234-5678"
+                        disabled={isLoading}
+                      />
+                      {signupForm.formState.errors.storePhone && (
+                        <p className="text-sm text-red-500 animate-pulse">
+                          {signupForm.formState.errors.storePhone.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  className="w-full py-4 text-lg font-bold bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 hover:from-green-600 hover:via-blue-600 hover:to-purple-600 transform hover:scale-105 transition-all duration-300 shadow-xl hover:shadow-2xl animate-glow"
+                  disabled={isLoading}
+                  loading={isLoading}
+                >
+                  {isLoading ? '회원가입 중...' : '✨ 회원가입'}
+                </Button>
+              </form>
+            )}
+
+            {/* Switch Mode */}
+            <div className="mt-8 text-center">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">또는</span>
+                </div>
+              </div>
+              
               <button
                 type="button"
                 onClick={switchMode}
-                className="ml-2 text-primary-600 hover:text-primary-500 font-medium"
-                disabled={isLoading}
+                className="mt-4 w-full py-4 px-6 border-2 border-gradient-to-r from-blue-300 to-purple-300 rounded-xl text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:border-blue-400 hover:border-purple-400 transition-all duration-300 font-bold transform hover:scale-105 shadow-lg hover:shadow-xl"
+                disabled={isLoading || isAnimating}
               >
-                {isLogin ? '회원가입' : '로그인'}
+                {isLogin ? '🆕 새 계정 만들기' : '🔐 기존 계정으로 로그인'}
               </button>
-            </p>
+            </div>
+          </div>
+
+          {/* 하단 정보 */}
+          <div className="text-center mt-8 text-sm text-gray-500 animate-fade-in">
+            <p className="font-medium">편의점 솔루션 v2.0</p>
+            <p className="text-xs mt-1 opacity-75">최신 기술로 만든 스마트 편의점 관리 시스템 ✨</p>
+            <div className="mt-3 flex justify-center space-x-1">
+              <div className="w-1 h-1 bg-blue-400 rounded-full animate-pulse-slow"></div>
+              <div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse-slow delay-200"></div>
+              <div className="w-1 h-1 bg-pink-400 rounded-full animate-pulse-slow delay-400"></div>
+            </div>
           </div>
         </div>
       </div>
