@@ -4,6 +4,13 @@ import { useAuthStore } from '../../stores/common/authStore';
 const CustomerHeader: React.FC = () => {
   const { profile, signOut } = useAuthStore();
 
+  const getDisplayName = () => {
+    if (profile) {
+      return `${profile.first_name} ${profile.last_name}`.trim() || '고객';
+    }
+    return '고객';
+  };
+
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
       <div className="px-4 py-3">
@@ -11,7 +18,7 @@ const CustomerHeader: React.FC = () => {
           <h1 className="text-lg font-semibold text-gray-900">편의점 솔루션</h1>
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-600">
-              {profile?.first_name} {profile?.last_name}
+              {getDisplayName()}님
             </span>
             <button
               onClick={() => signOut()}

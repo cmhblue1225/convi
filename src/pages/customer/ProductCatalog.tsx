@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { supabase } from '../../lib/supabase/client';
 import type { Product, Category, StoreProduct } from '../../types/common';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
@@ -19,6 +19,8 @@ const ProductCatalog: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
   
   const { addItem, getItemCount, items } = useCartStore();
 
@@ -32,9 +34,22 @@ const ProductCatalog: React.FC = () => {
       return;
     }
     
-    fetchCategories();
+    // URL 파라미터에서 카테고리 정보 읽기
+    const categorySlug = searchParams.get('category');
+    const categoryName = location.state?.categoryName;
+    
+    fetchCategories().then(() => {
+      // 카테고리 데이터 로드 후 URL 파라미터 처리
+      if (categorySlug) {
+        const category = categories.find(cat => cat.slug === categorySlug);
+        if (category) {
+          setSelectedCategory(category.id);
+        }
+      }
+    });
+    
     fetchProducts();
-  }, [selectedStore.id, selectedCategory, navigate]);
+  }, [selectedStore.id, selectedCategory, navigate, searchParams, location.state]);
 
   const fetchCategories = async () => {
     try {
@@ -50,6 +65,15 @@ const ProductCatalog: React.FC = () => {
       
       setCategories(data || []);
       console.log('📂 카테고리 데이터 로드 완료:', data?.length || 0, '개');
+      
+      // URL 파라미터에서 카테고리 정보 읽기 (카테고리 로드 후)
+      const categorySlug = searchParams.get('category');
+      if (categorySlug) {
+        const category = data?.find(cat => cat.slug === categorySlug);
+        if (category) {
+          setSelectedCategory(category.id);
+        }
+      }
       
     } catch (err) {
       console.error('Error fetching categories:', err);
@@ -128,6 +152,27 @@ const ProductCatalog: React.FC = () => {
     navigate(targetRoute);
   };
 
+  const handleCategoryChange = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    
+    // URL 업데이트 (선택적)
+    if (categoryId === 'all') {
+      navigate('/customer/products', { replace: true });
+    } else {
+      const category = categories.find(cat => cat.id === categoryId);
+      if (category) {
+        navigate(`/customer/products?category=${category.slug}`, { replace: true });
+      }
+    }
+  };
+
+  // 현재 선택된 카테고리 이름 가져오기
+  const getCurrentCategoryName = () => {
+    if (selectedCategory === 'all') return '전체 상품';
+    const category = categories.find(cat => cat.id === selectedCategory);
+    return category ? category.name : '전체 상품';
+  };
+
   if (!selectedStore.id) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -175,6 +220,10 @@ const ProductCatalog: React.FC = () => {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{selectedStore.name}</h1>
               <p className="text-gray-600 text-sm">{selectedStore.address}</p>
+              {/* 현재 카테고리 표시 */}
+              <p className="text-blue-600 text-sm font-medium mt-1">
+                📂 {getCurrentCategoryName()}
+              </p>
             </div>
             <div className="flex items-center space-x-3">
               {/* 장바구니 아이콘 */}
@@ -230,7 +279,7 @@ const ProductCatalog: React.FC = () => {
                   ? 'bg-blue-500 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
-              onClick={() => setSelectedCategory('all')}
+              onClick={() => handleCategoryChange('all')}
             >
               전체
             </button>
@@ -242,7 +291,7 @@ const ProductCatalog: React.FC = () => {
                     ? 'bg-blue-500 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
-                onClick={() => setSelectedCategory(category.id)}
+                onClick={() => handleCategoryChange(category.id)}
               >
                 {category.name}
               </button>
@@ -405,7 +454,7 @@ const ProductCatalog: React.FC = () => {
         {!loading && filteredProducts.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-500 mb-4">
-              {searchTerm ? '검색 결과가 없습니다.' : '등록된 상품이 없습니다.'}
+              {searchTerm ? '검색 결과가 없습니다.' : `${getCurrentCategoryName()}에 등록된 상품이 없습니다.`}
             </div>
             {searchTerm && (
               <button 

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { initializeAuth, useAuthStore } from './stores/common/authStore';
@@ -54,18 +54,30 @@ const queryClient = new QueryClient({
 
 function App() {
   const { isLoading, isAuthenticated, user } = useAuthStore();
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    // 인증 초기화 (보편적인 수준으로 복원)
-    console.log('🔐 App.tsx - 인증 초기화 시작 (세션 복원)');
-    initializeAuth();
+    // 인증 초기화
+    const initAuth = async () => {
+      console.log('🔐 App.tsx - 인증 초기화 시작 (세션 복원)');
+      try {
+        await initializeAuth();
+      } catch (error) {
+        console.error('❌ 인증 초기화 실패:', error);
+      } finally {
+        setIsInitialized(true);
+        console.log('✅ App.tsx - 인증 초기화 완료');
+      }
+    };
+
+    initAuth();
   }, []);
 
-  console.log('🎯 App.tsx 렌더링 - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated, 'user:', user?.role);
+  console.log('🎯 App.tsx 렌더링 - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated, 'user:', user?.role, 'isInitialized:', isInitialized);
 
-  // 초기 인증 확인 중에는 로딩 스피너 표시
-  if (isLoading) {
-    console.log('⏳ App.tsx - 인증 로딩 중, 로딩 스피너 표시');
+  // 초기화가 완료되지 않았거나 인증 로딩 중일 때는 로딩 스피너 표시
+  if (!isInitialized || isLoading) {
+    console.log('⏳ App.tsx - 초기화 또는 인증 로딩 중, 로딩 스피너 표시');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -73,7 +85,7 @@ function App() {
     );
   }
 
-  console.log('✅ App.tsx - 인증 완료, 라우터 렌더링');
+  console.log('✅ App.tsx - 초기화 완료, 라우터 렌더링');
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -87,7 +99,7 @@ function App() {
             <Route path="/test-store-selection" element={<StoreSelection />} />
             <Route path="/test-products" element={<ProductCatalog />} />
             
-            {/* Customer Routes - 임시로 보호 해제 (테스트용) */}
+            {/* Customer Routes */}
             <Route path="/customer" element={<CustomerLayout />}>
               <Route index element={<StoreSelection />} />
               <Route path="products" element={<ProductCatalog />} />

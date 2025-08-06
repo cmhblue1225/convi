@@ -470,7 +470,7 @@ export const useAuthStore = create<AuthState>()(
 );
 
 // 초기 인증 설정
-export const initializeAuth = async () => {
+export const initializeAuth = async (): Promise<void> => {
   const store = useAuthStore.getState();
   
   try {
@@ -499,15 +499,22 @@ export const initializeAuth = async () => {
         updated_at: session.user.updated_at || session.user.created_at,
       };
 
+      // 상태 즉시 업데이트
       store.user = userData;
       store.isAuthenticated = true;
       store.session = session;
       store.isLoading = false;
 
-      // 프로필 로드는 비동기로 처리
-      store.loadProfile(session.user.id).catch(error => {
-        console.error('⚠️ 프로필 로드 실패:', error);
-      });
+      console.log('✅ 사용자 정보 설정 완료:', userData.email, userData.role);
+
+      // 프로필 로드는 비동기로 처리하되, 실패해도 인증은 유지
+      try {
+        await store.loadProfile(session.user.id);
+        console.log('✅ 프로필 로드 완료');
+      } catch (profileError) {
+        console.error('⚠️ 프로필 로드 실패 (인증은 유지):', profileError);
+        // 프로필 로드 실패해도 인증 상태는 유지
+      }
     } else {
       console.log('🔍 저장된 세션 없음');
       store.clearAuth();
