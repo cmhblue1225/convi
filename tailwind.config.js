@@ -84,8 +84,8 @@ export default {
           '50%': { transform: 'translateY(-10px)' },
         },
         glow: {
-          '0%': { boxShadow: '0 0 5px rgba(59, 130, 246, 0.5)' },
-          '100%': { boxShadow: '0 0 20px rgba(59, 130, 246, 0.8)' },
+          '0%': { boxShadow: '0 0 5px rgba(71, 85, 105, 0.3)' },
+          '100%': { boxShadow: '0 0 20px rgba(71, 85, 105, 0.6)' },
         },
       },
       backdropBlur: {
