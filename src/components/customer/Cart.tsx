@@ -167,7 +167,7 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
                           </button>
                         </div>
                         <div className="text-sm font-semibold">
-                          {item.subtotal.toLocaleString()}원
+                          {(item.subtotal || 0).toLocaleString()}원
                         </div>
                       </div>
                       
@@ -225,11 +225,11 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>상품 금액</span>
-                  <span>{subtotal.toLocaleString()}원</span>
+                  <span>{(subtotal || 0).toLocaleString()}원</span>
                 </div>
                 <div className="flex justify-between">
                   <span>부가세</span>
-                  <span>{taxAmount.toLocaleString()}원</span>
+                  <span>{(taxAmount || 0).toLocaleString()}원</span>
                 </div>
                 {orderType === 'delivery' && (
                   <div className="flex justify-between">
@@ -238,20 +238,20 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
                       {deliveryFee === 0 ? (
                         <span className="text-green-600">무료</span>
                       ) : (
-                        `${deliveryFee.toLocaleString()}원`
+                        `${(deliveryFee || 0).toLocaleString()}원`
                       )}
                     </span>
                   </div>
                 )}
                 <div className="border-t pt-2 flex justify-between font-semibold">
                   <span>총 결제 금액</span>
-                  <span>{totalAmount.toLocaleString()}원</span>
+                  <span>{(totalAmount || 0).toLocaleString()}원</span>
                 </div>
                 
                 {/* 무료배송 안내 */}
                 {orderType === 'delivery' && subtotal < 20000 && (
                   <p className="text-xs text-gray-500">
-                    {(20000 - subtotal).toLocaleString()}원 더 주문하면 무료배송
+                    {(20000 - (subtotal || 0)).toLocaleString()}원 더 주문하면 무료배송
                   </p>
                 )}
               </div>

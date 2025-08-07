@@ -11,10 +11,7 @@ node_modules
 dist
 dist-ssr
 .env
-need.txt
-design.txt
-plan.txt
-console.txt
+.kiro
 *.local
 
 # Editor directories and files
