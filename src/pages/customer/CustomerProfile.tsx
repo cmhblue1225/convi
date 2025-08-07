@@ -26,7 +26,8 @@ import {
   PencilIcon,
   EyeIcon,
   CheckCircleIcon,
-  XCircleIcon
+  XCircleIcon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline';
 
 interface ProfileSection {
@@ -122,13 +123,13 @@ const CustomerProfile: React.FC = () => {
       id: 'orders',
       title: '구매/이용 내역',
       icon: ShoppingBagIcon,
-      description: '주문 내역, 결제 내역, 포인트 내역'
+      description: '주문 내역, 결제 내역, 이용 통계'
     }] : []),
     ...(user?.role === 'customer' ? [{
       id: 'benefits',
       title: '맞춤형 혜택 및 쿠폰',
       icon: GiftIcon,
-      description: '할인 쿠폰, 멤버십 혜택'
+      description: '포인트 내역, 할인 쿠폰, 멤버십 혜택'
     }] : []),
     ...(user?.role === 'customer' ? [{
       id: 'wishlist',
@@ -331,7 +332,7 @@ const CustomerProfile: React.FC = () => {
   // 포인트 사용 함수
   const usePoints = async (points: number, description: string, referenceType?: string, referenceId?: string) => {
     if (!user || user.role !== 'customer') return false;
-    
+
     try {
       const { data, error } = await supabase.rpc('update_user_points', {
         p_user_id: user.id,
@@ -359,7 +360,7 @@ const CustomerProfile: React.FC = () => {
   // 포인트 적립 함수
   const earnPoints = async (points: number, description: string, referenceType?: string, referenceId?: string) => {
     if (!user || user.role !== 'customer') return false;
-    
+
     try {
       const { data, error } = await supabase.rpc('update_user_points', {
         p_user_id: user.id,
@@ -387,10 +388,10 @@ const CustomerProfile: React.FC = () => {
   // 다음 등급까지 필요한 포인트 계산
   const getPointsToNextTier = () => {
     if (!loyaltyTiers.length) return 0;
-    
+
     const currentTierIndex = loyaltyTiers.findIndex(tier => tier.tier_name === loyaltyTier);
     if (currentTierIndex === -1 || currentTierIndex === loyaltyTiers.length - 1) return 0;
-    
+
     const nextTier = loyaltyTiers[currentTierIndex + 1];
     return nextTier.min_points - totalEarnedPoints;
   };
@@ -445,7 +446,7 @@ const CustomerProfile: React.FC = () => {
               <p className="font-medium">비밀번호 변경</p>
               <p className="text-sm text-gray-500">계정 보안을 위해 정기적으로 변경하세요</p>
             </div>
-            <button 
+            <button
               onClick={() => setIsPasswordModalOpen(true)}
               className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
             >
@@ -494,40 +495,146 @@ const CustomerProfile: React.FC = () => {
   const renderOrders = () => (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4 flex items-center">
-          <ShoppingBagIcon className="w-5 h-5 mr-2" />
-          최근 주문 내역
-        </h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold flex items-center">
+            <ShoppingBagIcon className="w-5 h-5 mr-2" />
+            주문 내역
+          </h3>
+          <div className="flex space-x-2">
+            <select className="text-sm border border-gray-300 rounded-lg px-3 py-1">
+              <option value="all">전체</option>
+              <option value="completed">완료</option>
+              <option value="preparing">준비중</option>
+              <option value="cancelled">취소</option>
+            </select>
+            <select className="text-sm border border-gray-300 rounded-lg px-3 py-1">
+              <option value="all">전체 기간</option>
+              <option value="week">최근 1주일</option>
+              <option value="month">최근 1개월</option>
+              <option value="3months">최근 3개월</option>
+            </select>
+          </div>
+        </div>
+
+        {/* 주문 통계 요약 */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-blue-50 p-3 rounded-lg text-center">
+            <p className="text-2xl font-bold text-blue-600">{orders.length}</p>
+            <p className="text-sm text-blue-600">총 주문</p>
+          </div>
+          <div className="bg-green-50 p-3 rounded-lg text-center">
+            <p className="text-2xl font-bold text-green-600">
+              {orders.filter(o => o.status === 'completed').length}
+            </p>
+            <p className="text-sm text-green-600">완료</p>
+          </div>
+          <div className="bg-yellow-50 p-3 rounded-lg text-center">
+            <p className="text-2xl font-bold text-yellow-600">
+              {orders.filter(o => o.status === 'preparing').length}
+            </p>
+            <p className="text-sm text-yellow-600">진행중</p>
+          </div>
+          <div className="bg-purple-50 p-3 rounded-lg text-center">
+            <p className="text-2xl font-bold text-purple-600">
+              {orders.reduce((sum, order) => sum + order.total_amount, 0).toLocaleString()}원
+            </p>
+            <p className="text-sm text-purple-600">총 결제</p>
+          </div>
+        </div>
         {orders.length > 0 ? (
           <div className="space-y-4">
             {orders.map((order) => (
-              <div key={order.id} className="border rounded-lg p-4">
-                <div className="flex justify-between items-start mb-2">
+              <div key={order.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start mb-3">
                   <div>
-                    <p className="font-medium">주문번호: {order.order_number}</p>
+                    <p className="font-medium text-gray-900">주문번호: {order.order_number}</p>
                     <p className="text-sm text-gray-500">
-                      {new Date(order.created_at).toLocaleDateString()}
+                      {new Date(order.created_at).toLocaleDateString()} {new Date(order.created_at).toLocaleTimeString()}
                     </p>
+                    {order.stores && (
+                      <p className="text-sm text-gray-600 mt-1">
+                        📍 {order.stores.name}
+                      </p>
+                    )}
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold">{order.total_amount.toLocaleString()}원</p>
-                    <span className={`inline-block px-2 py-1 rounded-full text-xs ${order.status === 'completed' ? 'bg-green-100 text-green-800' :
+                    <p className="font-semibold text-lg">{order.total_amount.toLocaleString()}원</p>
+                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${order.status === 'completed' ? 'bg-green-100 text-green-800' :
                         order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                          'bg-blue-100 text-blue-800'
+                          order.status === 'preparing' ? 'bg-yellow-100 text-yellow-800' :
+                            order.status === 'ready' ? 'bg-blue-100 text-blue-800' :
+                              'bg-gray-100 text-gray-800'
                       }`}>
-                      {order.status === 'completed' ? '완료' :
-                        order.status === 'cancelled' ? '취소' :
-                          order.status === 'preparing' ? '준비중' : '진행중'}
+                      {order.status === 'completed' ? '✅ 완료' :
+                        order.status === 'cancelled' ? '❌ 취소' :
+                          order.status === 'preparing' ? '👨‍🍳 준비중' :
+                            order.status === 'ready' ? '📦 준비완료' : '⏳ 진행중'}
                     </span>
                   </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <p className="text-sm text-gray-600">
-                    {order.type === 'delivery' ? '배송' : '픽업'} 주문
-                  </p>
-                  <button className="text-blue-500 text-sm hover:underline">
-                    상세보기
-                  </button>
+
+                {/* 주문 상품 미리보기 */}
+                {order.order_items && order.order_items.length > 0 && (
+                  <div className="mb-3">
+                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                      <span className="font-medium">{order.order_items[0].products?.name || order.order_items[0].product_name}</span>
+                      <span>x{order.order_items[0].quantity}</span>
+                      {order.order_items.length > 1 && (
+                        <span className="text-gray-500">외 {order.order_items.length - 1}개</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* 결제 정보 */}
+                <div className="flex items-center justify-between text-sm mb-3">
+                  <div className="flex items-center space-x-4">
+                    <span className={`px-2 py-1 rounded text-xs ${order.type === 'delivery' ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700'
+                      }`}>
+                      {order.type === 'delivery' ? '🚚 배송' : '🏪 픽업'}
+                    </span>
+                    {order.payment_method && (
+                      <span className="text-gray-600">
+                        💳 {order.payment_method === 'card' ? '카드' :
+                          order.payment_method === 'cash' ? '현금' :
+                            order.payment_method === 'kakao_pay' ? '카카오페이' :
+                              order.payment_method === 'toss_pay' ? '토스페이' : '기타'}
+                      </span>
+                    )}
+                  </div>
+                  <span className={`text-xs px-2 py-1 rounded ${order.payment_status === 'paid' ? 'bg-green-50 text-green-700' :
+                      order.payment_status === 'pending' ? 'bg-yellow-50 text-yellow-700' :
+                        order.payment_status === 'failed' ? 'bg-red-50 text-red-700' :
+                          'bg-gray-50 text-gray-700'
+                    }`}>
+                    {order.payment_status === 'paid' ? '결제완료' :
+                      order.payment_status === 'pending' ? '결제대기' :
+                        order.payment_status === 'failed' ? '결제실패' : '미결제'}
+                  </span>
+                </div>
+
+                {/* 액션 버튼들 */}
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <div className="flex space-x-2">
+                    <button className="text-blue-500 text-sm hover:underline font-medium">
+                      📋 상세보기
+                    </button>
+                    {order.status === 'completed' && (
+                      <button className="text-green-500 text-sm hover:underline">
+                        ⭐ 리뷰작성
+                      </button>
+                    )}
+                    {order.status === 'pending' && (
+                      <button className="text-red-500 text-sm hover:underline">
+                        ❌ 주문취소
+                      </button>
+                    )}
+                  </div>
+                  {order.status === 'completed' && (
+                    <button className="text-gray-500 text-sm hover:underline">
+                      🔄 재주문
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -537,80 +644,79 @@ const CustomerProfile: React.FC = () => {
         )}
       </div>
 
+
+
+      {/* 자주 주문한 상품 */}
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center">
-          <StarIcon className="w-5 h-5 mr-2" />
-          포인트 내역
+          <HeartIcon className="w-5 h-5 mr-2" />
+          자주 주문한 상품
         </h3>
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-4 text-white mb-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-sm opacity-90">보유 포인트</p>
-              <p className="text-2xl font-bold">{loyaltyPoints.toLocaleString()}P</p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm opacity-90">등급</p>
-              <p className="text-lg font-semibold">{loyaltyTier}</p>
-            </div>
-          </div>
-          <div className="mt-3 pt-3 border-t border-white/20">
-            <div className="flex justify-between text-sm">
-              <span className="opacity-90">총 적립 포인트</span>
-              <span>{totalEarnedPoints.toLocaleString()}P</span>
-            </div>
-            {getPointsToNextTier() > 0 && (
-              <div className="flex justify-between text-sm mt-1">
-                <span className="opacity-90">다음 등급까지</span>
-                <span>{getPointsToNextTier().toLocaleString()}P</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* 포인트 관리 버튼 */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <button 
-            onClick={() => earnPoints(100, '테스트 포인트 적립', 'test')}
-            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm"
-          >
-            테스트 적립 (+100P)
-          </button>
-          <button 
-            onClick={() => usePoints(50, '테스트 포인트 사용', 'test')}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm"
-            disabled={loyaltyPoints < 50}
-          >
-            테스트 사용 (-50P)
-          </button>
-        </div>
-
-        {/* 실제 포인트 거래 내역 */}
-        <div className="space-y-2">
-          <h4 className="font-medium text-gray-900 mb-3">최근 포인트 내역</h4>
-          {pointTransactions.length > 0 ? (
-            pointTransactions.slice(0, 5).map((transaction) => (
-              <div key={transaction.id} className="flex justify-between items-center py-2 border-b">
-                <div>
-                  <span className="text-sm font-medium">{transaction.description}</span>
-                  <p className="text-xs text-gray-500">
-                    {new Date(transaction.created_at).toLocaleDateString()}
-                  </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* 목업 데이터 - 실제로는 주문 데이터에서 집계 */}
+          {[
+            { name: '아메리카노', count: 15, lastOrder: '2024-01-15', image: '☕' },
+            { name: '삼각김밥 참치마요', count: 8, lastOrder: '2024-01-10', image: '🍙' },
+            { name: '바나나우유', count: 6, lastOrder: '2024-01-12', image: '🥛' }
+          ].map((item, index) => (
+            <div key={index} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-center space-x-3">
+                <div className="text-2xl">{item.image}</div>
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900">{item.name}</p>
+                  <p className="text-sm text-gray-500">{item.count}회 주문</p>
+                  <p className="text-xs text-gray-400">최근: {item.lastOrder}</p>
                 </div>
-                <span className={`text-sm font-medium ${
-                  transaction.transaction_type === 'earn' ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {transaction.transaction_type === 'earn' ? '+' : ''}{transaction.points}P
-                </span>
+                <button className="text-blue-500 text-sm hover:underline">
+                  재주문
+                </button>
               </div>
-            ))
-          ) : (
-            <p className="text-gray-500 text-center py-4">포인트 내역이 없습니다.</p>
-          )}
-          {pointTransactions.length > 5 && (
-            <button className="w-full text-center text-blue-500 text-sm hover:underline mt-2">
-              전체 내역 보기
-            </button>
-          )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 월별 이용 통계 */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold mb-4 flex items-center">
+          <ChartBarIcon className="w-5 h-5 mr-2" />
+          월별 이용 통계
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="text-center">
+            <p className="text-2xl font-bold text-blue-600">12</p>
+            <p className="text-sm text-gray-600">이번 달 주문</p>
+          </div>
+          <div className="text-center">
+            <p className="text-2xl font-bold text-green-600">156,000원</p>
+            <p className="text-sm text-gray-600">이번 달 결제</p>
+          </div>
+          <div className="text-center">
+            <p className="text-2xl font-bold text-purple-600">1,560P</p>
+            <p className="text-sm text-gray-600">이번 달 적립</p>
+          </div>
+          <div className="text-center">
+            <p className="text-2xl font-bold text-orange-600">13,000원</p>
+            <p className="text-sm text-gray-600">평균 주문금액</p>
+          </div>
+        </div>
+
+        {/* 간단한 차트 영역 */}
+        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+          <p className="text-sm text-gray-600 mb-2">최근 6개월 주문 추이</p>
+          <div className="flex items-end space-x-2 h-20">
+            {[8, 12, 15, 10, 18, 12].map((value, index) => (
+              <div key={index} className="flex-1 bg-blue-500 rounded-t" style={{ height: `${(value / 20) * 100}%` }}></div>
+            ))}
+          </div>
+          <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <span>8월</span>
+            <span>9월</span>
+            <span>10월</span>
+            <span>11월</span>
+            <span>12월</span>
+            <span>1월</span>
+          </div>
         </div>
       </div>
     </div>
@@ -686,7 +792,7 @@ const CustomerProfile: React.FC = () => {
             {(() => {
               const currentTier = loyaltyTiers.find(tier => tier.tier_name === loyaltyTier);
               if (!currentTier) return null;
-              
+
               const benefits = currentTier.benefits?.benefits || [];
               return benefits.map((benefit: string, index: number) => (
                 <div key={index} className="flex items-center">
@@ -695,15 +801,15 @@ const CustomerProfile: React.FC = () => {
                 </div>
               ));
             })()}
-            
+
             {/* 다음 등급 혜택 미리보기 */}
             {(() => {
               const currentTierIndex = loyaltyTiers.findIndex(tier => tier.tier_name === loyaltyTier);
               if (currentTierIndex === -1 || currentTierIndex === loyaltyTiers.length - 1) return null;
-              
+
               const nextTier = loyaltyTiers[currentTierIndex + 1];
               const nextBenefits = nextTier.benefits?.benefits || [];
-              
+
               return (
                 <div className="mt-4 pt-4 border-t">
                   <h4 className="font-medium text-gray-700 mb-2">{nextTier.tier_name} 등급 혜택 (미리보기)</h4>
@@ -721,6 +827,8 @@ const CustomerProfile: React.FC = () => {
       </div>
     </div>
   );
+
+
 
   const renderWishlist = () => (
     <div className="space-y-6">
@@ -1125,11 +1233,10 @@ const CustomerProfile: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-4">
         {/* 헤더 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">내 프로필</h1>
-          <p className="text-gray-600">계정 정보와 설정을 관리하세요</p>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">내 프로필</h1>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
