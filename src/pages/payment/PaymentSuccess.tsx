@@ -49,7 +49,21 @@ const PaymentSuccess: React.FC = () => {
       const paymentKey = searchParams.get('paymentKey');
 
       try {
-         else if (paymentKey) {
+        if (pgToken) {
+          // 카카오페이 처리
+          const orderId = searchParams.get('orderId');
+          const amount = searchParams.get('amount');
+          const tid = searchParams.get('tid'); // KakaoPay specific
+          const payload = {
+            pg_token: pgToken,
+            order_id: orderId,
+            amount: amount,
+            tid: tid // Pass tid if needed for final approval
+          };
+          const kakaoResult = await handleKakaoPayCallback(payload);
+          await createOrderFromCheckoutData(kakaoResult);
+          setPaymentData({ orderId, amount: parseInt(amount || '0'), method: 'kakao' });
+        } else if (paymentKey) {
           // 토스페이먼츠 처리
           const orderId = searchParams.get('orderId');
           const amount = searchParams.get('amount');
