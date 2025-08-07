@@ -14,6 +14,7 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signUp: (email: string, password: string, userData?: any) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<{ success: boolean; error?: string }>;
+  changePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
   refreshUser: () => Promise<void>;
   loadProfile: (userId: string) => Promise<void>;
   clearAuth: () => void;
@@ -343,6 +344,49 @@ export const useAuthStore = create<AuthState>()(
       }
     },
 
+    changePassword: async (newPassword: string) => {
+      try {
+        console.log('🔐 비밀번호 변경 시작');
+        // 비밀번호 변경 시에는 전역 isLoading을 사용하지 않음 (무한 루프 방지)
+        
+        const { data, error } = await supabase.auth.updateUser({
+          password: newPassword
+        });
+        
+        if (error) {
+          console.error('❌ 비밀번호 변경 실패:', error);
+          
+          // 사용자 친화적인 오류 메시지 제공
+          let userFriendlyMessage = error.message;
+          
+          if (error.message.includes('New password should be different from the old password')) {
+            userFriendlyMessage = '새 비밀번호는 현재 비밀번호와 달라야 합니다. 다른 비밀번호를 입력해주세요.';
+          } else if (error.message.includes('Password should be at least')) {
+            userFriendlyMessage = '비밀번호는 최소 6자 이상이어야 합니다.';
+          } else if (error.message.includes('weak password')) {
+            userFriendlyMessage = '비밀번호가 너무 약합니다. 더 강한 비밀번호를 사용해주세요.';
+          } else if (error.message.includes('Invalid password')) {
+            userFriendlyMessage = '유효하지 않은 비밀번호입니다. 비밀번호 요구사항을 확인해주세요.';
+          }
+          
+          return { success: false, error: userFriendlyMessage };
+        }
+
+        if (data.user) {
+          console.log('✅ 비밀번호 변경 성공');
+          return { success: true };
+        }
+
+        return { success: false, error: '비밀번호 변경 중 오류가 발생했습니다.' };
+      } catch (error) {
+        console.error('❌ 비밀번호 변경 예외:', error);
+        return { 
+          success: false, 
+          error: error instanceof Error ? error.message : '비밀번호 변경 중 오류가 발생했습니다.' 
+        };
+      }
+    },
+
     refreshUser: async () => {
       try {
         console.log('🔄 refreshUser 시작');
@@ -574,9 +618,11 @@ supabase.auth.onAuthStateChange(async (event, session) => {
       break;
       
     case 'USER_UPDATED':
-      if (session?.user) {
-        console.log('👤 사용자 정보 업데이트 이벤트 처리');
-        await store.refreshUser();
+      // 비밀번호 변경으로 인한 USER_UPDATED 이벤트는 무시 (무한 루프 방지)
+      console.log('👤 사용자 정보 업데이트 이벤트 - 비밀번호 변경으로 인한 이벤트는 무시');
+      if (session) {
+        // 세션만 업데이트하고 refreshUser는 호출하지 않음
+        store.session = session;
       }
       break;
       

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../stores/common/authStore';
 import { supabase } from '../../lib/supabase/client';
 import type { Profile, Order, Notification } from '../../types/common';
+import PasswordChangeModal from '../../components/common/PasswordChangeModal';
 import {
   UserIcon,
   CogIcon,
@@ -107,6 +108,7 @@ const CustomerProfile: React.FC = () => {
   const [totalEarnedPoints, setTotalEarnedPoints] = useState(0);
   const [pointTransactions, setPointTransactions] = useState<PointTransaction[]>([]);
   const [loyaltyTiers, setLoyaltyTiers] = useState<LoyaltyTier[]>([]);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
   // 프로필 섹션 정의 (고객만 포인트 섹션 표시)
   const profileSections: ProfileSection[] = [
@@ -441,9 +443,12 @@ const CustomerProfile: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium">비밀번호 변경</p>
-              <p className="text-sm text-gray-500">마지막 변경: 2024년 7월 15일</p>
+              <p className="text-sm text-gray-500">계정 보안을 위해 정기적으로 변경하세요</p>
             </div>
-            <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+            <button 
+              onClick={() => setIsPasswordModalOpen(true)}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
               변경
             </button>
           </div>
@@ -1179,6 +1184,16 @@ const CustomerProfile: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* 비밀번호 변경 모달 */}
+      <PasswordChangeModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+        onSuccess={() => {
+          // 비밀번호 변경 성공 시 추가 작업이 필요하면 여기에 작성
+          console.log('비밀번호 변경 완료');
+        }}
+      />
     </div>
   );
 };
