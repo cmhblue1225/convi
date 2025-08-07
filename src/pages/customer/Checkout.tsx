@@ -69,6 +69,18 @@ const Checkout: React.FC = () => {
 
   const handleOrderTypeChange = (type: 'pickup' | 'delivery') => {
     console.log('🚚 주문 타입 변경:', type);
+    
+    // 지점의 서비스 가능 여부 확인
+    if (type === 'delivery' && !selectedStore.delivery_available) {
+      alert('이 지점에서는 배송 서비스를 이용할 수 없습니다.');
+      return;
+    }
+    
+    if (type === 'pickup' && !selectedStore.pickup_available) {
+      alert('이 지점에서는 픽업 서비스를 이용할 수 없습니다.');
+      return;
+    }
+    
     setOrderType(type);
     setCartOrderType(type); // 장바구니에도 반영
   };
@@ -258,30 +270,39 @@ const Checkout: React.FC = () => {
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-lg font-semibold mb-4">주문 방식</h2>
               <div className="grid grid-cols-2 gap-4">
-                <button
-                  onClick={() => handleOrderTypeChange('pickup')}
-                  className={`p-4 border-2 rounded-lg text-center transition-colors ${
-                    orderType === 'pickup'
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <div className="text-2xl mb-2">🏪</div>
-                  <div className="font-medium">픽업</div>
-                  <div className="text-sm text-gray-500">매장에서 직접 픽업</div>
-                </button>
-                <button
-                  onClick={() => handleOrderTypeChange('delivery')}
-                  className={`p-4 border-2 rounded-lg text-center transition-colors ${
-                    orderType === 'delivery'
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <div className="text-2xl mb-2">🚚</div>
-                  <div className="font-medium">배송</div>
-                  <div className="text-sm text-gray-500">집까지 배송</div>
-                </button>
+                {selectedStore.pickup_available && (
+                  <button
+                    onClick={() => handleOrderTypeChange('pickup')}
+                    className={`p-4 border-2 rounded-lg text-center transition-colors ${
+                      orderType === 'pickup'
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    <div className="text-2xl mb-2">🏪</div>
+                    <div className="font-medium">픽업</div>
+                    <div className="text-sm text-gray-500">매장에서 직접 픽업</div>
+                  </button>
+                )}
+                {selectedStore.delivery_available && (
+                  <button
+                    onClick={() => handleOrderTypeChange('delivery')}
+                    className={`p-4 border-2 rounded-lg text-center transition-colors ${
+                      orderType === 'delivery'
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    <div className="text-2xl mb-2">🚚</div>
+                    <div className="font-medium">배송</div>
+                    <div className="text-sm text-gray-500">집까지 배송</div>
+                  </button>
+                )}
+                {!selectedStore.pickup_available && !selectedStore.delivery_available && (
+                  <div className="col-span-2 p-4 text-center text-gray-500">
+                    현재 이 지점에서는 주문 서비스를 이용할 수 없습니다.
+                  </div>
+                )}
               </div>
             </div>
 

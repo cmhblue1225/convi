@@ -14,8 +14,33 @@ const StoreSelection: React.FC = () => {
 
   useEffect(() => {
     console.log('🚀 useEffect 실행');
+    
+    // localStorage에서 이전 지점 정보 정리
+    localStorage.removeItem('selectedStore');
+    console.log('🧹 이전 지점 정보 정리 완료');
+    
     fetchStores();
     getUserLocation();
+
+    // 실시간 구독 설정
+    const subscription = supabase
+      .channel('stores_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'stores' }, 
+        (payload) => {
+          console.log('🔄 지점 데이터 변경 감지:', payload);
+          // 즉시 데이터 새로고침
+          setTimeout(() => {
+            fetchStores();
+          }, 100);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('🔕 지점 실시간 구독 해제');
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchStores = async () => {
@@ -26,7 +51,8 @@ const StoreSelection: React.FC = () => {
       
       console.log('📡 데이터베이스에서 활성 지점 조회...');
       
-      // 실제 데이터베이스에서 활성화된 지점들 조회
+      // 실제 데이터베이스에서 활성화된 지점들 조회 (캐시 무시)
+      const timestamp = Date.now();
       const { data, error } = await supabase
         .from('stores')
         .select('*')
@@ -43,29 +69,34 @@ const StoreSelection: React.FC = () => {
         console.log('✅ 지점 조회 성공:', data.length, '개 지점');
         
         // 데이터베이스 결과를 Store 타입으로 변환
-        const storesData: Store[] = data.map(store => ({
-          id: store.id,
-          name: store.name,
-          address: store.address,
-          phone: store.phone,
-          business_hours: store.business_hours || {
-            monday: { open: '06:00', close: '24:00' },
-            tuesday: { open: '06:00', close: '24:00' },
-            wednesday: { open: '06:00', close: '24:00' },
-            thursday: { open: '06:00', close: '24:00' },
-            friday: { open: '06:00', close: '24:00' },
-            saturday: { open: '06:00', close: '24:00' },
-            sunday: { open: '06:00', close: '24:00' }
-          },
-          delivery_available: store.delivery_available || true,
-          pickup_available: store.pickup_available || true,
-          delivery_radius: store.delivery_radius || 3000,
-          min_order_amount: store.min_order_amount || 15000,
-          delivery_fee: store.delivery_fee || 3000,
-          is_active: store.is_active,
-          created_at: store.created_at,
-          updated_at: store.updated_at
-        }));
+        const storesData: Store[] = data.map(store => {
+          const storeData = {
+            id: store.id,
+            name: store.name,
+            address: store.address,
+            phone: store.phone,
+            business_hours: store.business_hours || {
+              monday: { open: '06:00', close: '24:00' },
+              tuesday: { open: '06:00', close: '24:00' },
+              wednesday: { open: '06:00', close: '24:00' },
+              thursday: { open: '06:00', close: '24:00' },
+              friday: { open: '06:00', close: '24:00' },
+              saturday: { open: '06:00', close: '24:00' },
+              sunday: { open: '06:00', close: '24:00' }
+            },
+            delivery_available: store.delivery_available || false,
+            pickup_available: store.pickup_available || false,
+            delivery_radius: store.delivery_radius || 3000,
+            min_order_amount: store.min_order_amount || 15000,
+            delivery_fee: store.delivery_fee || 3000,
+            is_active: store.is_active,
+            created_at: store.created_at,
+            updated_at: store.updated_at
+          };
+          
+          console.log(`📋 지점 정보: ${storeData.name} - 배송: ${storeData.delivery_available}, 픽업: ${storeData.pickup_available}`);
+          return storeData;
+        });
         
         setStores(storesData);
       } else {
@@ -112,10 +143,62 @@ const StoreSelection: React.FC = () => {
     return R * c;
   };
 
-  const selectStore = (store: Store) => {
-    // 선택한 지점을 로컬 스토리지에 저장
-    localStorage.setItem('selectedStore', JSON.stringify(store));
-    navigate('/customer/products');
+  const selectStore = async (store: Store) => {
+    try {
+      console.log('🏪 지점 선택:', store.name);
+      
+      // 최신 지점 정보를 데이터베이스에서 다시 조회
+      const { data: latestStore, error } = await supabase
+        .from('stores')
+        .select('*')
+        .eq('id', store.id)
+        .single();
+      
+      if (error) {
+        console.error('❌ 최신 지점 정보 조회 실패:', error);
+        alert('지점 정보를 불러오는데 실패했습니다.');
+        return;
+      }
+      
+      if (!latestStore.is_active) {
+        alert('이 지점은 현재 운영 중단 상태입니다.');
+        return;
+      }
+      
+      // 최신 정보로 업데이트된 Store 객체 생성
+      const updatedStore: Store = {
+        id: latestStore.id,
+        name: latestStore.name,
+        address: latestStore.address,
+        phone: latestStore.phone,
+        business_hours: latestStore.business_hours || {
+          monday: { open: '06:00', close: '24:00' },
+          tuesday: { open: '06:00', close: '24:00' },
+          wednesday: { open: '06:00', close: '24:00' },
+          thursday: { open: '06:00', close: '24:00' },
+          friday: { open: '06:00', close: '24:00' },
+          saturday: { open: '06:00', close: '24:00' },
+          sunday: { open: '06:00', close: '24:00' }
+        },
+        delivery_available: latestStore.delivery_available || false,
+        pickup_available: latestStore.pickup_available || false,
+        delivery_radius: latestStore.delivery_radius || 3000,
+        min_order_amount: latestStore.min_order_amount || 15000,
+        delivery_fee: latestStore.delivery_fee || 3000,
+        is_active: latestStore.is_active,
+        created_at: latestStore.created_at,
+        updated_at: latestStore.updated_at
+      };
+      
+      console.log('✅ 최신 지점 정보:', updatedStore);
+      
+      // 최신 정보를 로컬 스토리지에 저장
+      localStorage.setItem('selectedStore', JSON.stringify(updatedStore));
+      navigate('/customer/products');
+    } catch (error) {
+      console.error('❌ 지점 선택 중 오류:', error);
+      alert('지점 선택 중 오류가 발생했습니다.');
+    }
   };
 
   const formatBusinessHours = (businessHours: any) => {

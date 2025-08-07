@@ -764,6 +764,59 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- 지점의 서비스 가능 여부를 검증하는 함수
+CREATE OR REPLACE FUNCTION validate_store_service(
+    p_store_id UUID,
+    p_service_type TEXT
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+    store_record RECORD;
+BEGIN
+    -- 지점 정보 조회
+    SELECT 
+        is_active,
+        delivery_available,
+        pickup_available
+    INTO store_record
+    FROM stores
+    WHERE id = p_store_id;
+    
+    -- 지점이 존재하지 않거나 비활성화된 경우
+    IF NOT FOUND OR NOT store_record.is_active THEN
+        RETURN FALSE;
+    END IF;
+    
+    -- 서비스 타입에 따른 검증
+    CASE p_service_type
+        WHEN 'delivery' THEN
+            RETURN store_record.delivery_available;
+        WHEN 'pickup' THEN
+            RETURN store_record.pickup_available;
+        ELSE
+            RETURN FALSE;
+    END CASE;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 주문 생성 시 서비스 가능 여부를 검증하는 함수
+CREATE OR REPLACE FUNCTION validate_order_service()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- 지점의 서비스 가능 여부 검증
+    IF NOT validate_store_service(NEW.store_id, NEW.type) THEN
+        RAISE EXCEPTION '선택한 지점에서 % 서비스를 이용할 수 없습니다.', 
+            CASE NEW.type 
+                WHEN 'delivery' THEN '배송'
+                WHEN 'pickup' THEN '픽업'
+                ELSE NEW.type
+            END;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 -- =====================================================
 -- 5. 트리거 생성 (완전한 버전)
 -- =====================================================
@@ -811,6 +864,12 @@ CREATE TRIGGER trigger_prevent_duplicate_orders
     BEFORE INSERT ON orders
     FOR EACH ROW
     EXECUTE FUNCTION prevent_duplicate_orders();
+
+-- 주문 생성 시 서비스 검증 트리거
+CREATE TRIGGER trigger_validate_order_service
+    BEFORE INSERT ON orders
+    FOR EACH ROW
+    EXECUTE FUNCTION validate_order_service();
 
 -- =====================================================
 -- 6. RLS 활성화 및 정책 생성 (무한 재귀 방지)
