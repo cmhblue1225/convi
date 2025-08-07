@@ -611,6 +611,7 @@ export const useOrderStore = create<OrderState>()(
       },
 
       clearOrders: async () => {
+        console.log('🚀 clearOrders 함수 시작');
         set({ isLoading: true, error: null });
         
         try {
@@ -625,7 +626,7 @@ export const useOrderStore = create<OrderState>()(
 
           console.log('✅ 인증된 사용자:', user.id);
 
-          // 단순하게 주문만 삭제 (CASCADE로 관련 데이터도 함께 삭제됨)
+          // 주문 삭제 (CASCADE로 관련 데이터도 함께 삭제됨)
           const { error: deleteError } = await supabase
             .from('orders')
             .delete()
@@ -638,8 +639,30 @@ export const useOrderStore = create<OrderState>()(
 
           console.log('✅ 주문 삭제 완료');
 
+          // localStorage에서 주문 데이터 제거 (persist 미들웨어 우회)
+          const storageKey = 'convenience-store-orders';
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem(storageKey);
+            console.log('🗑️ localStorage에서 주문 데이터 제거 완료');
+          }
+
           // 로컬 상태 초기화
-          set({ orders: [], isLoading: false });
+          set({ orders: [], isLoading: false, error: null });
+          
+          // persist 미들웨어가 즉시 저장하도록 강제 실행 (여러 번 시도)
+          const clearStorage = () => {
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem(storageKey);
+              console.log('🔄 persist 미들웨어 동기화 완료');
+            }
+          };
+          
+          // 즉시 실행
+          clearStorage();
+          
+          // 약간의 지연 후 다시 실행 (persist 미들웨어가 다시 저장할 수 있으므로)
+          setTimeout(clearStorage, 50);
+          setTimeout(clearStorage, 200);
           
           console.log('✅ 모든 주문 내역 삭제 완료');
         } catch (error) {
@@ -656,8 +679,15 @@ export const useOrderStore = create<OrderState>()(
       name: 'convenience-store-orders',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
-        orders: state.orders // isLoading, error는 저장하지 않음
-      })
+        // 주문이 비어있으면 아무것도 저장하지 않음 (삭제 시 localStorage에서 완전히 제거)
+        ...(state.orders.length > 0 && { orders: state.orders })
+      }),
+      // persist 미들웨어가 상태 변경을 즉시 반영하도록 설정
+      version: 1,
+      migrate: (persistedState: any, version: number) => {
+        // 버전 마이그레이션 로직 (필요시)
+        return persistedState;
+      }
     }
   )
 );

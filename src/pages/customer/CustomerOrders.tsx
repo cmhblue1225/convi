@@ -60,14 +60,19 @@ const CustomerOrders: React.FC = () => {
               {orders.length > 0 && (
                 <button
                   onClick={async () => {
+                    console.log('🗑️ 전체 삭제 버튼 클릭됨');
                     if (window.confirm('모든 주문 내역을 삭제하시겠습니까?\n\n⚠️ 이 작업은 되돌릴 수 없습니다.')) {
+                      console.log('✅ 사용자 확인됨, clearOrders 함수 호출 시작');
                       try {
                         await clearOrders();
+                        console.log('✅ clearOrders 함수 완료');
                         alert('모든 주문 내역이 삭제되었습니다.');
                       } catch (error) {
-                        console.error('주문 내역 삭제 실패:', error);
+                        console.error('❌ 주문 내역 삭제 실패:', error);
                         alert('주문 내역 삭제에 실패했습니다. 다시 시도해주세요.');
                       }
+                    } else {
+                      console.log('❌ 사용자가 취소함');
                     }
                   }}
                   className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"

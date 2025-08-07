@@ -168,7 +168,7 @@ CREATE TABLE order_items (
     subtotal NUMERIC NOT NULL,
     options JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    CONSTRAINT order_items_order_id_fkey FOREIGN KEY (order_id) REFERENCES orders(id),
+    CONSTRAINT order_items_order_id_fkey FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     CONSTRAINT order_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id)
 );
 
@@ -210,7 +210,7 @@ CREATE TABLE order_status_history (
     changed_by UUID,
     notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    CONSTRAINT order_status_history_order_id_fkey FOREIGN KEY (order_id) REFERENCES orders(id),
+    CONSTRAINT order_status_history_order_id_fkey FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     CONSTRAINT order_status_history_changed_by_fkey FOREIGN KEY (changed_by) REFERENCES profiles(id)
 );
 
@@ -931,6 +931,9 @@ CREATE POLICY "Customers can create own orders" ON orders
 CREATE POLICY "Customers can view own orders" ON orders
     FOR SELECT USING (customer_id = auth.uid());
 
+CREATE POLICY "Customers can delete own orders" ON orders
+    FOR DELETE USING (customer_id = auth.uid());
+
 CREATE POLICY "Store owners can manage store orders" ON orders
     FOR ALL USING (
         EXISTS (
@@ -950,6 +953,14 @@ CREATE POLICY "HQ can view all orders" ON orders
 -- order_items 테이블 정책
 CREATE POLICY "Customers can create order items for own orders" ON order_items
     FOR INSERT WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM orders o
+            WHERE o.id = order_items.order_id AND o.customer_id = auth.uid()
+        )
+    );
+
+CREATE POLICY "Customers can delete own order items" ON order_items
+    FOR DELETE USING (
         EXISTS (
             SELECT 1 FROM orders o
             WHERE o.id = order_items.order_id AND o.customer_id = auth.uid()
