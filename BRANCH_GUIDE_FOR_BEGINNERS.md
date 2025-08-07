@@ -233,7 +233,7 @@ git pull origin develop
 git merge feature/customer-payment
 git push origin develop
 
-# 8. 내 브랜치로 복귀
+# 8. 내 브랜치로 복귀합니당
 git checkout feature/customer-payment
 # 또는 다른 주문 관련 브랜치로 전환
 # git checkout feature/customer-cart     # 장바구니 기능
