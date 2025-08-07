@@ -5,7 +5,7 @@
 
 -- 이 스크립트는 모든 고급 기능을 포함한 완전한 데이터베이스를 구축합니다.
 -- 실행 시간: 약 2-3분 소요
--- 최종 업데이트: 2025-08-05 (중복 주문 방지 기능 추가)
+-- 최종 업데이트: 2025-08-07 (테스트 데이터 대폭 확장 - 카테고리 29개, 상품 52개)
 
 -- =====================================================
 -- 1. 확장 기능 활성화
@@ -1159,29 +1159,141 @@ CREATE POLICY "HQ can manage all settings" ON system_settings
     );
 
 -- =====================================================
--- 8. 초기 데이터 삽입
+-- 8. 초기 데이터 삽입 (대폭 확장된 테스트 데이터)
 -- =====================================================
 
--- 카테고리 데이터
+-- 카테고리 데이터 (29개 카테고리)
 INSERT INTO categories (name, slug, description, display_order, is_active) VALUES
+-- 기본 대분류 카테고리
 ('음료', 'beverages', '다양한 음료 제품', 1, true),
 ('식품', 'food', '신선한 식품', 2, true),
 ('간식', 'snacks', '맛있는 간식', 3, true),
-('생활용품', 'household', '일상 생활용품', 4, true);
+('생활용품', 'household', '일상 생활용품', 4, true),
 
--- 상품 데이터 (주요 상품들만)
-INSERT INTO products (name, description, category_id, brand, manufacturer, unit, base_price, cost_price, tax_rate, requires_preparation, preparation_time, nutritional_info, allergen_info) VALUES
-('코카콜라 500ml', '세계적으로 사랑받는 탄산음료', (SELECT id FROM categories WHERE slug = 'beverages'), '코카콜라', '코카콜라 컴퍼니', '개', 2000, 1200, 0.10, false, 0, '{"칼로리": 210, "탄수화물": 53, "단백질": 0, "지방": 0}', ARRAY['없음']),
-('농심 신라면 120g', '한국의 대표적인 라면', (SELECT id FROM categories WHERE slug = 'food'), '농심', '농심', '개', 1200, 720, 0.10, true, 3, '{"칼로리": 500, "탄수화물": 65, "단백질": 10, "지방": 20}', ARRAY['밀', '대두']),
-('농심 새우깡 90g', '바삭하고 고소한 새우깡', (SELECT id FROM categories WHERE slug = 'snacks'), '농심', '농심', '개', 1500, 900, 0.10, false, 0, '{"칼로리": 450, "탄수화물": 55, "단백질": 8, "지방": 22}', ARRAY['새우', '밀']);
+-- 음료 세부 카테고리
+('탄산음료', 'carbonated-drinks', '시원하고 톡 쏘는 탄산음료', 11, true),
+('커피/차', 'coffee-tea', '따뜻하고 향긋한 커피와 차', 12, true),
+('우유/유제품', 'milk-dairy', '신선한 우유와 유제품', 13, true),
+('주스/음료', 'juice-drinks', '과일 주스와 건강 음료', 14, true),
+('에너지음료', 'energy-drinks', '활력을 주는 에너지 드링크', 15, true),
 
--- 시스템 설정
+-- 식품 세부 카테고리
+('즉석식품', 'instant-food', '간편하게 먹을 수 있는 즉석식품', 21, true),
+('라면/면류', 'noodles-ramen', '다양한 라면과 면류 제품', 22, true),
+('냉동식품', 'frozen-food', '신선하게 보관된 냉동식품', 23, true),
+('빵/베이커리', 'bread-bakery', '갓 구운 빵과 베이커리 제품', 24, true),
+('유제품/계란', 'dairy-eggs', '신선한 유제품과 계란', 25, true),
+
+-- 간식 세부 카테고리
+('과자/스낵', 'snacks-crackers', '바삭하고 맛있는 과자류', 31, true),
+('초콜릿/사탕', 'chocolate-candy', '달콤한 초콜릿과 사탕', 32, true),
+('아이스크림', 'ice-cream', '시원하고 달콤한 아이스크림', 33, true),
+('견과류', 'nuts', '건강한 견과류와 건과일', 34, true),
+('껌/젤리', 'gum-jelly', '쫄깃한 껌과 젤리류', 35, true),
+
+-- 생활용품 세부 카테고리
+('세제/청소용품', 'cleaning-supplies', '깨끗한 생활을 위한 세제', 41, true),
+('화장지/휴지', 'tissue-paper', '부드러운 화장지와 휴지', 42, true),
+('개인위생용품', 'personal-hygiene', '개인 위생을 위한 필수품', 43, true),
+('화장품/미용', 'cosmetics-beauty', '아름다운 생활을 위한 화장품', 44, true),
+('의약품/건강', 'medicine-health', '건강 관리를 위한 의약품', 45, true),
+
+-- 새로운 대분류 추가
+('문구/사무용품', 'stationery-office', '학습과 업무를 위한 문구류', 50, true),
+('전자제품/배터리', 'electronics-battery', '편리한 전자제품과 배터리', 60, true),
+('담배/주류', 'tobacco-alcohol', '성인용 담배와 주류 제품', 70, true),
+('반려동물용품', 'pet-supplies', '사랑하는 반려동물을 위한 용품', 80, true),
+('자동차용품', 'car-supplies', '자동차 관리를 위한 용품', 90, true);
+
+-- 상품 데이터 (52개 다양한 상품)
+INSERT INTO products (name, description, barcode, category_id, brand, manufacturer, unit, base_price, cost_price, tax_rate, is_active, requires_preparation, preparation_time, nutritional_info, allergen_info) VALUES
+
+-- 기존 3개 상품 (호환성 유지)
+('코카콜라 500ml', '세계적으로 사랑받는 탄산음료', '8801094000001', (SELECT id FROM categories WHERE slug = 'carbonated-drinks'), '코카콜라', '한국 코카콜라', '개', 2000, 1200, 0.10, true, false, 0, '{"칼로리": 210, "탄수화물": 53, "단백질": 0, "지방": 0}', ARRAY['없음']),
+('농심 신라면 120g', '한국의 대표적인 라면', '8801043001010', (SELECT id FROM categories WHERE slug = 'noodles-ramen'), '농심', '농심', '개', 1200, 750, 0.10, true, true, 4, '{"칼로리": 520, "탄수화물": 77, "단백질": 11, "지방": 19}', ARRAY['글루텐', '대두']),
+('농심 새우깡 90g', '바삭하고 고소한 새우깡', '8801043011010', (SELECT id FROM categories WHERE slug = 'snacks-crackers'), '농심', '농심', '개', 1500, 900, 0.10, true, false, 0, '{"칼로리": 320, "탄수화물": 32, "단백질": 4, "지방": 20}', ARRAY['갑각류']),
+
+-- 탄산음료 카테고리 추가 상품들
+('코카콜라 350ml', '세계적으로 사랑받는 탄산음료', '8801094000011', (SELECT id FROM categories WHERE slug = 'carbonated-drinks'), '코카콜라', '한국 코카콜라', '개', 1800, 1100, 0.10, true, false, 0, '{"칼로리": 140, "탄수화물": 37, "단백질": 0, "지방": 0}', ARRAY['없음']),
+('펩시콜라 500ml', '상쾌한 콜라의 진정한 맛', '8801094000012', (SELECT id FROM categories WHERE slug = 'carbonated-drinks'), '펩시', '롯데칠성음료', '개', 2000, 1200, 0.10, true, false, 0, '{"칼로리": 210, "탄수화물": 53, "단백질": 0, "지방": 0}', ARRAY['없음']),
+('칠성사이다 500ml', '청량한 사이다의 대명사', '8801094000013', (SELECT id FROM categories WHERE slug = 'carbonated-drinks'), '칠성사이다', '롯데칠성음료', '개', 1800, 1100, 0.10, true, false, 0, '{"칼로리": 190, "탄수화물": 48, "단백질": 0, "지방": 0}', ARRAY['없음']),
+('스프라이트 500ml', '레몬라임의 상쾌한 맛', '8801094000014', (SELECT id FROM categories WHERE slug = 'carbonated-drinks'), '스프라이트', '한국 코카콜라', '개', 1800, 1100, 0.10, true, false, 0, '{"칼로리": 180, "탄수화물": 45, "단백질": 0, "지방": 0}', ARRAY['없음']),
+('환타 오렌지 500ml', '달콤한 오렌지 맛 탄산음료', '8801094000015', (SELECT id FROM categories WHERE slug = 'carbonated-drinks'), '환타', '한국 코카콜라', '개', 1800, 1100, 0.10, true, false, 0, '{"칼로리": 200, "탄수화물": 50, "단백질": 0, "지방": 0}', ARRAY['없음']),
+('마운틴듀 500ml', '시트러스 맛의 에너지 넘치는 탄산음료', '8801094000016', (SELECT id FROM categories WHERE slug = 'carbonated-drinks'), '마운틴듀', '롯데칠성음료', '개', 2000, 1200, 0.10, true, false, 0, '{"칼로리": 220, "탄수화물": 55, "단백질": 0, "지방": 0}', ARRAY['없음']),
+
+-- 커피/차 카테고리 상품들
+('맥심 오리지널 커피믹스', '달콤하고 부드러운 커피믹스', '8801094001011', (SELECT id FROM categories WHERE slug = 'coffee-tea'), '맥심', '동서식품', '개', 12000, 8000, 0.10, true, false, 0, '{"칼로리": 60, "탄수화물": 10, "단백질": 1, "지방": 2}', ARRAY['유제품']),
+('스타벅스 아메리카노 RTD', '진짜 스타벅스 원두로 만든 아메리카노', '8801094001012', (SELECT id FROM categories WHERE slug = 'coffee-tea'), '스타벅스', '롯데칠성음료', '개', 3000, 1800, 0.10, true, false, 0, '{"칼로리": 10, "탄수화물": 2, "단백질": 1, "지방": 0}', ARRAY['없음']),
+('TOP 아메리카노 275ml', '원두의 깊은 맛이 살아있는 아메리카노', '8801094001013', (SELECT id FROM categories WHERE slug = 'coffee-tea'), 'TOP', '롯데칠성음료', '개', 1500, 900, 0.10, true, false, 0, '{"칼로리": 5, "탄수화물": 1, "단백질": 0, "지방": 0}', ARRAY['없음']),
+('컨트리타임 아이스티', '상큼한 레몬 아이스티', '8801094001014', (SELECT id FROM categories WHERE slug = 'coffee-tea'), '컨트리타임', '롯데칠성음료', '개', 1800, 1100, 0.10, true, false, 0, '{"칼로리": 80, "탄수화물": 20, "단백질": 0, "지방": 0}', ARRAY['없음']),
+('립톤 아이스티 레몬', '세계 1위 티 브랜드의 아이스티', '8801094001015', (SELECT id FROM categories WHERE slug = 'coffee-tea'), '립톤', '유니레버코리아', '개', 1900, 1150, 0.10, true, false, 0, '{"칼로리": 90, "탄수화물": 22, "단백질": 0, "지방": 0}', ARRAY['없음']),
+
+-- 라면/면류 카테고리 상품들
+('농심 짜파게티 140g', '달콤짭짤한 짜장면의 맛', '8801043001001', (SELECT id FROM categories WHERE slug = 'noodles-ramen'), '농심', '농심', '개', 1300, 800, 0.10, true, true, 4, '{"칼로리": 570, "탄수화물": 80, "단백질": 12, "지방": 22}', ARRAY['글루텐', '대두']),
+('농심 너구리 120g', '진한 다시마 육수의 우동', '8801043001002', (SELECT id FROM categories WHERE slug = 'noodles-ramen'), '농심', '농심', '개', 1200, 750, 0.10, true, true, 4, '{"칼로리": 500, "탄수화물": 75, "단백질": 10, "지방": 18}', ARRAY['글루텐', '대두']),
+('농심 안성탕면 125g', '얼큰한 국물의 전통 라면', '8801043001003', (SELECT id FROM categories WHERE slug = 'noodles-ramen'), '농심', '농심', '개', 1200, 750, 0.10, true, true, 4, '{"칼로리": 520, "탄수화물": 77, "단백질": 11, "지방": 19}', ARRAY['글루텐', '대두']),
+('오뚜기 진라면 순한맛 120g', '깔끔하고 순한 맛의 라면', '8801043002001', (SELECT id FROM categories WHERE slug = 'noodles-ramen'), '진라면', '오뚜기', '개', 1200, 750, 0.10, true, true, 4, '{"칼로리": 510, "탄수화물": 76, "단백질": 10, "지방": 18}', ARRAY['글루텐', '대두']),
+('오뚜기 진라면 매운맛 120g', '매콤한 맛이 일품인 라면', '8801043002002', (SELECT id FROM categories WHERE slug = 'noodles-ramen'), '진라면', '오뚜기', '개', 1200, 750, 0.10, true, true, 4, '{"칼로리": 515, "탄수화물": 77, "단백질": 10, "지방": 18}', ARRAY['글루텐', '대두']),
+('삼양 불닭볶음면 140g', '매운 맛의 대명사 볶음면', '8801043003001', (SELECT id FROM categories WHERE slug = 'noodles-ramen'), '불닭볶음면', '삼양식품', '개', 1500, 900, 0.10, true, true, 4, '{"칼로리": 530, "탄수화물": 80, "단백질": 11, "지방": 17}', ARRAY['글루텐', '대두']),
+('팔도 비빔면 130g', '새콤달콤 비빔면의 원조', '8801043004001', (SELECT id FROM categories WHERE slug = 'noodles-ramen'), '팔도비빔면', '팔도', '개', 1300, 800, 0.10, true, true, 4, '{"칼로리": 490, "탄수화물": 85, "단백질": 9, "지방": 12}', ARRAY['글루텐', '대두']),
+('농심 육개장사발면 86g', '얼큰한 육개장 맛 컵라면', '8801043001004', (SELECT id FROM categories WHERE slug = 'noodles-ramen'), '농심', '농심', '개', 1400, 850, 0.10, true, true, 3, '{"칼로리": 350, "탄수화물": 50, "단백질": 7, "지방": 13}', ARRAY['글루텐', '대두']),
+('농심 새우탕면 75g', '시원한 새우 국물 컵라면', '8801043001005', (SELECT id FROM categories WHERE slug = 'noodles-ramen'), '농심', '농심', '개', 1400, 850, 0.10, true, true, 3, '{"칼로리": 320, "탄수화물": 45, "단백질": 6, "지방": 12}', ARRAY['글루텐', '대두', '갑각류']),
+
+-- 과자/스낵 카테고리 상품들
+('농심 포테토칩 오리지널 60g', '바삭한 감자칩의 정석', '8801043011001', (SELECT id FROM categories WHERE slug = 'snacks-crackers'), '농심', '농심', '개', 1800, 1100, 0.10, true, false, 0, '{"칼로리": 320, "탄수화물": 32, "단백질": 4, "지방": 20}', ARRAY['없음']),
+('오리온 초코파이 360g', '부드러운 마시멜로와 초콜릿의 조화', '8801043012001', (SELECT id FROM categories WHERE slug = 'snacks-crackers'), '초코파이', '오리온', '개', 3500, 2200, 0.10, true, false, 0, '{"칼로리": 480, "탄수화물": 65, "단백질": 5, "지방": 22}', ARRAY['글루텐', '계란', '유제품']),
+('롯데 빼빼로 오리지널 47g', '아삭한 비스킷과 달콤한 초콜릿', '8801043013001', (SELECT id FROM categories WHERE slug = 'snacks-crackers'), '빼빼로', '롯데제과', '개', 1200, 750, 0.10, true, false, 0, '{"칼로리": 240, "탄수화물": 32, "단백질": 3, "지방": 11}', ARRAY['글루텐', '유제품']),
+('오리온 꼬깔콘 초코첵스 77g', '바삭한 콘과 달콤한 초콜릿', '8801043014001', (SELECT id FROM categories WHERE slug = 'snacks-crackers'), '꼬깔콘', '오리온', '개', 1500, 900, 0.10, true, false, 0, '{"칼로리": 380, "탄수화물": 58, "단백질": 5, "지방": 15}', ARRAY['유제품']),
+('크라운 산도 오리지널 80g', '바삭하고 고소한 크래커', '8801043015001', (SELECT id FROM categories WHERE slug = 'snacks-crackers'), '산도', '크라운제과', '개', 1400, 850, 0.10, true, false, 0, '{"칼로리": 420, "탄수화물": 55, "단백질": 7, "지방": 20}', ARRAY['글루텐']),
+('해태 허니버터칩 60g', '달콤짭짤한 허니버터 맛', '8801043016001', (SELECT id FROM categories WHERE slug = 'snacks-crackers'), '허니버터칩', '해태제과', '개', 1800, 1100, 0.10, true, false, 0, '{"칼로리": 320, "탄수화물": 34, "단백질": 4, "지방": 19}', ARRAY['유제품']),
+('농심 양파링 50g', '바삭한 양파 맛 스낵', '8801043017001', (SELECT id FROM categories WHERE slug = 'snacks-crackers'), '농심', '농심', '개', 1500, 900, 0.10, true, false, 0, '{"칼로리": 260, "탄수화물": 30, "단백질": 4, "지방": 14}', ARRAY['없음']),
+
+-- 우유/유제품 카테고리 상품들
+('서울우유 1000ml', '신선한 목장 우유', '8801043021001', (SELECT id FROM categories WHERE slug = 'milk-dairy'), '서울우유', '서울우유협동조합', '개', 2800, 1800, 0.08, true, false, 0, '{"칼로리": 650, "탄수화물": 48, "단백질": 32, "지방": 36}', ARRAY['유제품']),
+('매일우유 고칼슘 1000ml', '칼슘이 풍부한 영양 우유', '8801043021002', (SELECT id FROM categories WHERE slug = 'milk-dairy'), '매일우유', '매일유업', '개', 2900, 1850, 0.08, true, false, 0, '{"칼로리": 660, "탄수화물": 50, "단백질": 33, "지방": 36}', ARRAY['유제품']),
+('빙그레 바나나맛우유 240ml', '달콤한 바나나 맛 우유', '8801043021003', (SELECT id FROM categories WHERE slug = 'milk-dairy'), '바나나맛우유', '빙그레', '개', 1500, 950, 0.08, true, false, 0, '{"칼로리": 190, "탄수화물": 32, "단백질": 6, "지방": 5}', ARRAY['유제품']),
+('빙그레 딸기맛우유 240ml', '상큼한 딸기 맛 우유', '8801043021004', (SELECT id FROM categories WHERE slug = 'milk-dairy'), '딸기맛우유', '빙그레', '개', 1500, 950, 0.08, true, false, 0, '{"칼로리": 185, "탄수화물": 30, "단백질": 6, "지방": 5}', ARRAY['유제품']),
+('남양 GT 요구르트 65ml', '유산균이 살아있는 요구르트', '8801043021005', (SELECT id FROM categories WHERE slug = 'milk-dairy'), 'GT', '남양유업', '개', 400, 250, 0.08, true, false, 0, '{"칼로리": 50, "탄수화물": 10, "단백질": 2, "지방": 1}', ARRAY['유제품']),
+
+-- 즉석식품 카테고리 상품들
+('CU 삼각김밥 참치마요', '고소한 참치마요 삼각김밥', '8801043031001', (SELECT id FROM categories WHERE slug = 'instant-food'), 'CU', 'CU', '개', 1500, 900, 0.08, true, false, 0, '{"칼로리": 280, "탄수화물": 45, "단백질": 8, "지방": 8}', ARRAY['계란', '대두']),
+('CU 삼각김밥 스팸', '진짜 스팸이 들어간 삼각김밥', '8801043031002', (SELECT id FROM categories WHERE slug = 'instant-food'), 'CU', 'CU', '개', 1800, 1100, 0.08, true, false, 0, '{"칼로리": 320, "탄수화물": 48, "단백질": 10, "지방": 11}', ARRAY['대두']),
+('CU 주먹밥 불고기', '달짝지근한 불고기 주먹밥', '8801043031003', (SELECT id FROM categories WHERE slug = 'instant-food'), 'CU', 'CU', '개', 2000, 1200, 0.08, true, false, 0, '{"칼로리": 350, "탄수화물": 55, "단백질": 12, "지방": 10}', ARRAY['대두']),
+('오뚜기 컵밥 제육덮밥', '매콤한 제육이 올라간 덮밥', '8801043031004', (SELECT id FROM categories WHERE slug = 'instant-food'), '오뚜기', '오뚜기', '개', 3500, 2200, 0.08, true, true, 3, '{"칼로리": 480, "탄수화물": 70, "단백질": 15, "지방": 16}', ARRAY['대두']),
+('오뚜기 컵밥 김치볶음밥', '얼큰한 김치볶음밥', '8801043031005', (SELECT id FROM categories WHERE slug = 'instant-food'), '오뚜기', '오뚜기', '개', 3000, 1900, 0.08, true, true, 3, '{"칼로리": 420, "탄수화물": 65, "단백질": 12, "지방": 14}', ARRAY['대두']),
+
+-- 생활용품 카테고리들
+('샤프란 주방세제 500ml', '기름때까지 깔끔하게', '8801043041001', (SELECT id FROM categories WHERE slug = 'cleaning-supplies'), '샤프란', 'LG생활건강', '개', 3000, 1900, 0.10, true, false, 0, '{}', ARRAY['없음']),
+('크린랩 만능세정제 500ml', '99.9% 세균 제거', '8801043041002', (SELECT id FROM categories WHERE slug = 'cleaning-supplies'), '크린랩', '유한킴벌리', '개', 4000, 2500, 0.10, true, false, 0, '{}', ARRAY['없음']),
+('깨끗한나라 화장지 30m 12롤', '부드럽고 질긴 화장지', '8801043042001', (SELECT id FROM categories WHERE slug = 'tissue-paper'), '깨끗한나라', '깨끗한나라', '개', 8000, 5200, 0.08, true, false, 0, '{}', ARRAY['없음']),
+('크리넥스 티슈 180매', '부드러운 프리미엄 티슈', '8801043042002', (SELECT id FROM categories WHERE slug = 'tissue-paper'), '크리넥스', '유한킴벌리', '개', 3500, 2300, 0.08, true, false, 0, '{}', ARRAY['없음']),
+('2080 치약 120g', '불소로 충치 예방', '8801043043001', (SELECT id FROM categories WHERE slug = 'personal-hygiene'), '2080', '애경산업', '개', 2500, 1600, 0.08, true, false, 0, '{}', ARRAY['없음']),
+('닥터베스트 칫솔 중모', '잇몸 건강까지 생각한 칫솔', '8801043043002', (SELECT id FROM categories WHERE slug = 'personal-hygiene'), '닥터베스트', 'LG생활건강', '개', 2000, 1300, 0.08, true, false, 0, '{}', ARRAY['없음']),
+
+-- 문구/사무용품
+('모나미 153 볼펜 검정', '부드러운 필기감의 볼펜', '8801043051001', (SELECT id FROM categories WHERE slug = 'stationery-office'), '모나미', '모나미', '개', 500, 300, 0.10, true, false, 0, '{}', ARRAY['없음']),
+('포스트잇 3x3 노랑 100매', '메모의 필수품', '8801043051002', (SELECT id FROM categories WHERE slug = 'stationery-office'), '포스트잇', '3M', '개', 2000, 1300, 0.10, true, false, 0, '{}', ARRAY['없음']),
+
+-- 전자제품/배터리
+('듀라셀 AA 배터리 4개', '오래가는 알카라인 배터리', '8801043061001', (SELECT id FROM categories WHERE slug = 'electronics-battery'), '듀라셀', '듀라셀', '개', 8000, 5200, 0.10, true, false, 0, '{}', ARRAY['없음']),
+('에너자이저 AAA 배터리 4개', '고성능 알카라인 배터리', '8801043061002', (SELECT id FROM categories WHERE slug = 'electronics-battery'), '에너자이저', '에너자이저', '개', 7000, 4500, 0.10, true, false, 0, '{}', ARRAY['없음']);
+
+-- 시스템 설정 (확장된 설정)
 INSERT INTO system_settings (key, value, description, category, is_public) VALUES
 ('app_name', '"편의점 관리 시스템"', '애플리케이션 이름', 'general', true),
 ('app_version', '"2.0.0"', '애플리케이션 버전', 'general', true),
 ('default_tax_rate', '0.1', '기본 부가세율', 'business', false),
 ('min_order_amount', '1000', '최소 주문 금액', 'business', true),
-('delivery_fee', '2000', '기본 배송비', 'business', true);
+('delivery_fee', '2000', '기본 배송비', 'business', true),
+('auto_add_products_to_store', 'true', '새 지점 생성 시 모든 상품 자동 추가 여부', 'store', false),
+('default_store_stock_quantity', '50', '새 지점 생성 시 기본 재고 수량', 'store', false),
+('hq_can_manage_all_products', 'true', '본사에서 모든 상품 관리 가능 여부', 'hq', false),
+('support_email', '"support@convistore.com"', '고객지원 이메일', 'general', true),
+('support_phone', '"1588-1234"', '고객지원 전화번호', 'general', true),
+('pickup_preparation_time', '15', '픽업 준비 시간(분)', 'order', true),
+('store_approval_required', 'true', '점포 승인 필요 여부', 'store', false),
+('max_products_per_store', '1000', '점포당 최대 상품 수', 'store', false),
+('notification_enabled', 'true', '알림 기능 활성화', 'notification', true);
 
 -- =====================================================
 -- 9. 설정 완료 확인

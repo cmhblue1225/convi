@@ -2,8 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
 // Supabase 설정 - 환경 변수가 없으면 기본값 사용
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jjardndxllxysbdhpuow.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqYXJkbmR4bGx4eXNiZGhwdW93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MzczNzIsImV4cCI6MjA2OTUxMzM3Mn0.L0ZG1Dl92OhkyoyGhS424OxQKpJ681AmfD-GxUJTAH0';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://yormdnbglkceebzapvwm.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlvcm1kbmJnbGtjZWViemFwdndtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1MTU3MzIsImV4cCI6MjA3MDA5MTczMn0.AezRUbWhSW0GPTjHm3tKFi-DBQBmsI5vByzQOduhRMg';
 
 // URL 유효성 검사
 if (!supabaseUrl || supabaseUrl === 'your_supabase_project_url') {
