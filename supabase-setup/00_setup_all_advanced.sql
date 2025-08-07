@@ -1307,7 +1307,179 @@ INSERT INTO system_settings (key, value, description, category, is_public) VALUE
 ('notification_enabled', 'true', '알림 기능 활성화', 'notification', true);
 
 -- =====================================================
--- 9. 설정 완료 확인
+-- 9. 매출 분석 뷰 및 함수 생성
+-- =====================================================
+
+-- 1. 일별 매출 요약 뷰
+CREATE OR REPLACE VIEW daily_sales_analytics AS
+SELECT 
+    DATE(o.created_at) as sale_date,
+    COUNT(*) as total_orders,
+    COUNT(CASE WHEN o.status = 'completed' THEN 1 END) as completed_orders,
+    COUNT(CASE WHEN o.status = 'cancelled' THEN 1 END) as cancelled_orders,
+    SUM(CASE WHEN o.status = 'completed' THEN o.total_amount ELSE 0 END) as total_revenue,
+    AVG(CASE WHEN o.status = 'completed' THEN o.total_amount ELSE NULL END) as avg_order_value,
+    COUNT(CASE WHEN o.type = 'pickup' THEN 1 END) as pickup_orders,
+    COUNT(CASE WHEN o.type = 'delivery' THEN 1 END) as delivery_orders
+FROM orders o
+GROUP BY DATE(o.created_at)
+ORDER BY sale_date DESC;
+
+-- 2. 지점별 매출 분석 뷰
+CREATE OR REPLACE VIEW store_sales_analytics AS
+SELECT 
+    s.id as store_id,
+    s.name as store_name,
+    COUNT(o.id) as total_orders,
+    COUNT(CASE WHEN o.status = 'completed' THEN 1 END) as completed_orders,
+    SUM(CASE WHEN o.status = 'completed' THEN o.total_amount ELSE 0 END) as total_revenue,
+    AVG(CASE WHEN o.status = 'completed' THEN o.total_amount ELSE NULL END) as avg_order_value,
+    COUNT(CASE WHEN o.type = 'pickup' THEN 1 END) as pickup_orders,
+    COUNT(CASE WHEN o.type = 'delivery' THEN 1 END) as delivery_orders,
+    MAX(o.created_at) as last_order_date
+FROM stores s
+LEFT JOIN orders o ON s.id = o.store_id
+GROUP BY s.id, s.name
+ORDER BY total_revenue DESC;
+
+-- 3. 상품별 매출 분석 뷰
+CREATE OR REPLACE VIEW product_sales_analytics AS
+SELECT 
+    p.id as product_id,
+    p.name as product_name,
+    c.name as category_name,
+    COUNT(oi.id) as total_sold,
+    SUM(oi.subtotal) as total_revenue,
+    AVG(oi.unit_price) as avg_price,
+    COUNT(DISTINCT o.id) as order_count
+FROM products p
+LEFT JOIN categories c ON p.category_id = c.id
+LEFT JOIN order_items oi ON p.id = oi.product_id
+LEFT JOIN orders o ON oi.order_id = o.id AND o.status = 'completed'
+GROUP BY p.id, p.name, c.name
+ORDER BY total_revenue DESC;
+
+-- 4. 시간대별 매출 분석 뷰
+CREATE OR REPLACE VIEW hourly_sales_analytics AS
+SELECT 
+    EXTRACT(HOUR FROM o.created_at) as hour_of_day,
+    COUNT(*) as total_orders,
+    SUM(CASE WHEN o.status = 'completed' THEN o.total_amount ELSE 0 END) as total_revenue,
+    AVG(CASE WHEN o.status = 'completed' THEN o.total_amount ELSE NULL END) as avg_order_value
+FROM orders o
+GROUP BY EXTRACT(HOUR FROM o.created_at)
+ORDER BY hour_of_day;
+
+-- 5. 결제 방법별 매출 분석 뷰
+CREATE OR REPLACE VIEW payment_method_analytics AS
+SELECT 
+    o.payment_method,
+    COUNT(*) as total_orders,
+    SUM(CASE WHEN o.status = 'completed' THEN o.total_amount ELSE 0 END) as total_revenue,
+    AVG(CASE WHEN o.status = 'completed' THEN o.total_amount ELSE NULL END) as avg_order_value,
+    COUNT(CASE WHEN o.payment_status = 'paid' THEN 1 END) as paid_orders,
+    COUNT(CASE WHEN o.payment_status = 'failed' THEN 1 END) as failed_orders
+FROM orders o
+GROUP BY o.payment_method
+ORDER BY total_revenue DESC;
+
+-- 매출 분석 함수들
+-- 1. 기간별 매출 통계 함수
+CREATE OR REPLACE FUNCTION get_sales_summary(
+    start_date DATE DEFAULT CURRENT_DATE - INTERVAL '30 days',
+    end_date DATE DEFAULT CURRENT_DATE
+)
+RETURNS TABLE (
+    total_orders BIGINT,
+    completed_orders BIGINT,
+    cancelled_orders BIGINT,
+    total_revenue NUMERIC,
+    avg_order_value NUMERIC,
+    pickup_orders BIGINT,
+    delivery_orders BIGINT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        COUNT(*)::BIGINT as total_orders,
+        COUNT(CASE WHEN o.status = 'completed' THEN 1 END)::BIGINT as completed_orders,
+        COUNT(CASE WHEN o.status = 'cancelled' THEN 1 END)::BIGINT as cancelled_orders,
+        COALESCE(SUM(CASE WHEN o.status = 'completed' THEN o.total_amount ELSE 0 END), 0) as total_revenue,
+        COALESCE(AVG(CASE WHEN o.status = 'completed' THEN o.total_amount ELSE NULL END), 0) as avg_order_value,
+        COUNT(CASE WHEN o.type = 'pickup' THEN 1 END)::BIGINT as pickup_orders,
+        COUNT(CASE WHEN o.type = 'delivery' THEN 1 END)::BIGINT as delivery_orders
+    FROM orders o
+    WHERE DATE(o.created_at) BETWEEN start_date AND end_date;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 2. 지점별 매출 순위 함수
+CREATE OR REPLACE FUNCTION get_store_rankings(
+    start_date DATE DEFAULT CURRENT_DATE - INTERVAL '30 days',
+    end_date DATE DEFAULT CURRENT_DATE
+)
+RETURNS TABLE (
+    store_id UUID,
+    store_name TEXT,
+    total_revenue NUMERIC,
+    total_orders BIGINT,
+    avg_order_value NUMERIC,
+    rank_position BIGINT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        s.id as store_id,
+        s.name as store_name,
+        COALESCE(SUM(CASE WHEN o.status = 'completed' THEN o.total_amount ELSE 0 END), 0) as total_revenue,
+        COUNT(o.id)::BIGINT as total_orders,
+        COALESCE(AVG(CASE WHEN o.status = 'completed' THEN o.total_amount ELSE NULL END), 0) as avg_order_value,
+        RANK() OVER (ORDER BY COALESCE(SUM(CASE WHEN o.status = 'completed' THEN o.total_amount ELSE 0 END), 0) DESC) as rank_position
+    FROM stores s
+    LEFT JOIN orders o ON s.id = o.store_id 
+        AND DATE(o.created_at) BETWEEN start_date AND end_date
+    GROUP BY s.id, s.name
+    ORDER BY total_revenue DESC;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 3. 상품별 매출 순위 함수
+CREATE OR REPLACE FUNCTION get_product_rankings(
+    start_date DATE DEFAULT CURRENT_DATE - INTERVAL '30 days',
+    end_date DATE DEFAULT CURRENT_DATE
+)
+RETURNS TABLE (
+    product_id UUID,
+    product_name TEXT,
+    category_name TEXT,
+    total_sold BIGINT,
+    total_revenue NUMERIC,
+    avg_price NUMERIC,
+    rank_position BIGINT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        p.id as product_id,
+        p.name as product_name,
+        c.name as category_name,
+        COUNT(oi.id)::BIGINT as total_sold,
+        COALESCE(SUM(oi.subtotal), 0) as total_revenue,
+        COALESCE(AVG(oi.unit_price), 0) as avg_price,
+        RANK() OVER (ORDER BY COALESCE(SUM(oi.subtotal), 0) DESC) as rank_position
+    FROM products p
+    LEFT JOIN categories c ON p.category_id = c.id
+    LEFT JOIN order_items oi ON p.id = oi.product_id
+    LEFT JOIN orders o ON oi.order_id = o.id 
+        AND o.status = 'completed'
+        AND DATE(o.created_at) BETWEEN start_date AND end_date
+    GROUP BY p.id, p.name, c.name
+    ORDER BY total_revenue DESC;
+END;
+$$ LANGUAGE plpgsql;
+
+-- =====================================================
+-- 10. 설정 완료 확인
 -- =====================================================
 
 SELECT 
