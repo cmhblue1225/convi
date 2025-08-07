@@ -10,6 +10,16 @@ export interface CartItem {
   subtotal: number;
 }
 
+// Coupon 인터페이스 정의 (데이터베이스 연동을 고려한 구조)
+export interface Coupon {
+  code: string;
+  discount: number; // 할인 금액 또는 비율 (예: 10000원 또는 0.1)
+  type: 'percentage' | 'fixed'; // 'percentage' (비율 할인) 또는 'fixed' (고정 금액 할인)
+  minAmount?: number; // 최소 주문 금액 (선택 사항)
+  name?: string; // 쿠폰 이름 (UI 표시용)
+  description?: string; // 쿠폰 설명 (UI 표시용)
+}
+
 interface CartStore {
   items: CartItem[];
   storeId: string | null;
@@ -19,6 +29,8 @@ interface CartStore {
   taxAmount: number;
   deliveryFee: number;
   totalAmount: number;
+  appliedPoints: number; // 적용된 포인트
+  appliedCoupon: Coupon | null; // 적용된 쿠폰 정보
   
   // Actions
   addItem: (product: Product, storeProduct: StoreProduct, quantity?: number) => void;
@@ -28,6 +40,9 @@ interface CartStore {
   calculateTotals: () => void;
   getItemCount: () => number;
   setOrderType: (type: 'pickup' | 'delivery') => void;
+  applyPoints: (points: number) => void;
+  applyCoupon: (coupon: Coupon) => void;
+  removeCoupon: () => void;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -41,6 +56,8 @@ export const useCartStore = create<CartStore>()(
       taxAmount: 0,
       deliveryFee: 0,
       totalAmount: 0,
+      appliedPoints: 0, // 초기 상태 추가
+      appliedCoupon: null, // 초기 상태 추가
 
       addItem: (product, storeProduct, quantity = 1) => {
         let { items, storeId } = get();
@@ -53,16 +70,18 @@ export const useCartStore = create<CartStore>()(
           if (!confirmed) return;
           
           console.log('🗑️ 다른 지점으로 인한 장바구니 초기화');
-                  set({
-          items: [],
-          storeId: storeProduct.store_id,
-          storeName: null,
-          orderType: 'pickup',
-          subtotal: 0,
-          taxAmount: 0,
-          deliveryFee: 0,
-          totalAmount: 0
-        });
+          set({
+            items: [],
+            storeId: storeProduct.store_id,
+            storeName: null,
+            orderType: 'pickup',
+            subtotal: 0,
+            taxAmount: 0,
+            deliveryFee: 0,
+            totalAmount: 0,
+            appliedPoints: 0, // 장바구니 초기화 시 포인트/쿠폰도 초기화
+            appliedCoupon: null
+          });
           
           // 장바구니를 비운 후 새로운 상태를 가져오기
           items = [];
@@ -145,7 +164,7 @@ export const useCartStore = create<CartStore>()(
             
             const finalPrice = item.storeProduct.discount_rate > 0 
               ? item.storeProduct.price * (1 - item.storeProduct.discount_rate)
-              : item.storeProduct.price;
+              : item.product.price;
               
             return {
               ...item,
@@ -168,24 +187,54 @@ export const useCartStore = create<CartStore>()(
           subtotal: 0,
           taxAmount: 0,
           deliveryFee: 0,
-          totalAmount: 0
+          totalAmount: 0,
+          appliedPoints: 0, // 장바구니 초기화 시 포인트/쿠폰도 초기화
+          appliedCoupon: null
         });
       },
 
       calculateTotals: () => {
-        const { items, orderType } = get();
+        const { items, orderType, appliedPoints, appliedCoupon } = get();
         const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
         const taxAmount = subtotal * 0.1; // 10% 세율
         
         // 배송비 계산 (픽업은 0원, 배송은 2만원 이상 무료배송)
         const deliveryFee = orderType === 'pickup' ? 0 : (subtotal >= 20000 ? 0 : 3000);
-        const totalAmount = subtotal + taxAmount + deliveryFee;
+        let currentTotal = subtotal + taxAmount + deliveryFee;
+
+        let discountAmount = 0;
+
+        // 쿠폰 할인 적용
+        if (appliedCoupon) {
+          if (appliedCoupon.minAmount && currentTotal < appliedCoupon.minAmount) {
+            // 최소 주문 금액 미달 시 쿠폰 적용 안 함
+            console.warn(`쿠폰 "${appliedCoupon.code}"은(는) 최소 주문 금액 ${appliedCoupon.minAmount.toLocaleString()}원 이상에서만 적용됩니다.`);
+            // 쿠폰 적용 해제 (사용자에게 알림 후)
+            set({ appliedCoupon: null });
+          } else {
+            if (appliedCoupon.type === 'percentage') {
+              discountAmount += currentTotal * appliedCoupon.discount;
+            } else { // fixed
+              discountAmount += appliedCoupon.discount;
+            }
+          }
+        }
+
+        // 포인트 할인 적용 (쿠폰 할인 후 금액에서 차감)
+        // 포인트는 총 결제 금액을 0원 미만으로 만들 수 없음
+        discountAmount += Math.min(appliedPoints, currentTotal - discountAmount);
         
+        currentTotal -= discountAmount;
+        
+        // 최종 금액이 0원 미만이 되지 않도록 보정
+        currentTotal = Math.max(0, currentTotal);
+
         set({
           subtotal,
           taxAmount,
           deliveryFee,
-          totalAmount
+          totalAmount: currentTotal,
+          // 할인 금액은 totalAmount에 반영되므로 별도 저장 필요 없음
         });
       },
 
@@ -197,7 +246,22 @@ export const useCartStore = create<CartStore>()(
       setOrderType: (type: 'pickup' | 'delivery') => {
         console.log('🚚 주문 타입 변경:', type);
         set({ orderType: type });
-        get().calculateTotals(); // 배송비 재계산
+        get().calculateTotals(); // 배송비 및 할인 재계산
+      },
+
+      applyPoints: (points: number) => {
+        set({ appliedPoints: points });
+        get().calculateTotals(); // 포인트 적용 후 총 금액 재계산
+      },
+
+      applyCoupon: (coupon: Coupon) => {
+        set({ appliedCoupon: coupon });
+        get().calculateTotals(); // 쿠폰 적용 후 총 금액 재계산
+      },
+
+      removeCoupon: () => {
+        set({ appliedCoupon: null });
+        get().calculateTotals(); // 쿠폰 제거 후 총 금액 재계산
       }
     }),
     {
@@ -210,7 +274,9 @@ export const useCartStore = create<CartStore>()(
         subtotal: state.subtotal,
         taxAmount: state.taxAmount,
         deliveryFee: state.deliveryFee,
-        totalAmount: state.totalAmount
+        totalAmount: state.totalAmount,
+        appliedPoints: state.appliedPoints, // persist에 추가
+        appliedCoupon: state.appliedCoupon // persist에 추가
       })
     }
   )
