@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '../../stores/cartStore';
-import { useOrderStore, type DeliveryAddress } from '../../stores/orderStore';
+import type { DeliveryAddress } from '../../stores/orderStore';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { supabase } from '../../lib/supabase/client';
+import { useAuthStore } from '../../stores/common/authStore';
 import PaymentMethodSelector from '../../components/payment/PaymentMethodSelector';
 import PaymentProcessor from '../../components/payment/PaymentProcessor';
+import type { UserCoupon, CouponValidation } from '../../types/common';
 
 // 결제 방법 타입 정의 (orderStore와 통일)
 type PaymentMethod = 'card' | 'cash' | 'mobile' | 'toss' | 'kakao' | 'naver' | 'payco';
@@ -14,6 +16,7 @@ type PaymentMethod = 'card' | 'cash' | 'mobile' | 'toss' | 'kakao' | 'naver' | '
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const {
     items,
     storeId,
@@ -22,11 +25,8 @@ const Checkout: React.FC = () => {
     taxAmount,
     deliveryFee,
     totalAmount,
-    clearCart,
     setOrderType: setCartOrderType
   } = useCartStore();
-  
-  const { addOrder } = useOrderStore();
 
   const [orderType, setOrderType] = useState<'pickup' | 'delivery'>(cartOrderType);
   const [deliveryAddress, setDeliveryAddress] = useState<DeliveryAddress>({
@@ -38,8 +38,16 @@ const Checkout: React.FC = () => {
   });
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
   const [currentStep, setCurrentStep] = useState<'info' | 'payment' | 'processing'>('info');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+
+  // 쿠폰/포인트 관련 상태 (최소한으로 추가)
+  const [userCoupons, setUserCoupons] = useState<UserCoupon[]>([]);
+  const [selectedCoupon, setSelectedCoupon] = useState<string>('');
+  const [couponValidation, setCouponValidation] = useState<CouponValidation | null>(null);
+  const [pointsToUse, setPointsToUse] = useState<number>(0);
+  const [totalPoints, setTotalPoints] = useState(0);
+  const [finalAmount, setFinalAmount] = useState(totalAmount);
+  const [orderNumber, setOrderNumber] = useState<string>('');
 
   // 선택된 지점 정보
   const selectedStore = JSON.parse(localStorage.getItem('selectedStore') || '{}');
@@ -58,7 +66,95 @@ const Checkout: React.FC = () => {
       navigate('/customer');
       return;
     }
-  }, [items, selectedStore, navigate]);
+
+    // 쿠폰/포인트 정보 로드
+    if (user) {
+      fetchUserCoupons();
+      fetchTotalPoints();
+    }
+  }, [items, selectedStore, navigate, user]);
+
+  useEffect(() => {
+    calculateFinalAmount();
+  }, [totalAmount, couponValidation, pointsToUse]);
+
+  // 쿠폰/포인트 관련 함수들
+  const fetchUserCoupons = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('user_coupons')
+        .select(`
+          *,
+          coupon:coupons(*)
+        `)
+        .eq('user_id', user.id)
+        .eq('is_used', false);
+
+      if (error) throw error;
+      setUserCoupons(data || []);
+    } catch (error) {
+      console.error('쿠폰 조회 오류:', error);
+    }
+  };
+
+  const fetchTotalPoints = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await supabase.rpc('get_user_total_points', {
+        user_uuid: user.id
+      });
+
+      if (error) throw error;
+      setTotalPoints(data || 0);
+    } catch (error) {
+      console.error('포인트 조회 오류:', error);
+    }
+  };
+
+  const validateCoupon = async (couponCode: string) => {
+    if (!user?.id) return null;
+    
+    try {
+      const { data, error } = await supabase.rpc('validate_coupon', {
+        coupon_code: couponCode,
+        user_uuid: user.id,
+        order_amount: totalAmount
+      });
+
+      if (error) throw error;
+      return data[0] || null;
+    } catch (error) {
+      console.error('쿠폰 검증 오류:', error);
+      return null;
+    }
+  };
+
+  const calculateFinalAmount = () => {
+    let amount = totalAmount;
+    
+    if (couponValidation?.is_valid) {
+      amount -= couponValidation.discount_amount;
+    }
+    
+    amount -= pointsToUse;
+    
+    setFinalAmount(Math.max(0, amount));
+  };
+
+  const handleCouponApply = async () => {
+    if (!selectedCoupon) return;
+    
+    const validation = await validateCoupon(selectedCoupon);
+    setCouponValidation(validation);
+  };
+
+  const handlePointsChange = (points: number) => {
+    const maxPoints = Math.min(totalPoints, finalAmount);
+    setPointsToUse(Math.min(points, maxPoints));
+  };
 
   const handleAddressChange = (field: keyof DeliveryAddress, value: string) => {
     setDeliveryAddress(prev => ({
@@ -119,6 +215,12 @@ const Checkout: React.FC = () => {
   const handleProceedToPayment = () => {
     if (!validateForm()) return;
     
+    // 주문번호 생성 (한 번만)
+    if (!orderNumber) {
+      const newOrderNumber = generateOrderNumber();
+      setOrderNumber(newOrderNumber);
+    }
+    
     // 결제 진행 전 장바구니 정보를 localStorage에 저장 (PaymentSuccess 페이지에서 사용)
     const checkoutData = {
       items: items,
@@ -129,8 +231,14 @@ const Checkout: React.FC = () => {
       subtotal: subtotal,
       taxAmount: taxAmount,
       deliveryFee: deliveryFee,
-      totalAmount: totalAmount,
-      paymentMethod: paymentMethod
+      totalAmount: finalAmount, // 할인 적용된 최종 금액
+      originalAmount: totalAmount, // 원래 금액
+      paymentMethod: paymentMethod,
+      // 쿠폰/포인트 정보 추가
+      selectedCoupon: selectedCoupon,
+      couponDiscount: couponValidation?.discount_amount || 0,
+      pointsUsed: pointsToUse,
+      orderNumber: orderNumber || generateOrderNumber()
     };
     
     localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
@@ -139,42 +247,7 @@ const Checkout: React.FC = () => {
     setCurrentStep('payment');
   };
 
-  // 재고 확인 함수
-  const checkStockAvailability = async (): Promise<boolean> => {
-    try {
-      console.log('📦 재고 확인 시작...');
-      
-      for (const item of items) {
-        const { data: stockData, error: stockError } = await supabase
-          .from('store_products')
-          .select('stock_quantity, is_available')
-          .eq('store_id', selectedStore.id)
-          .eq('product_id', item.product.id)
-          .single();
 
-        if (stockError) {
-          console.error(`❌ 재고 조회 실패 (${item.product.name}):`, stockError);
-          return false;
-        }
-
-        if (!stockData.is_available) {
-          alert(`상품 "${item.product.name}"이 현재 판매 중지되었습니다.`);
-          return false;
-        }
-
-        if (stockData.stock_quantity < item.quantity) {
-          alert(`상품 "${item.product.name}"의 재고가 부족합니다.\n현재 재고: ${stockData.stock_quantity}개\n주문 수량: ${item.quantity}개`);
-          return false;
-        }
-      }
-      
-      console.log('✅ 재고 확인 완료');
-      return true;
-    } catch (error) {
-      console.error('❌ 재고 확인 중 오류:', error);
-      return false;
-    }
-  };
 
   const handlePaymentSuccess = async (paymentResult: any) => {
     console.log('💳 토스페이먼츠 결제창 열기 성공:', paymentResult);
@@ -190,7 +263,7 @@ const Checkout: React.FC = () => {
       code: 'PAYMENT_FAILED',
       message: error.message || '결제에 실패했습니다.',
       orderId: generateOrderNumber(),
-      amount: totalAmount.toString()
+      amount: finalAmount.toString()
     });
     
     navigate(`/payment/fail?${failParams.toString()}`);
@@ -472,6 +545,65 @@ const Checkout: React.FC = () => {
               </div>
             </div>
 
+            {/* 쿠폰/포인트 할인 (최소한으로 추가) */}
+            {(userCoupons.length > 0 || totalPoints > 0) && (
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h2 className="text-lg font-semibold mb-4">할인 혜택</h2>
+                
+                {userCoupons.length > 0 && (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      쿠폰 ({userCoupons.length}개 보유)
+                    </label>
+                    <div className="flex space-x-2">
+                      <select
+                        value={selectedCoupon}
+                        onChange={(e) => setSelectedCoupon(e.target.value)}
+                        className="flex-1 p-2 border border-gray-300 rounded-lg text-sm"
+                      >
+                        <option value="">쿠폰 선택</option>
+                        {userCoupons.map((userCoupon) => (
+                          <option key={userCoupon.id} value={userCoupon.coupon.code}>
+                            {userCoupon.coupon.name}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={handleCouponApply}
+                        className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
+                      >
+                        적용
+                      </button>
+                    </div>
+                    {couponValidation && (
+                      <p className={`text-sm mt-1 ${
+                        couponValidation.is_valid ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {couponValidation.message}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {totalPoints > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      포인트 ({totalPoints.toLocaleString()}P 보유)
+                    </label>
+                    <input
+                      type="number"
+                      value={pointsToUse}
+                      onChange={(e) => handlePointsChange(Number(e.target.value))}
+                      max={Math.min(totalPoints, finalAmount)}
+                      min="0"
+                      placeholder="사용할 포인트"
+                      className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* 결제 금액 */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-lg font-semibold mb-4">결제 금액</h2>
@@ -496,9 +628,21 @@ const Checkout: React.FC = () => {
                     </span>
                   </div>
                 )}
+                {couponValidation?.is_valid && (
+                  <div className="flex justify-between text-red-600">
+                    <span>쿠폰 할인</span>
+                    <span>-{couponValidation.discount_amount.toLocaleString()}원</span>
+                  </div>
+                )}
+                {pointsToUse > 0 && (
+                  <div className="flex justify-between text-red-600">
+                    <span>포인트 할인</span>
+                    <span>-{pointsToUse.toLocaleString()}원</span>
+                  </div>
+                )}
                 <div className="border-t pt-2 flex justify-between font-semibold text-lg">
                   <span>총 결제 금액</span>
-                  <span className="text-blue-600">{totalAmount.toLocaleString()}원</span>
+                  <span className="text-blue-600">{finalAmount.toLocaleString()}원</span>
                 </div>
               </div>
             </div>
@@ -542,7 +686,7 @@ const Checkout: React.FC = () => {
                 <PaymentMethodSelector
                   selectedMethod={paymentMethod}
                   onMethodChange={setPaymentMethod}
-                  amount={totalAmount}
+                  amount={finalAmount}
                 />
                 
                 {/* 결제 진행 버튼 */}
@@ -591,9 +735,21 @@ const Checkout: React.FC = () => {
                     <span>₩{deliveryFee.toLocaleString()}</span>
                   </div>
                 )}
+                {couponValidation?.is_valid && (
+                  <div className="flex justify-between text-red-600">
+                    <span>쿠폰 할인</span>
+                    <span>-₩{couponValidation.discount_amount.toLocaleString()}</span>
+                  </div>
+                )}
+                {pointsToUse > 0 && (
+                  <div className="flex justify-between text-red-600">
+                    <span>포인트 할인</span>
+                    <span>-₩{pointsToUse.toLocaleString()}</span>
+                  </div>
+                )}
                 <div className="flex justify-between font-semibold text-lg pt-2 border-t">
                   <span>총 결제금액</span>
-                  <span className="text-primary-color">₩{totalAmount.toLocaleString()}</span>
+                  <span className="text-primary-color">₩{finalAmount.toLocaleString()}</span>
                 </div>
               </div>
 
@@ -616,9 +772,9 @@ const Checkout: React.FC = () => {
               <PaymentProcessor
                 paymentMethod={paymentMethod}
                 orderInfo={{
-                  orderId: generateOrderNumber(),
+                  orderId: orderNumber || generateOrderNumber(),
                   orderName: `${selectedStore.name} 주문`,
-                  amount: totalAmount,
+                  amount: finalAmount,
                   customerName: deliveryAddress.name || '고객',
                   customerEmail: 'customer@example.com', // 실제로는 로그인한 사용자 정보 사용
                   customerPhone: deliveryAddress.phone

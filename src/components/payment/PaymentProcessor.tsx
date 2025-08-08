@@ -127,6 +127,14 @@ const PaymentProcessor: React.FC<PaymentProcessorProps> = ({
   };
 
   const handleTossPayment = async () => {
+    console.log('🏦 토스페이 결제 처리 시작...');
+    
+    // 이미 토스 위젯이 표시되어 있으면 중복 실행 방지
+    if (showTossWidget) {
+      console.log('⚠️ 토스페이 위젯이 이미 표시되어 있습니다.');
+      return;
+    }
+    
     // 토스페이 결제창 표시
     setShowTossWidget(true);
   };

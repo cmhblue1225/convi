@@ -285,5 +285,58 @@ export interface ToastMessage {
   };
 }
 
-// 기존 호환성을 위한 re-export
-export { User, UserProfile, UserRole, UserStatus };
+export interface Coupon {
+  id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  discount_type: 'percentage' | 'fixed_amount';
+  discount_value: number;
+  min_order_amount: number;
+  max_discount_amount?: number | null;
+  usage_limit?: number | null;
+  used_count: number;
+  is_active: boolean;
+  valid_from: string;
+  valid_until?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserCoupon {
+  id: string;
+  user_id: string;
+  coupon_id: string;
+  is_used: boolean;
+  used_at?: string | null;
+  used_order_id?: string | null;
+  expires_at?: string | null;
+  created_at: string;
+  coupon: Coupon;
+}
+
+export interface Point {
+  id: string;
+  user_id: string;
+  amount: number;
+  type: 'earned' | 'used' | 'expired' | 'bonus';
+  description?: string | null;
+  order_id?: string | null;
+  expires_at?: string | null;
+  created_at: string;
+}
+
+export interface PointSettings {
+  id: string;
+  key: string;
+  value: any;
+  description?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CouponValidation {
+  is_valid: boolean;
+  discount_amount: number;
+  message: string;
+}

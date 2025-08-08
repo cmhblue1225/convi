@@ -936,12 +936,250 @@ export type Database = {
         }
         Relationships: []
       }
+      coupons: {
+        Row: {
+          id: string
+          code: string
+          name: string
+          description: string | null
+          discount_type: 'percentage' | 'fixed_amount'
+          discount_value: number
+          min_order_amount: number
+          max_discount_amount: number | null
+          usage_limit: number | null
+          used_count: number
+          is_active: boolean
+          valid_from: string
+          valid_until: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          code: string
+          name: string
+          description?: string | null
+          discount_type: 'percentage' | 'fixed_amount'
+          discount_value: number
+          min_order_amount: number
+          max_discount_amount?: number | null
+          usage_limit?: number | null
+          used_count?: number
+          is_active?: boolean
+          valid_from?: string
+          valid_until?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          code?: string
+          name?: string
+          description?: string | null
+          discount_type?: 'percentage' | 'fixed_amount'
+          discount_value?: number
+          min_order_amount?: number
+          max_discount_amount?: number | null
+          usage_limit?: number | null
+          used_count?: number
+          is_active?: boolean
+          valid_from?: string
+          valid_until?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_coupons: {
+        Row: {
+          id: string
+          user_id: string
+          coupon_id: string
+          is_used: boolean
+          used_at: string | null
+          used_order_id: string | null
+          expires_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          coupon_id: string
+          is_used?: boolean
+          used_at?: string | null
+          used_order_id?: string | null
+          expires_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          coupon_id?: string
+          is_used?: boolean
+          used_at?: string | null
+          used_order_id?: string | null
+          expires_at?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_coupons_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_coupons_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_coupons_used_order_id_fkey"
+            columns: ["used_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      points: {
+        Row: {
+          id: string
+          user_id: string
+          amount: number
+          type: 'earned' | 'used' | 'expired' | 'bonus'
+          description: string | null
+          order_id: string | null
+          expires_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          amount: number
+          type: 'earned' | 'used' | 'expired' | 'bonus'
+          description?: string | null
+          order_id?: string | null
+          expires_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          amount?: number
+          type?: 'earned' | 'used' | 'expired' | 'bonus'
+          description?: string | null
+          order_id?: string | null
+          expires_at?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "points_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "points_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      point_settings: {
+        Row: {
+          id: string
+          key: string
+          value: Json
+          description: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          key: string
+          value: Json
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          key?: string
+          value?: Json
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      validate_coupon: {
+        Args: {
+          coupon_code: string
+          user_uuid: string
+          order_amount: number
+        }
+        Returns: {
+          is_valid: boolean
+          discount_amount: number
+          message: string
+        }[]
+      }
+      earn_points: {
+        Args: {
+          user_uuid: string
+          order_amount: number
+          order_uuid: string
+        }
+        Returns: undefined
+      }
+      get_user_total_points: {
+        Args: {
+          user_uuid: string
+        }
+        Returns: number
+      }
+      add_welcome_bonus: {
+        Args: {
+          user_uuid: string
+        }
+        Returns: undefined
+      }
+      use_coupon: {
+        Args: {
+          user_uuid: string
+          coupon_uuid: string
+          order_uuid: string
+        }
+        Returns: boolean
+      }
+      give_coupon_to_user: {
+        Args: {
+          user_uuid: string
+          coupon_code: string
+          expires_at?: string
+        }
+        Returns: boolean
+      }
+      distribute_coupon_to_all_users: {
+        Args: {
+          coupon_code: string
+          expires_at?: string
+        }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

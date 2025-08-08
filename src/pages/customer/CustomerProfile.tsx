@@ -4,6 +4,7 @@ import { useAuthStore } from '../../stores/common/authStore';
 import { useOrderStore } from '../../stores/orderStore';
 import { supabase } from '../../lib/supabase/client';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import type { UserCoupon, Point } from '../../types/common';
 
 interface Profile {
   id: string;
@@ -41,10 +42,13 @@ interface ProfileFormData {
 
 const CustomerProfile: React.FC = () => {
   const navigate = useNavigate();
-  const { user, profile: authProfile, updateProfile } = useAuthStore();
+  const { user } = useAuthStore();
   const { orders } = useOrderStore();
   
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [userCoupons, setUserCoupons] = useState<UserCoupon[]>([]);
+  const [points, setPoints] = useState<Point[]>([]);
+  const [totalPoints, setTotalPoints] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -105,8 +109,60 @@ const CustomerProfile: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchProfile();
+    if (user) {
+      fetchProfile();
+      fetchUserCoupons();
+      fetchPoints();
+    }
   }, [user]);
+
+  const fetchUserCoupons = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('user_coupons')
+        .select(`
+          *,
+          coupon:coupons(*)
+        `)
+        .eq('user_id', user.id)
+        .eq('is_used', false);
+
+      if (error) throw error;
+      setUserCoupons(data || []);
+    } catch (error) {
+      console.error('쿠폰 조회 오류:', error);
+    }
+  };
+
+  const fetchPoints = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('points')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setPoints(data || []);
+
+      // 총 포인트 계산
+      const total = (data || []).reduce((sum, point) => {
+        if (point.type === 'earned' || point.type === 'bonus') {
+          return sum + point.amount;
+        } else if (point.type === 'used' || point.type === 'expired') {
+          return sum - point.amount;
+        }
+        return sum;
+      }, 0);
+      setTotalPoints(total);
+    } catch (error) {
+      console.error('포인트 조회 오류:', error);
+    }
+  };
 
   // 프로필 저장
   const handleSaveProfile = async () => {
@@ -457,6 +513,81 @@ const CustomerProfile: React.FC = () => {
 
           {/* 사이드바 */}
           <div className="space-y-6">
+            {/* 포인트 정보 */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">보유 포인트</h2>
+              <div className="text-center mb-4">
+                <div className="text-3xl font-bold text-blue-600 mb-1">
+                  {totalPoints.toLocaleString()}P
+                </div>
+                <p className="text-sm text-gray-500">1P = 1원</p>
+              </div>
+              
+              {points.length > 0 && (
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">최근 포인트 내역</h3>
+                  {points.slice(0, 5).map((point) => (
+                    <div key={point.id} className="flex justify-between items-center text-sm py-1">
+                      <div>
+                        <span className="text-gray-600">{point.description || '포인트'}</span>
+                        <div className="text-xs text-gray-400">
+                          {new Date(point.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <span className={`font-medium ${
+                        point.type === 'earned' || point.type === 'bonus' 
+                          ? 'text-green-600' 
+                          : 'text-red-600'
+                      }`}>
+                        {point.type === 'earned' || point.type === 'bonus' ? '+' : '-'}
+                        {point.amount.toLocaleString()}P
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 쿠폰 정보 */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">보유 쿠폰</h2>
+              {userCoupons.length > 0 ? (
+                <div className="space-y-3">
+                  {userCoupons.map((userCoupon) => (
+                    <div key={userCoupon.id} className="border border-gray-200 rounded-lg p-3">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-medium text-sm">{userCoupon.coupon.name}</h3>
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                          {userCoupon.coupon.discount_type === 'percentage' 
+                            ? `${userCoupon.coupon.discount_value}%` 
+                            : `${userCoupon.coupon.discount_value.toLocaleString()}원`}
+                        </span>
+                      </div>
+                      {userCoupon.coupon.description && (
+                        <p className="text-xs text-gray-600 mb-2">{userCoupon.coupon.description}</p>
+                      )}
+                      <div className="text-xs text-gray-500">
+                        최소 주문: {userCoupon.coupon.min_order_amount.toLocaleString()}원
+                        {userCoupon.expires_at && (
+                          <div>만료: {new Date(userCoupon.expires_at).toLocaleDateString()}</div>
+                        )}
+                        {userCoupon.coupon.valid_until && (
+                          <div>유효기간: {new Date(userCoupon.coupon.valid_until).toLocaleDateString()}</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-gray-500 py-8">
+                  <svg className="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                  <p className="text-sm">보유한 쿠폰이 없습니다</p>
+                </div>
+              )}
+            </div>
+
             {/* 주문 통계 */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">주문 통계</h2>

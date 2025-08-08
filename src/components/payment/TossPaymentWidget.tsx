@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 
 interface TossPaymentWindowProps {
@@ -24,15 +24,50 @@ const TossPaymentWindow: React.FC<TossPaymentWindowProps> = ({
 }) => {
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const hasInitialized = useRef(false);
+
+  // 콜백 함수들을 안정화
+  const stableOnSuccess = useCallback(onSuccess, []);
+  const stableOnFail = useCallback(onFail, []);
 
   useEffect(() => {
+    // 이미 초기화되었으면 중복 실행 방지
+    if (hasInitialized.current) {
+      return;
+    }
+
     const initializePayment = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        // 토스페이먼츠 SDK 동적 로드
+        // 중복 초기화 방지
+        hasInitialized.current = true;
+
+        // 토스페이먼츠 SDK 동적 로드 (이미 로드된 경우 재사용)
         const loadTossPayments = async (): Promise<any> => {
+          // 이미 로드된 경우
+          if ((window as any).TossPayments) {
+            return (window as any).TossPayments;
+          }
+          
+          // 이미 로딩 중인 스크립트가 있는지 확인
+          const existingScript = document.querySelector('script[src="https://js.tosspayments.com/v2/standard"]');
+          if (existingScript) {
+            return new Promise((resolve, reject) => {
+              existingScript.addEventListener('load', () => {
+                if ((window as any).TossPayments) {
+                  resolve((window as any).TossPayments);
+                } else {
+                  reject(new Error('토스페이먼츠 SDK 로드 실패'));
+                }
+              });
+              existingScript.addEventListener('error', () => {
+                reject(new Error('토스페이먼츠 SDK 로드 실패'));
+              });
+            });
+          }
+          
           return new Promise((resolve, reject) => {
             const script = document.createElement('script');
             script.src = 'https://js.tosspayments.com/v2/standard';
@@ -154,12 +189,12 @@ const TossPaymentWindow: React.FC<TossPaymentWindowProps> = ({
         
         setError(error instanceof Error ? error.message : '결제창 초기화에 실패했습니다.');
         setIsLoading(false);
-        onFail(error);
+        stableOnFail(error);
       }
     };
 
     initializePayment();
-  }, [orderId, orderName, amount, customerName, customerEmail, customerMobilePhone, onSuccess, onFail]);
+  }, [orderId, orderName, amount, customerName, customerEmail, customerMobilePhone]); // 콜백 함수 제거
 
   if (isLoading) {
     return (
