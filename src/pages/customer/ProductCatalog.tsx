@@ -30,7 +30,7 @@ const ProductCatalog: React.FC = () => {
   useEffect(() => {
     if (!selectedStore.id) {
       // 지점이 선택되지 않았으면 지점 선택 페이지로 이동
-      navigate('/customer');
+      navigate('/customer/store');
       return;
     }
     
@@ -144,10 +144,8 @@ const ProductCatalog: React.FC = () => {
     console.log('🔄 지점 변경 버튼 클릭');
     localStorage.removeItem('selectedStore');
     
-    // 테스트 환경에서는 테스트 라우트로, 실제 환경에서는 customer 라우트로
-    const isTestEnvironment = window.location.pathname.includes('/test-');
-    const targetRoute = isTestEnvironment ? '/test-store-selection' : '/customer';
-    
+    // 지점 선택 페이지로 이동
+    const targetRoute = '/customer/store';
     console.log('🎯 이동할 경로:', targetRoute);
     navigate(targetRoute);
   };

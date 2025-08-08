@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/common/authStore';
 import { useCartStore } from '../../stores/cartStore';
+import { supabase } from '../../lib/supabase/client';
 
 interface QuickCategory {
   id: string;
@@ -25,15 +26,91 @@ const CustomerHome: React.FC = () => {
   const { getItemCount } = useCartStore();
   const [selectedStore, setSelectedStore] = useState<any>(null);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+  const [quickCategories, setQuickCategories] = useState<QuickCategory[]>([]);
 
-  const quickCategories: QuickCategory[] = [
-    { id: '1', name: '음료', icon: '🥤', path: '/customer/products?category=beverages' },
-    { id: '2', name: '과자', icon: '🍪', path: '/customer/products?category=snacks' },
-    { id: '3', name: '라면', icon: '🍜', path: '/customer/products?category=instant' },
-    { id: '4', name: '유제품', icon: '🥛', path: '/customer/products?category=dairy' },
-    { id: '5', name: '아이스크림', icon: '🍦', path: '/customer/products?category=ice-cream' },
-    { id: '6', name: '생활용품', icon: '🧴', path: '/customer/products?category=daily' },
-  ];
+  const getCategoryIcon = (slug?: string, name?: string) => {
+    const key = (slug || name || '').toLowerCase();
+    const map: Record<string, string> = {
+      // 대분류
+      'beverages': '🥤',
+      'food': '🍱',
+      'snacks': '🍪',
+      'household': '🧴',
+      // 음료 하위
+      'carbonated-drinks': '🥤',
+      'coffee-tea': '☕',
+      'juice-sports-drinks': '🧃',
+      'milk-dairy': '🥛',
+      // 식품 하위
+      'instant-food': '🍜',
+      'frozen-food': '❄️',
+      'fresh-food': '🥗',
+      // 간식 하위
+      'cookies-snacks': '🍪',
+      'chocolate-candy': '🍫',
+      'nuts': '🥜',
+      // 생활용품 하위
+      'cleaning-supplies': '🧼',
+      'tissue-personal-care': '🧻',
+      'stationery-office': '✏️',
+    };
+    return map[key] || '📦';
+  };
+
+  const fetchQuickCategories = async (storeId?: string) => {
+    try {
+      // 제품 기준으로 실제 존재하는 카테고리만 추출
+      if (storeId) {
+        const { data, error } = await supabase
+          .from('products')
+          .select(`
+            category:categories(id, name, slug),
+            store_products!inner(store_id, is_available)
+          `)
+          .eq('store_products.store_id', storeId)
+          .eq('store_products.is_available', true)
+          .eq('is_active', true);
+        if (error) throw error;
+        const unique: Record<string, { id: string; name: string; slug: string }> = {};
+        (data || []).forEach((row: any) => {
+          if (row.category) {
+            unique[row.category.id] = row.category;
+          }
+        });
+        const items = Object.values(unique)
+          .slice(0, 6)
+          .map((c) => ({
+            id: c.id,
+            name: c.name,
+            icon: getCategoryIcon(c.slug, c.name),
+            path: `/customer/products?category=${c.slug}`,
+          }));
+        setQuickCategories(items);
+      } else {
+        const { data, error } = await supabase
+          .from('products')
+          .select(`category:categories(id, name, slug)`) 
+          .eq('is_active', true);
+        if (error) throw error;
+        const unique: Record<string, { id: string; name: string; slug: string }> = {};
+        (data || []).forEach((row: any) => {
+          if (row.category) unique[row.category.id] = row.category;
+        });
+        const items = Object.values(unique)
+          .slice(0, 6)
+          .map((c) => ({
+            id: c.id,
+            name: c.name,
+            icon: getCategoryIcon(c.slug, c.name),
+            path: `/customer/products?category=${c.slug}`,
+          }));
+        setQuickCategories(items);
+      }
+    } catch (err) {
+      console.error('빠른 카테고리 로딩 오류:', err);
+      setQuickCategories([]);
+    }
+  };
 
   const promoItems = [
     { id: '1', title: '2+1 할인 이벤트', subtitle: '음료수 전품목', discount: '33%' },
@@ -67,6 +144,14 @@ const CustomerHome: React.FC = () => {
         created_at: '2024-01-14'
       }
     ]);
+    // 빠른 카테고리 로딩 (선택된 지점 기준)
+    try {
+      const store = localStorage.getItem('selectedStore');
+      const parsed = store ? JSON.parse(store) : null;
+      fetchQuickCategories(parsed?.id);
+    } catch {
+      fetchQuickCategories();
+    }
   }, []);
 
   const getGreeting = () => {
