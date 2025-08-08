@@ -24,6 +24,8 @@ const StoreInventory: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [filterStock, setFilterStock] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'current' | 'all'>('current');
+  const [expiryFilter, setExpiryFilter] = useState<'all' | 'normal' | 'warning' | 'danger' | 'expired'>('all');
+  const [expiryByStoreProductId, setExpiryByStoreProductId] = useState<Record<string, { expiresAt: string | null; daysRemaining: number | null; status: 'normal' | 'warning' | 'danger' | 'expired' | null }>>({});
   const { user } = useAuthStore();
 
   // 실시간 구독 설정
@@ -110,6 +112,52 @@ const StoreInventory: React.FC = () => {
           };
         });
         setStoreProducts(transformedData);
+
+        // 유통기한 정보 조회: 각 store_product_id 별 가장 빠른 expires_at
+        const realIds = transformedData
+          .map((p) => p.id)
+          .filter((id) => typeof id === 'string' && !id.startsWith('temp_')) as string[];
+        if (realIds.length > 0) {
+          const { data: txRows, error: txError } = await supabase
+            .from('inventory_transactions')
+            .select('store_product_id, expires_at')
+            .in('store_product_id', realIds)
+            .not('expires_at', 'is', null);
+
+          if (txError) {
+            console.error('❌ 유통기한 조회 실패:', txError);
+          } else {
+            const earliestMap = new Map<string, string>();
+            for (const row of txRows || []) {
+              const spId = (row as any).store_product_id as string;
+              const expiresAt = (row as any).expires_at as string;
+              const prev = earliestMap.get(spId);
+              if (!prev || new Date(expiresAt) < new Date(prev)) {
+                earliestMap.set(spId, expiresAt);
+              }
+            }
+
+            const now = Date.now();
+            const mapObj: Record<string, { expiresAt: string | null; daysRemaining: number | null; status: 'normal' | 'warning' | 'danger' | 'expired' | null }> = {};
+            for (const spId of realIds) {
+              const exp = earliestMap.get(spId) || null;
+              if (exp) {
+                const diffDays = Math.ceil((new Date(exp).getTime() - now) / (1000 * 60 * 60 * 24));
+                let status: 'normal' | 'warning' | 'danger' | 'expired';
+                if (diffDays <= 0) status = 'expired';
+                else if (diffDays <= 3) status = 'danger';
+                else if (diffDays <= 7) status = 'warning';
+                else status = 'normal';
+                mapObj[spId] = { expiresAt: exp, daysRemaining: diffDays, status };
+              } else {
+                mapObj[spId] = { expiresAt: null, daysRemaining: null, status: null };
+              }
+            }
+            setExpiryByStoreProductId(mapObj);
+          }
+        } else {
+          setExpiryByStoreProductId({});
+        }
       }
     } catch (error) {
       console.error('❌ 데이터 조회 중 오류:', error);
@@ -131,6 +179,13 @@ const StoreInventory: React.FC = () => {
       if (filterStock === 'low' && product.stock_quantity <= product.safety_stock) return true;
       if (filterStock === 'out' && product.stock_quantity <= 0) return true;
       return false;
+    })
+    .filter((product) => {
+      if (expiryFilter === 'all') return true;
+      const info = expiryByStoreProductId[product.id];
+      const status = info?.status || null;
+      if (!status) return expiryFilter === 'normal';
+      return status === expiryFilter;
     });
 
   if (loading) {
@@ -173,6 +228,18 @@ const StoreInventory: React.FC = () => {
         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
           <h2 className="text-lg font-semibold text-gray-900">재고 현황</h2>
           <div className="flex space-x-2">
+            <select
+              value={expiryFilter}
+              onChange={(e) => setExpiryFilter(e.target.value as any)}
+              className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+              title="유통기한 상태 필터"
+            >
+              <option value="all">유통기한 전체</option>
+              <option value="warning">임박(≤7일)</option>
+              <option value="danger">위험(≤3일)</option>
+              <option value="expired">만료</option>
+              <option value="normal">정상</option>
+            </select>
             <button
               onClick={() => setViewMode('current')}
               className={`px-3 py-1 text-xs rounded ${
@@ -221,6 +288,12 @@ const StoreInventory: React.FC = () => {
                   최대재고
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  유통기한
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  유통기한 상태
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   상태
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -234,6 +307,16 @@ const StoreInventory: React.FC = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredProducts.map((product) => {
                 const stockStatus = getStockStatus(product.stock_quantity, product.safety_stock);
+                const expiryInfo = expiryByStoreProductId[product.id];
+                const daysRemaining = expiryInfo?.daysRemaining ?? null;
+                const expiryStatus = expiryInfo?.status ?? null;
+                const expiryColor = expiryStatus === 'expired'
+                  ? 'bg-gray-100 text-gray-800'
+                  : expiryStatus === 'danger'
+                    ? 'bg-red-100 text-red-800'
+                    : expiryStatus === 'warning'
+                      ? 'bg-orange-100 text-orange-800'
+                      : 'bg-green-100 text-green-800';
                 return (
                   <tr key={product.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -247,6 +330,14 @@ const StoreInventory: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{product.max_stock}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{daysRemaining === null ? '-' : `${daysRemaining}일`}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${expiryColor}`}>
+                        {expiryStatus === 'expired' ? '만료' : expiryStatus === 'danger' ? '위험' : expiryStatus === 'warning' ? '임박' : '정상'}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${stockStatus.color}`}>
