@@ -11,13 +11,15 @@ export interface CartItem {
 }
 
 // Coupon 인터페이스 정의 (데이터베이스 연동을 고려한 구조)
+// %%수정됨: Coupon 인터페이스에 user_coupon_id 추가
 export interface Coupon {
-  code: string;
-  discount: number; // 할인 금액 또는 비율 (예: 10000원 또는 0.1)
-  type: 'percentage' | 'fixed'; // 'percentage' (비율 할인) 또는 'fixed' (고정 금액 할인)
-  minAmount?: number; // 최소 주문 금액 (선택 사항)
-  name?: string; // 쿠폰 이름 (UI 표시용)
-  description?: string; // 쿠폰 설명 (UI 표시용)
+  code: string; // coupon_id
+  user_coupon_id: string; // user_coupons.id
+  discount: number; // 할인 금액 또는 비율
+  type: 'percentage' | 'fixed';
+  minAmount?: number;
+  name?: string;
+  description?: string;
 }
 
 interface CartStore {

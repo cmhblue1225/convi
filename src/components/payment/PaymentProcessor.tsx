@@ -131,6 +131,18 @@ const PaymentProcessor: React.FC<PaymentProcessorProps> = ({
     setShowTossWidget(true);
   };
 
+  const handleKakaoPayment = async () => {
+    setProcessingMessage('카카오페이 결제는 현재 준비 중입니다.');
+    // 실제 카카오페이 결제 로직 대신 임시 처리
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        alert('카카오페이 결제는 현재 준비 중입니다.');
+        onCancel(); // 결제 취소 또는 이전 단계로 돌아가기
+        resolve(null);
+      }, 1000);
+    });
+  };
+
   
 
   const handleOtherPayment = async () => {

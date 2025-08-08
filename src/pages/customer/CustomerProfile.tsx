@@ -3,6 +3,7 @@ import { useAuthStore } from '../../stores/common/authStore';
 import { supabase } from '../../lib/supabase/client';
 import type { Profile, Order, Notification } from '../../types/common';
 import PasswordChangeModal from '../../components/common/PasswordChangeModal';
+import DeliveryAddressModal from '../../components/customer/DeliveryAddressModal';
 import {
   UserIcon,
   CogIcon,
@@ -20,14 +21,14 @@ import {
   KeyIcon,
   StarIcon,
   TicketIcon,
-  ClockIcon,
   DocumentTextIcon,
   ChatBubbleLeftRightIcon,
   PencilIcon,
-  EyeIcon,
   CheckCircleIcon,
   XCircleIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  TrophyIcon as TrophyIconOutline,
+  ArchiveBoxIcon as ArchiveIcon
 } from '@heroicons/react/24/outline';
 
 interface ProfileSection {
@@ -40,6 +41,8 @@ interface ProfileSection {
 interface UserAddress {
   id: string;
   name: string;
+  recipient_name: string;
+  phone: string;
   address: string;
   detail_address?: string;
   postal_code?: string;
@@ -62,7 +65,10 @@ interface WishlistItem {
   product_name: string;
   product_image?: string;
   price: number;
+  original_price: number;
+  discount_rate: number;
   is_available: boolean;
+  stock_quantity: number;
   added_at: string;
 }
 
@@ -101,6 +107,8 @@ const CustomerProfile: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [editingAddress, setEditingAddress] = useState<UserAddress | undefined>();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -126,9 +134,15 @@ const CustomerProfile: React.FC = () => {
       description: '주문 내역, 결제 내역, 이용 통계'
     }] : []),
     ...(user?.role === 'customer' ? [{
+      id: 'events',
+      title: '이벤트',
+      icon: GiftIcon,
+      description: '이벤트 참여 및 당첨 내역'
+    }] : []),
+    ...(user?.role === 'customer' ? [{
       id: 'benefits',
       title: '맞춤형 혜택 및 쿠폰',
-      icon: GiftIcon,
+      icon: TicketIcon,
       description: '포인트 내역, 할인 쿠폰, 멤버십 혜택'
     }] : []),
     ...(user?.role === 'customer' ? [{
@@ -154,12 +168,6 @@ const CustomerProfile: React.FC = () => {
       title: '로그인 및 연결된 서비스',
       icon: LinkIcon,
       description: '간편 로그인, 결제수단'
-    },
-    {
-      id: 'privacy',
-      title: '개인정보 및 데이터 관리',
-      icon: ShieldCheckIcon,
-      description: '개인정보 설정, 접속 기록'
     }
   ];
 
@@ -247,25 +255,84 @@ const CustomerProfile: React.FC = () => {
         }
       }
 
-      // 목업 데이터 설정
-      setAddresses([
-        {
-          id: '1',
-          name: '집',
-          address: '서울시 강남구 테헤란로 123',
-          detail_address: '456호',
-          postal_code: '06234',
-          is_default: true
-        },
-        {
-          id: '2',
-          name: '회사',
-          address: '서울시 서초구 서초대로 789',
-          detail_address: '10층',
-          postal_code: '06789',
-          is_default: false
-        }
-      ]);
+      // 찜 목록 로드
+      console.log('찜 목록 로드 시작, user.id:', user.id);
+      const { data: wishlistData, error: wishlistError } = await supabase
+        .from('wishlists')
+        .select(`
+          id,
+          product_id,
+          created_at,
+          products:product_id (
+            id,
+            name,
+            image_urls,
+            is_active,
+            store_products!inner (
+              price,
+              discount_rate,
+              is_available,
+              stock_quantity
+            )
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (wishlistError) {
+        console.error('찜 목록 로드 실패:', wishlistError);
+        setWishlist([]);
+        return;
+      }
+
+      if (!wishlistData || wishlistData.length === 0) {
+        console.log('찜한 상품이 없습니다.');
+        setWishlist([]);
+        return;
+      }
+
+      try {
+        const formattedWishlist = wishlistData
+          .filter(item => item.products && item.products.store_products && item.products.store_products.length > 0)
+          .map(item => {
+            const product = item.products;
+            const storeProduct = product.store_products[0];
+            
+            return {
+              id: item.id,
+              product_id: product.id,
+              product_name: product.name,
+              product_image: product.image_urls?.[0],
+              price: storeProduct.price,
+              original_price: storeProduct.price,
+              discount_rate: storeProduct.discount_rate,
+              is_available: storeProduct.is_available && storeProduct.stock_quantity > 0,
+              stock_quantity: storeProduct.stock_quantity,
+              added_at: item.created_at
+            };
+          });
+
+        console.log('포맷된 찜 목록:', formattedWishlist);
+        setWishlist(formattedWishlist);
+      } catch (error) {
+        console.error('찜 목록 데이터 처리 중 오류:', error);
+        setWishlist([]);
+      }
+
+          // 배송지 목록 로드
+      const { data: addressesData, error: addressesError } = await supabase
+        .from('delivery_addresses')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('is_default', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      if (addressesError) {
+        console.error('배송지 목록 로드 실패:', addressesError);
+        setAddresses([]);
+      } else {
+        setAddresses(addressesData || []);
+      }
 
       setCoupons([
         {
@@ -285,18 +352,6 @@ const CustomerProfile: React.FC = () => {
           min_order_amount: 50000,
           expires_at: '2024-09-30',
           is_used: false
-        }
-      ]);
-
-      setWishlist([
-        {
-          id: '1',
-          product_id: 'p1',
-          product_name: '코카콜라 355ml',
-          product_image: '/images/products/coke.jpg',
-          price: 1500,
-          is_available: true,
-          added_at: '2024-08-01'
         }
       ]);
 
@@ -830,6 +885,25 @@ const CustomerProfile: React.FC = () => {
 
 
 
+  // 찜 삭제 함수
+  const removeFromWishlist = async (wishlistId: string) => {
+    try {
+      const { error } = await supabase
+        .from('wishlists')
+        .delete()
+        .eq('id', wishlistId);
+
+      if (error) throw error;
+
+      // 찜 목록 새로고침
+      loadUserData();
+      alert('찜 목록에서 삭제되었습니다.');
+    } catch (error) {
+      console.error('찜 삭제 실패:', error);
+      alert('찜 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
   const renderWishlist = () => (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow p-6">
@@ -840,34 +914,82 @@ const CustomerProfile: React.FC = () => {
         {wishlist.length > 0 ? (
           <div className="grid gap-4">
             {wishlist.map((item) => (
-              <div key={item.id} className="flex items-center space-x-4 p-4 border rounded-lg">
-                <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
+              <div key={item.id} className="flex items-center space-x-4 p-4 border rounded-lg hover:shadow-md transition-shadow">
+                <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
                   {item.product_image ? (
-                    <img src={item.product_image} alt={item.product_name} className="w-full h-full object-cover rounded-lg" />
+                    <img 
+                      src={item.product_image} 
+                      alt={item.product_name} 
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
-                    <span className="text-gray-400 text-xs">이미지</span>
+                    <div className="text-4xl text-gray-300">📦</div>
                   )}
                 </div>
-                <div className="flex-1">
-                  <h4 className="font-medium">{item.product_name}</h4>
-                  <p className="text-sm text-gray-500">
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-lg truncate">{item.product_name}</h4>
+                  <p className="text-sm text-gray-500 mb-1">
                     찜한 날짜: {new Date(item.added_at).toLocaleDateString()}
                   </p>
-                  <p className="font-semibold text-blue-600">{item.price.toLocaleString()}원</p>
+                  <div className="flex items-center space-x-2 mb-1">
+                    <span className={`text-sm px-2 py-1 rounded ${
+                      item.is_available 
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-red-100 text-red-700'
+                    }`}>
+                      {item.is_available 
+                        ? `재고 ${item.stock_quantity}개` 
+                        : '품절'}
+                    </span>
+                    {item.discount_rate > 0 && (
+                      <span className="text-sm px-2 py-1 rounded bg-red-100 text-red-700">
+                        {Math.round(item.discount_rate * 100)}% 할인
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-baseline space-x-2">
+                    <span className="font-semibold text-lg text-blue-600">
+                      {item.price.toLocaleString()}원
+                    </span>
+                    {item.discount_rate > 0 && (
+                      <span className="text-sm text-gray-500 line-through">
+                        {item.original_price.toLocaleString()}원
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex flex-col space-y-2">
-                  <button className="px-4 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600">
+                  <button
+                    className={`px-4 py-2 text-sm rounded transition-colors ${
+                      item.is_available
+                        ? 'bg-blue-500 text-white hover:bg-blue-600'
+                        : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    }`}
+                    disabled={!item.is_available}
+                  >
                     장바구니
                   </button>
-                  <button className="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300">
-                    삭제
+                  <button
+                    onClick={() => removeFromWishlist(item.id)}
+                    className="px-4 py-2 bg-red-100 text-red-600 text-sm rounded hover:bg-red-200 transition-colors"
+                  >
+                    찜 취소
                   </button>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-gray-500 text-center py-8">찜한 상품이 없습니다.</p>
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">💝</div>
+            <p className="text-gray-500 mb-4">찜한 상품이 없습니다.</p>
+            <button
+              onClick={() => window.location.href = '/customer/products'}
+              className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              상품 둘러보기
+            </button>
+          </div>
         )}
       </div>
 
@@ -890,6 +1012,84 @@ const CustomerProfile: React.FC = () => {
     </div>
   );
 
+  // 배송지 추가/수정
+  const handleAddressSubmit = async (address: UserAddress) => {
+    if (!user) return;
+
+    try {
+      if (!address.id) {
+        // 새 배송지 추가
+        const { data, error } = await supabase
+          .from('delivery_addresses')
+          .insert({
+            user_id: user.id,
+            name: address.name,
+            recipient_name: address.recipient_name,
+            phone: address.phone,
+            address: address.address,
+            detail_address: address.detail_address,
+            postal_code: address.postal_code,
+            is_default: address.is_default
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        if (data) {
+          setAddresses([...addresses, data]);
+        }
+      } else {
+        // 기존 배송지 수정
+        const { error } = await supabase
+          .from('delivery_addresses')
+          .update({
+            name: address.name,
+            recipient_name: address.recipient_name,
+            phone: address.phone,
+            address: address.address,
+            detail_address: address.detail_address,
+            postal_code: address.postal_code,
+            is_default: address.is_default
+          })
+          .eq('id', address.id);
+
+        if (error) throw error;
+        
+        // 로컬 상태 업데이트
+        const updatedAddresses = addresses.map(a => 
+          a.id === address.id ? { ...a, ...address } : a
+        );
+        setAddresses(updatedAddresses);
+      }
+
+      alert(address.id ? '배송지가 수정되었습니다.' : '새 배송지가 추가되었습니다.');
+    } catch (error) {
+      console.error('배송지 저장 중 오류:', error);
+      alert('배송지 저장에 실패했습니다.');
+    }
+  };
+
+  // 배송지 삭제
+  const handleAddressDelete = async (addressId: string) => {
+    if (!user || !window.confirm('이 배송지를 삭제하시겠습니까?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('delivery_addresses')
+        .delete()
+        .eq('id', addressId);
+
+      if (error) throw error;
+
+      // 로컬 상태 업데이트
+      setAddresses(addresses.filter(a => a.id !== addressId));
+      alert('배송지가 삭제되었습니다.');
+    } catch (error) {
+      console.error('배송지 삭제 중 오류:', error);
+      alert('배송지 삭제에 실패했습니다.');
+    }
+  };
+
   const renderDelivery = () => (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow p-6">
@@ -910,6 +1110,12 @@ const CustomerProfile: React.FC = () => {
                       </span>
                     )}
                   </div>
+                  <p className="text-sm font-medium text-gray-700 mb-1">
+                    수령인: {address.recipient_name}
+                  </p>
+                  <p className="text-sm text-gray-600 mb-1">
+                    연락처: {address.phone}
+                  </p>
                   <p className="text-sm text-gray-600">{address.address}</p>
                   {address.detail_address && (
                     <p className="text-sm text-gray-600">{address.detail_address}</p>
@@ -917,17 +1123,32 @@ const CustomerProfile: React.FC = () => {
                   <p className="text-sm text-gray-500">우편번호: {address.postal_code}</p>
                 </div>
                 <div className="flex space-x-2">
-                  <button className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300">
+                  <button 
+                    onClick={() => {
+                      setEditingAddress(address);
+                      setIsAddressModalOpen(true);
+                    }}
+                    className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300"
+                  >
                     수정
                   </button>
-                  <button className="px-3 py-1 bg-red-200 text-red-700 text-sm rounded hover:bg-red-300">
+                  <button 
+                    onClick={() => handleAddressDelete(address.id)}
+                    className="px-3 py-1 bg-red-200 text-red-700 text-sm rounded hover:bg-red-300"
+                  >
                     삭제
                   </button>
                 </div>
               </div>
             </div>
           ))}
-          <button className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400">
+          <button 
+            onClick={() => {
+              setEditingAddress(undefined);
+              setIsAddressModalOpen(true);
+            }}
+            className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400"
+          >
             + 새 배송지 추가
           </button>
         </div>
@@ -1119,91 +1340,136 @@ const CustomerProfile: React.FC = () => {
     </div>
   );
 
-  const renderPrivacy = () => (
+  const renderEvents = () => (
     <div className="space-y-6">
+      {/* 진행 중인 이벤트 */}
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center">
-          <ShieldCheckIcon className="w-5 h-5 mr-2" />
-          개인정보 설정
+          <GiftIcon className="w-5 h-5 mr-2" />
+          진행 중인 이벤트
         </h3>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">마케팅 정보 수신 동의</p>
-              <p className="text-sm text-gray-500">할인 쿠폰, 이벤트 정보를 받아보세요</p>
+        <div className="grid gap-4">
+          {/* 이벤트 카드 1 */}
+          <div className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+            <div className="relative">
+              <div className="aspect-video bg-gray-100 flex items-center justify-center">
+                <span className="text-4xl">🎉</span>
+              </div>
+              <span className="absolute top-2 right-2 px-2 py-1 bg-red-500 text-white text-xs rounded-full">
+                D-7
+              </span>
             </div>
-            <input type="checkbox" defaultChecked className="toggle" />
+            <div className="p-4">
+              <h4 className="font-medium text-lg mb-2">신규 회원 특별 이벤트</h4>
+              <p className="text-sm text-gray-600 mb-3">
+                신규 가입 후 첫 구매 시 2,000원 할인
+              </p>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500">2024.03.01 ~ 2024.03.31</span>
+                <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm">
+                  참여하기
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">개인정보 수집 및 이용 동의</p>
-              <p className="text-sm text-gray-500">서비스 이용을 위한 필수 동의</p>
+
+          {/* 이벤트 카드 2 */}
+          <div className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+            <div className="relative">
+              <div className="aspect-video bg-gray-100 flex items-center justify-center">
+                <span className="text-4xl">🎁</span>
+              </div>
+              <span className="absolute top-2 right-2 px-2 py-1 bg-green-500 text-white text-xs rounded-full">
+                진행중
+              </span>
             </div>
-            <input type="checkbox" defaultChecked disabled className="toggle" />
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">위치 정보 이용 동의</p>
-              <p className="text-sm text-gray-500">근처 매장 찾기 서비스</p>
+            <div className="p-4">
+              <h4 className="font-medium text-lg mb-2">봄맞이 포토 이벤트</h4>
+              <p className="text-sm text-gray-600 mb-3">
+                봄 시즌 상품과 함께 인증샷을 올려주세요
+              </p>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500">2024.03.15 ~ 2024.04.15</span>
+                <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm">
+                  참여하기
+                </button>
+              </div>
             </div>
-            <input type="checkbox" className="toggle" />
           </div>
         </div>
       </div>
 
+      {/* 참여 중인 이벤트 */}
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center">
-          <ClockIcon className="w-5 h-5 mr-2" />
-          최근 접속 기록
+          <StarIcon className="w-5 h-5 mr-2" />
+          참여 중인 이벤트
         </h3>
-        <div className="space-y-3">
-          <div className="flex justify-between items-center py-2 border-b">
-            <div>
-              <p className="text-sm font-medium">웹 브라우저</p>
-              <p className="text-xs text-gray-500">Chrome 127.0.0.0</p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm">2024-08-04 14:30</p>
-              <p className="text-xs text-gray-500">서울, 대한민국</p>
-            </div>
-          </div>
-          <div className="flex justify-between items-center py-2 border-b">
-            <div>
-              <p className="text-sm font-medium">모바일 앱</p>
-              <p className="text-xs text-gray-500">iOS 17.5</p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm">2024-08-03 09:15</p>
-              <p className="text-xs text-gray-500">서울, 대한민국</p>
+        <div className="space-y-4">
+          <div className="border rounded-lg p-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <h4 className="font-medium">봄맞이 포토 이벤트</h4>
+                <p className="text-sm text-gray-500 mt-1">참여일: 2024.03.20</p>
+                <p className="text-sm text-blue-600 mt-2">심사 진행 중</p>
+              </div>
+              <button className="text-sm text-blue-500 hover:underline">
+                상세보기
+              </button>
             </div>
           </div>
         </div>
       </div>
 
+      {/* 당첨 내역 */}
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center">
-          <EyeIcon className="w-5 h-5 mr-2" />
-          데이터 관리
+          <TrophyIconOutline className="w-5 h-5 mr-2" />
+          당첨 내역
         </h3>
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">내 데이터 다운로드</p>
-              <p className="text-sm text-gray-500">개인정보 및 활동 내역을 다운로드</p>
+          <div className="border rounded-lg p-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <h4 className="font-medium">2월 구매 감사 이벤트</h4>
+                <p className="text-sm text-gray-500 mt-1">당첨일: 2024.03.01</p>
+                <p className="text-sm text-green-600 mt-2">
+                  경품: 모바일 상품권 5,000원
+                </p>
+              </div>
+              <button className="text-sm text-blue-500 hover:underline">
+                상품 수령
+              </button>
             </div>
-            <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-              다운로드
-            </button>
           </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">계정 삭제</p>
-              <p className="text-sm text-gray-500">모든 데이터가 영구적으로 삭제됩니다</p>
+        </div>
+      </div>
+
+      {/* 종료된 이벤트 */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold mb-4 flex items-center">
+          <ArchiveIcon className="w-5 h-5 mr-2" />
+          종료된 이벤트
+        </h3>
+        <div className="space-y-4">
+          {[1, 2].map((_, index) => (
+            <div key={index} className="border rounded-lg p-4 opacity-75">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h4 className="font-medium">2월 구매 감사 이벤트</h4>
+                  <p className="text-sm text-gray-500 mt-1">
+                    기간: 2024.02.01 ~ 2024.02.29
+                  </p>
+                  <span className="inline-block mt-2 px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                    종료됨
+                  </span>
+                </div>
+                <button className="text-sm text-gray-500 hover:underline">
+                  결과보기
+                </button>
+              </div>
             </div>
-            <button className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
-              삭제 요청
-            </button>
-          </div>
+          ))}
         </div>
       </div>
     </div>
@@ -1218,7 +1484,7 @@ const CustomerProfile: React.FC = () => {
       case 'delivery': return user?.role === 'customer' ? renderDelivery() : renderBasicInfo();
       case 'notifications': return renderNotifications();
       case 'connections': return renderConnections();
-      case 'privacy': return renderPrivacy();
+      case 'events': return renderEvents();
       default: return renderBasicInfo();
     }
   };
@@ -1242,47 +1508,49 @@ const CustomerProfile: React.FC = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* 사이드바 */}
           <div className="lg:w-1/4">
-            <div className="bg-white rounded-lg shadow p-6 mb-6">
-              <div className="flex items-center mb-4">
-                <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-xl font-bold">
-                  {userProfile?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                </div>
-                <div className="ml-4">
-                  <h3 className="font-semibold">{userProfile?.full_name || '사용자'}</h3>
-                  <p className="text-sm text-gray-500">{user?.email}</p>
-                </div>
-              </div>
-              {user?.role === 'customer' && (
-                <div className="text-center">
-                  <div className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg p-3 text-white">
-                    <p className="text-sm opacity-90">멤버십 등급</p>
-                    <p className="font-bold">{loyaltyTier}</p>
+            <div className="sticky top-4">
+              <div className="bg-white rounded-lg shadow p-6 mb-6">
+                <div className="flex items-center mb-4">
+                  <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-xl font-bold">
+                    {userProfile?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                  </div>
+                  <div className="ml-4">
+                    <h3 className="font-semibold">{userProfile?.full_name || '사용자'}</h3>
+                    <p className="text-sm text-gray-500">{user?.email}</p>
                   </div>
                 </div>
-              )}
-            </div>
-
-            <nav className="bg-white rounded-lg shadow">
-              {profileSections.map((section) => {
-                const Icon = section.icon;
-                return (
-                  <button
-                    key={section.id}
-                    onClick={() => setActiveSection(section.id)}
-                    className={`w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${activeSection === section.id ? 'bg-blue-50 border-r-4 border-r-blue-500' : ''
-                      }`}
-                  >
-                    <div className="flex items-center">
-                      <Icon className="w-5 h-5 mr-3 text-gray-400" />
-                      <div>
-                        <p className="font-medium text-sm">{section.title}</p>
-                        <p className="text-xs text-gray-500">{section.description}</p>
-                      </div>
+                {user?.role === 'customer' && (
+                  <div className="text-center">
+                    <div className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg p-3 text-white">
+                      <p className="text-sm opacity-90">멤버십 등급</p>
+                      <p className="font-bold">{loyaltyTier}</p>
                     </div>
-                  </button>
-                );
-              })}
-            </nav>
+                  </div>
+                )}
+              </div>
+
+              <nav className="bg-white rounded-lg shadow">
+                {profileSections.map((section) => {
+                  const Icon = section.icon;
+                  return (
+                    <button
+                      key={section.id}
+                      onClick={() => setActiveSection(section.id)}
+                      className={`w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${activeSection === section.id ? 'bg-blue-50 border-r-4 border-r-blue-500' : ''
+                        }`}
+                    >
+                      <div className="flex items-center">
+                        <Icon className="w-5 h-5 mr-3 text-gray-400" />
+                        <div>
+                          <p className="font-medium text-sm">{section.title}</p>
+                          <p className="text-xs text-gray-500">{section.description}</p>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
           </div>
 
           {/* 메인 콘텐츠 */}
@@ -1300,6 +1568,13 @@ const CustomerProfile: React.FC = () => {
           // 비밀번호 변경 성공 시 추가 작업이 필요하면 여기에 작성
           console.log('비밀번호 변경 완료');
         }}
+      />
+
+      <DeliveryAddressModal
+        isOpen={isAddressModalOpen}
+        onClose={() => setIsAddressModalOpen(false)}
+        onSubmit={handleAddressSubmit}
+        editAddress={editingAddress}
       />
     </div>
   );
