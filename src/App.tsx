@@ -108,6 +108,7 @@ function App() {
               <Route path="products" element={<ProductCatalog />} />
               <Route path="checkout" element={<Checkout />} />
               <Route path="orders" element={<CustomerOrders />} />
+              <Route path="orders/:orderId" element={<OrderTracking />} />
               <Route path="orders/:orderId/tracking" element={<OrderTracking />} />
               <Route path="categories" element={<CustomerCategories />} />
               <Route path="profile" element={<CustomerProfile />} />

@@ -105,8 +105,18 @@ export interface UserProfile {
   user_id: string;
   first_name: string;
   last_name: string;
+  email?: string;
   phone?: string;
   avatar_url?: string;
+  birth_date?: string;
+  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
+  notification_settings?: {
+    email_notifications: boolean;
+    push_notifications: boolean;
+    order_updates: boolean;
+    promotions: boolean;
+    newsletter: boolean;
+  };
   created_at: string;
   updated_at: string;
 }

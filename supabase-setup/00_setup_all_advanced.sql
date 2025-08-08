@@ -1585,4 +1585,133 @@ SELECT
     action_timing as "실행시점"
 FROM information_schema.triggers 
 WHERE trigger_schema = 'public' 
-    AND trigger_name = 'trigger_prevent_duplicate_orders'; 
+    AND trigger_name = 'trigger_prevent_duplicate_orders';
+
+-- =====================================================
+-- 11. 프로필 테이블 개선 (CustomerProfile 페이지용)
+-- =====================================================
+
+-- 프로필 테이블에 추가 필드들
+ALTER TABLE profiles 
+ADD COLUMN IF NOT EXISTS first_name TEXT,
+ADD COLUMN IF NOT EXISTS last_name TEXT,
+ADD COLUMN IF NOT EXISTS email TEXT,
+ADD COLUMN IF NOT EXISTS birth_date DATE,
+ADD COLUMN IF NOT EXISTS gender TEXT,
+ADD COLUMN IF NOT EXISTS notification_settings JSONB DEFAULT '{
+  "email_notifications": true,
+  "push_notifications": true,
+  "order_updates": true,
+  "promotions": true,
+  "newsletter": false
+}'::jsonb;
+
+-- 기존 full_name 데이터를 first_name과 last_name으로 분리
+UPDATE profiles 
+SET 
+  first_name = CASE 
+    WHEN full_name LIKE '% %' THEN 
+      SPLIT_PART(full_name, ' ', 1)
+    ELSE 
+      full_name
+  END,
+  last_name = CASE 
+    WHEN full_name LIKE '% %' THEN 
+      SUBSTRING(full_name FROM POSITION(' ' IN full_name) + 1)
+    ELSE 
+      NULL
+  END
+WHERE (first_name IS NULL OR last_name IS NULL) AND full_name IS NOT NULL;
+
+-- first_name을 NOT NULL로 설정
+UPDATE profiles 
+SET first_name = full_name 
+WHERE first_name IS NULL AND full_name IS NOT NULL;
+
+-- 성별 제약조건 추가
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.check_constraints 
+        WHERE constraint_name = 'profiles_gender_check'
+    ) THEN
+        ALTER TABLE profiles 
+        ADD CONSTRAINT profiles_gender_check 
+        CHECK (gender IN ('male', 'female', 'other', 'prefer_not_to_say'));
+    END IF;
+END $$;
+
+-- 성별 기본값 설정
+UPDATE profiles 
+SET gender = 'prefer_not_to_say' 
+WHERE gender IS NULL;
+
+-- 기존 preferences에 알림 설정이 없다면 추가
+UPDATE profiles 
+SET notification_settings = COALESCE(
+  notification_settings,
+  '{
+    "email_notifications": true,
+    "push_notifications": true,
+    "order_updates": true,
+    "promotions": true,
+    "newsletter": false
+  }'::jsonb
+)
+WHERE notification_settings IS NULL;
+
+-- 프로필 통계 함수 생성
+CREATE OR REPLACE FUNCTION get_customer_stats(customer_id UUID)
+RETURNS TABLE(
+  total_orders BIGINT,
+  completed_orders BIGINT,
+  total_spent NUMERIC,
+  avg_order_value NUMERIC
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    COUNT(o.id)::BIGINT as total_orders,
+    COUNT(CASE WHEN o.status = 'completed' THEN 1 END)::BIGINT as completed_orders,
+    COALESCE(SUM(o.total_amount), 0) as total_spent,
+    COALESCE(AVG(o.total_amount), 0) as avg_order_value
+  FROM orders o
+  WHERE o.customer_id = get_customer_stats.customer_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 프로필 조회 뷰 생성
+CREATE OR REPLACE VIEW customer_profiles AS
+SELECT 
+  id,
+  role,
+  full_name,
+  first_name,
+  last_name,
+  email,
+  phone,
+  avatar_url,
+  address,
+  birth_date,
+  gender,
+  preferences,
+  notification_settings,
+  is_active,
+  created_at,
+  updated_at
+FROM profiles
+WHERE role = 'customer';
+
+-- 프로필 관련 인덱스 생성
+CREATE INDEX IF NOT EXISTS idx_profiles_email ON profiles(email);
+CREATE INDEX IF NOT EXISTS idx_profiles_phone ON profiles(phone);
+CREATE INDEX IF NOT EXISTS idx_profiles_created_at ON profiles(created_at);
+
+-- 프로필 RLS 정책 업데이트
+DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
+CREATE POLICY "Users can view own profile" ON profiles
+  FOR SELECT USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
+CREATE POLICY "Users can update own profile" ON profiles
+  FOR UPDATE USING (auth.uid() = id); 

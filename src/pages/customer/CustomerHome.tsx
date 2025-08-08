@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/common/authStore';
 import { useCartStore } from '../../stores/cartStore';
+import { useOrderStore } from '../../stores/orderStore';
 import { supabase } from '../../lib/supabase/client';
 
 interface QuickCategory {
@@ -24,9 +25,11 @@ const CustomerHome: React.FC = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuthStore();
   const { getItemCount } = useCartStore();
+  const { fetchOrders } = useOrderStore();
   const [selectedStore, setSelectedStore] = useState<any>(null);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [quickCategories, setQuickCategories] = useState<QuickCategory[]>([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
 
   const getCategoryIcon = (slug?: string, name?: string) => {
     const key = (slug || name || '').toLowerCase();
@@ -112,6 +115,49 @@ const CustomerHome: React.FC = () => {
     }
   };
 
+  const fetchRecentOrders = async () => {
+    if (!user) return;
+    
+    setIsLoadingOrders(true);
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          id,
+          order_number,
+          store_id,
+          stores(name),
+          total_amount,
+          status,
+          created_at,
+          order_items(id)
+        `)
+        .eq('customer_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      if (error) {
+        console.error('최근 주문 조회 실패:', error);
+        return;
+      }
+
+      const orders: RecentOrder[] = (data || []).map(order => ({
+        id: order.id,
+        store_name: order.stores?.name || '알 수 없는 지점',
+        items_count: order.order_items?.length || 0,
+        total_amount: typeof order.total_amount === 'string' ? parseFloat(order.total_amount) : order.total_amount,
+        status: order.status,
+        created_at: order.created_at || new Date().toISOString()
+      }));
+
+      setRecentOrders(orders);
+    } catch (err) {
+      console.error('최근 주문 로딩 오류:', err);
+    } finally {
+      setIsLoadingOrders(false);
+    }
+  };
+
   const promoItems = [
     { id: '1', title: '2+1 할인 이벤트', subtitle: '음료수 전품목', discount: '33%' },
     { id: '2', title: '신상품 출시', subtitle: '프리미엄 도시락', discount: '신상' },
@@ -125,25 +171,9 @@ const CustomerHome: React.FC = () => {
       setSelectedStore(JSON.parse(storeData));
     }
 
-    // 최근 주문 내역 설정 (임시 데이터)
-    setRecentOrders([
-      {
-        id: '1',
-        store_name: 'GS25 강남역점',
-        items_count: 3,
-        total_amount: 8500,
-        status: 'completed',
-        created_at: '2024-01-15'
-      },
-      {
-        id: '2', 
-        store_name: 'GS25 홍대입구점',
-        items_count: 2,
-        total_amount: 5200,
-        status: 'completed',
-        created_at: '2024-01-14'
-      }
-    ]);
+    // 최근 주문 내역 로드
+    fetchRecentOrders();
+    
     // 빠른 카테고리 로딩 (선택된 지점 기준)
     try {
       const store = localStorage.getItem('selectedStore');
@@ -152,7 +182,7 @@ const CustomerHome: React.FC = () => {
     } catch {
       fetchQuickCategories();
     }
-  }, []);
+  }, [user]);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -180,6 +210,10 @@ const CustomerHome: React.FC = () => {
     navigate(`/customer/orders/${orderId}`);
   };
 
+  const handleViewAllOrders = () => {
+    navigate('/customer/orders');
+  };
+
   const getStatusText = (status: string) => {
     const statusMap = {
       'pending': '주문 접수',
@@ -190,6 +224,21 @@ const CustomerHome: React.FC = () => {
       'cancelled': '취소됨'
     };
     return statusMap[status as keyof typeof statusMap] || status;
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) {
+      return '어제';
+    } else if (diffDays === 0) {
+      return '오늘';
+    } else {
+      return `${diffDays}일 전`;
+    }
   };
 
   return (
@@ -314,17 +363,23 @@ const CustomerHome: React.FC = () => {
         </div>
 
         {/* 최근 주문 내역 */}
-        {recentOrders.length > 0 && (
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-gray-900">최근 주문</h2>
-              <button 
-                onClick={() => navigate('/customer/orders')}
-                className="text-sm text-blue-600 hover:text-blue-700"
-              >
-                전체보기
-              </button>
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-gray-900">최근 주문</h2>
+            <button 
+              onClick={handleViewAllOrders}
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              전체보기
+            </button>
+          </div>
+          
+          {isLoadingOrders ? (
+            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+              <p className="text-gray-500 text-sm">주문 내역을 불러오는 중...</p>
             </div>
+          ) : recentOrders.length > 0 ? (
             <div className="space-y-3">
               {recentOrders.slice(0, 2).map((order) => (
                 <button
@@ -343,12 +398,27 @@ const CustomerHome: React.FC = () => {
                       {getStatusText(order.status)}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-400">{order.created_at}</p>
+                  <p className="text-xs text-gray-400">{formatDate(order.created_at)}</p>
                 </button>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 text-center">
+              <div className="text-gray-400 mb-2">
+                <svg className="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </div>
+              <p className="text-gray-500 text-sm mb-3">아직 주문 내역이 없습니다.</p>
+              <button
+                onClick={() => navigate('/customer/products')}
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 text-sm"
+              >
+                첫 주문하기
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* 고객 지원 */}
         <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-6">
