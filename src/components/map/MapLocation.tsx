@@ -22,9 +22,9 @@ interface GSStore {
 
 const Location: React.FC<LocationProps> = ({ width = '80%', height = '600px' }) => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const [map, setMap] = useState<any>(null);
+  const [, setMap] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
 
   const mockGSStores: GSStore[] = [
     { id: '1', name: 'GS25 강남역점', lat: 37.4979, lng: 127.0276, address: '서울시 강남구 강남대로 지하396' },
@@ -101,7 +101,7 @@ const Location: React.FC<LocationProps> = ({ width = '80%', height = '600px' }) 
 
             setUserLocation({ lat, lng });
 
-            const userMarker = new window.naver.maps.Marker({
+            new window.naver.maps.Marker({
               position: userPosition,
               map: naverMap
             });

@@ -1,60 +1,67 @@
 import type { Database } from '../lib/supabase/types';
 
+// 헬퍼 타입 정의
+type PublicTableName = keyof Database['public']['Tables'];
+
+type TableRow<T extends PublicTableName> = Database['public']['Tables'][T]['Row'];
+type TableInsert<T extends PublicTableName> = Database['public']['Tables'][T]['Insert'];
+type TableUpdate<T extends PublicTableName> = Database['public']['Tables'][T]['Update'];
+
 // 데이터베이스 테이블 타입들
-export type Profile = Database['public']['Tables']['profiles']['Row'];
-export type ProfileInsert = Database['public']['Tables']['profiles']['Insert'];
-export type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
+export type Profile = TableRow<'profiles'>;
+export type ProfileInsert = TableInsert<'profiles'>;
+export type ProfileUpdate = TableUpdate<'profiles'>;
 
-export type Store = Database['public']['Tables']['stores']['Row'];
-export type StoreInsert = Database['public']['Tables']['stores']['Insert'];
-export type StoreUpdate = Database['public']['Tables']['stores']['Update'];
+export type Store = TableRow<'stores'>;
+export type StoreInsert = TableInsert<'stores'>;
+export type StoreUpdate = TableUpdate<'stores'>;
 
-export type Product = Database['public']['Tables']['products']['Row'];
-export type ProductInsert = Database['public']['Tables']['products']['Insert'];
-export type ProductUpdate = Database['public']['Tables']['products']['Update'];
+export type Product = TableRow<'products'>;
+export type ProductInsert = TableInsert<'products'>;
+export type ProductUpdate = TableUpdate<'products'>;
 
-export type Category = Database['public']['Tables']['categories']['Row'];
-export type CategoryInsert = Database['public']['Tables']['categories']['Insert'];
-export type CategoryUpdate = Database['public']['Tables']['categories']['Update'];
+export type Category = TableRow<'categories'>;
+export type CategoryInsert = TableInsert<'categories'>;
+export type CategoryUpdate = TableUpdate<'categories'>;
 
-export type StoreProduct = Database['public']['Tables']['store_products']['Row'];
-export type StoreProductInsert = Database['public']['Tables']['store_products']['Insert'];
-export type StoreProductUpdate = Database['public']['Tables']['store_products']['Update'];
+export type StoreProduct = TableRow<'store_products'>;
+export type StoreProductInsert = TableInsert<'store_products'>;
+export type StoreProductUpdate = TableUpdate<'store_products'>;
 
-export type Order = Database['public']['Tables']['orders']['Row'];
-export type OrderInsert = Database['public']['Tables']['orders']['Insert'];
-export type OrderUpdate = Database['public']['Tables']['orders']['Update'];
+export type Order = TableRow<'orders'>;
+export type OrderInsert = TableInsert<'orders'>;
+export type OrderUpdate = TableUpdate<'orders'>;
 
-export type OrderItem = Database['public']['Tables']['order_items']['Row'];
-export type OrderItemInsert = Database['public']['Tables']['order_items']['Insert'];
-export type OrderItemUpdate = Database['public']['Tables']['order_items']['Update'];
+export type OrderItem = TableRow<'order_items'>;
+export type OrderItemInsert = TableInsert<'order_items'>;
+export type OrderItemUpdate = TableUpdate<'order_items'>;
 
-export type OrderStatusHistory = Database['public']['Tables']['order_status_history']['Row'];
+export type OrderStatusHistory = TableRow<'order_status_history'>;
 
-export type SupplyRequest = Database['public']['Tables']['supply_requests']['Row'];
-export type SupplyRequestInsert = Database['public']['Tables']['supply_requests']['Insert'];
-export type SupplyRequestUpdate = Database['public']['Tables']['supply_requests']['Update'];
+export type SupplyRequest = TableRow<'supply_requests'>;
+export type SupplyRequestInsert = TableInsert<'supply_requests'>;
+export type SupplyRequestUpdate = TableUpdate<'supply_requests'>;
 
-export type SupplyRequestItem = Database['public']['Tables']['supply_request_items']['Row'];
-export type SupplyRequestItemInsert = Database['public']['Tables']['supply_request_items']['Insert'];
-export type SupplyRequestItemUpdate = Database['public']['Tables']['supply_request_items']['Update'];
+export type SupplyRequestItem = TableRow<'supply_request_items'>;
+export type SupplyRequestItemInsert = TableInsert<'supply_request_items'>;
+export type SupplyRequestItemUpdate = TableUpdate<'supply_request_items'>;
 
-export type Shipment = Database['public']['Tables']['shipments']['Row'];
-export type ShipmentInsert = Database['public']['Tables']['shipments']['Insert'];
-export type ShipmentUpdate = Database['public']['Tables']['shipments']['Update'];
+export type Shipment = TableRow<'shipments'>;
+export type ShipmentInsert = TableInsert<'shipments'>;
+export type ShipmentUpdate = TableUpdate<'shipments'>;
 
-export type InventoryTransaction = Database['public']['Tables']['inventory_transactions']['Row'];
-export type InventoryTransactionInsert = Database['public']['Tables']['inventory_transactions']['Insert'];
-export type InventoryTransactionUpdate = Database['public']['Tables']['inventory_transactions']['Update'];
+export type InventoryTransaction = TableRow<'inventory_transactions'>;
+export type InventoryTransactionInsert = TableInsert<'inventory_transactions'>;
+export type InventoryTransactionUpdate = TableUpdate<'inventory_transactions'>;
 
-export type Notification = Database['public']['Tables']['notifications']['Row'];
-export type NotificationInsert = Database['public']['Tables']['notifications']['Insert'];
-export type NotificationUpdate = Database['public']['Tables']['notifications']['Update'];
+export type Notification = TableRow<'notifications'>;
+export type NotificationInsert = TableInsert<'notifications'>;
+export type NotificationUpdate = TableUpdate<'notifications'>;
 
-export type DailySalesSummary = Database['public']['Tables']['daily_sales_summary']['Row'];
-export type ProductSalesSummary = Database['public']['Tables']['product_sales_summary']['Row'];
+export type DailySalesSummary = TableRow<'daily_sales_summary'>;
+export type ProductSalesSummary = TableRow<'product_sales_summary'>;
 
-export type SystemSetting = Database['public']['Tables']['system_settings']['Row'];
+export type SystemSetting = TableRow<'system_settings'>;
 
 // 사용자 역할 타입
 export type UserRole = 'customer' | 'store_owner' | 'hq_admin' | 'headquarters';
@@ -275,5 +282,5 @@ export interface ToastMessage {
   };
 }
 
-// 기존 호환성을 위한 re-export
-export { User, UserProfile, UserRole, UserStatus };
+// 기존 호환성을 위한 re-export (이미 위에서 정의되어 있음)
+// export type { User, UserProfile, UserRole, UserStatus };

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { requestCardPayment, requestEasyPayment, requestTossPayment } from '../../lib/payment/tossPayments';
-import { initKakaoPaySDK, initiateKakaoPayPayment } from '../../lib/payment/kakaoPay';
+// import { requestCardPayment, requestEasyPayment, requestTossPayment } from '../../lib/payment/tossPayments';
+// import { initKakaoPaySDK, initiateKakaoPayPayment } from '../../lib/payment/kakaoPay';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import TossPaymentWindow from './TossPaymentWidget';
 
@@ -8,7 +8,7 @@ import TossPaymentWindow from './TossPaymentWidget';
 type PaymentMethod = 'card' | 'cash' | 'mobile' | 'toss' | 'kakao' | 'naver' | 'payco';
 
 // 토스페이먼츠 결제 정보 타입 정의 (로컬에서 정의)
-interface PaymentInfo {
+/* interface PaymentInfo {
   orderId: string;
   orderName: string;
   amount: number;
@@ -27,7 +27,7 @@ interface KakaoPaymentInfo {
   customerName?: string;
   customerEmail?: string;
   customerPhone?: string;
-}
+} */
 
 interface PaymentProcessorProps {
   paymentMethod: PaymentMethod;
@@ -122,6 +122,7 @@ const PaymentProcessor: React.FC<PaymentProcessorProps> = ({
         
         console.log('✅ 카드 결제 시뮬레이션 성공:', result);
         onPaymentSuccess(result);
+        resolve(result);
       }, 3000);
     });
   };
@@ -129,6 +130,18 @@ const PaymentProcessor: React.FC<PaymentProcessorProps> = ({
   const handleTossPayment = async () => {
     // 토스페이 결제창 표시
     setShowTossWidget(true);
+  };
+
+  const handleKakaoPayment = async () => {
+    setProcessingMessage('카카오페이 결제는 현재 준비 중입니다.');
+    // 실제 카카오페이 결제 로직 대신 임시 처리
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        alert('카카오페이 결제는 현재 준비 중입니다.');
+        onCancel(); // 결제 취소 또는 이전 단계로 돌아가기
+        resolve(null);
+      }, 1000);
+    });
   };
 
   
@@ -158,6 +171,7 @@ const PaymentProcessor: React.FC<PaymentProcessorProps> = ({
         
         console.log(`✅ ${getPaymentMethodName(paymentMethod)} 결제 시뮬레이션 성공:`, result);
         onPaymentSuccess(result);
+        resolve(result);
       }, 3000);
     });
   };
@@ -187,6 +201,7 @@ const PaymentProcessor: React.FC<PaymentProcessorProps> = ({
         
         console.log('✅ 휴대폰 결제 시뮬레이션 성공:', result);
         onPaymentSuccess(result);
+        resolve(result);
       }, 3000);
     });
   };
@@ -216,6 +231,7 @@ const PaymentProcessor: React.FC<PaymentProcessorProps> = ({
         
         console.log('✅ 현금 결제 시뮬레이션 성공:', result);
         onPaymentSuccess(result);
+        resolve(result);
       }, 2000);
     });
   };

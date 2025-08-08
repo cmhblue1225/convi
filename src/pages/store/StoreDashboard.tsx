@@ -181,7 +181,7 @@ const StoreDashboard: React.FC = () => {
     // 기본 통계 데이터 설정 (데이터가 없어도 기본값으로 설정)
     const today = new Date().toDateString();
     const todayOrders = orders.filter(order => 
-      new Date(order.createdAt).toDateString() === today
+      order.createdAt && new Date(order.createdAt).toDateString() === today
     );
     
     const todaySales = todayOrders.reduce((sum, order) => sum + order.totalAmount, 0);
@@ -204,9 +204,10 @@ const StoreDashboard: React.FC = () => {
     lastWeekStart.setDate(thisWeekStart.getDate() - 7);
 
     const thisWeekOrders = orders.filter(order => 
-      new Date(order.createdAt) >= thisWeekStart
+      order.createdAt && new Date(order.createdAt) >= thisWeekStart
     );
     const lastWeekOrders = orders.filter(order => {
+      if (!order.createdAt) return false;
       const orderDate = new Date(order.createdAt);
       return orderDate >= lastWeekStart && orderDate < thisWeekStart;
     });
@@ -223,9 +224,10 @@ const StoreDashboard: React.FC = () => {
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
     const thisMonthOrders = orders.filter(order => 
-      new Date(order.createdAt) >= thisMonthStart
+      order.createdAt && new Date(order.createdAt) >= thisMonthStart
     );
     const lastMonthOrders = orders.filter(order => {
+      if (!order.createdAt) return false;
       const orderDate = new Date(order.createdAt);
       return orderDate >= lastMonthStart && orderDate < thisMonthStart;
     });
@@ -255,7 +257,7 @@ const StoreDashboard: React.FC = () => {
       const dateStr = date.toDateString();
       
       const dayOrders = orders.filter(order => 
-        new Date(order.createdAt).toDateString() === dateStr
+        order.createdAt && new Date(order.createdAt).toDateString() === dateStr
       );
       
       return {
@@ -466,7 +468,7 @@ const StoreDashboard: React.FC = () => {
                         {order.orderNumber}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {new Date(order.createdAt).toLocaleString('ko-KR')}
+                        {order.createdAt ? new Date(order.createdAt).toLocaleString('ko-KR') : '알 수 없음'}
                       </p>
                     </div>
                     {getStatusBadge(order.status)}

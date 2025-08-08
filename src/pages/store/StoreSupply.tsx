@@ -94,7 +94,7 @@ const StoreSupply: React.FC = () => {
       const { data: storeData, error: storeError } = await supabase
         .from('stores')
         .select('id')
-        .eq('owner_id', user?.id)
+        .eq('owner_id', user?.id!)
         .single();
 
       if (storeError || !storeData) {
@@ -170,7 +170,7 @@ const StoreSupply: React.FC = () => {
       if (requestsError) {
         console.error('❌ 물류 요청 조회 실패:', requestsError);
       } else {
-        setSupplyRequests(requestsData || []);
+        setSupplyRequests((requestsData || []) as SupplyRequest[]);
       }
     } catch (error) {
       console.error('❌ 데이터 조회 중 오류:', error);
@@ -196,7 +196,7 @@ const StoreSupply: React.FC = () => {
       const { data: storeData, error: storeError } = await supabase
         .from('stores')
         .select('id, name')
-        .eq('owner_id', user?.id)
+        .eq('owner_id', user?.id!)
         .single();
 
       if (storeError || !storeData) {

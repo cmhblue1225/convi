@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase/client';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
-import { useAuthStore } from '../../stores/common/authStore';
+// import { useAuthStore } from '../../stores/common/authStore';
 
 interface Category {
   id: string;
@@ -69,7 +69,7 @@ const HQProducts: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const { user } = useAuthStore();
+  // const { user } = useAuthStore();
 
   // 실시간 구독 설정
   useEffect(() => {
@@ -153,7 +153,7 @@ const HQProducts: React.FC = () => {
         return;
       }
 
-      setProducts(productsData || [] as any);
+      setProducts((productsData || []) as Product[]);
     } catch (error) {
       console.error('❌ 데이터 조회 중 오류:', error);
     } finally {
@@ -584,7 +584,7 @@ const HQProducts: React.FC = () => {
                     <input
                       type="text"
                       name="barcode"
-                      defaultValue={editingProduct?.barcode}
+                      defaultValue={editingProduct?.barcode || ''}
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                     />
                   </div>
@@ -592,7 +592,7 @@ const HQProducts: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700">카테고리</label>
                     <select
                       name="category_id"
-                      defaultValue={editingProduct?.category_id}
+                      defaultValue={editingProduct?.category_id || ''}
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                     >
                       <option value="">카테고리 선택</option>
@@ -608,7 +608,7 @@ const HQProducts: React.FC = () => {
                     <input
                       type="text"
                       name="brand"
-                      defaultValue={editingProduct?.brand}
+                      defaultValue={editingProduct?.brand || ''}
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                     />
                   </div>
@@ -617,7 +617,7 @@ const HQProducts: React.FC = () => {
                     <input
                       type="text"
                       name="manufacturer"
-                      defaultValue={editingProduct?.manufacturer}
+                      defaultValue={editingProduct?.manufacturer || ''}
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                     />
                   </div>
@@ -648,7 +648,7 @@ const HQProducts: React.FC = () => {
                     <input
                       type="number"
                       name="cost_price"
-                      defaultValue={editingProduct?.cost_price}
+                      defaultValue={editingProduct?.cost_price || 0}
                       min="0"
                       step="0.01"
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
@@ -682,7 +682,7 @@ const HQProducts: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700">설명</label>
                     <textarea
                       name="description"
-                      defaultValue={editingProduct?.description}
+                      defaultValue={editingProduct?.description || ''}
                       rows={3}
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                     />

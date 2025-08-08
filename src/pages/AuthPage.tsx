@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '../components/common/Button';
 import { useAuthStore } from '../stores/common/authStore';
-import type { UserRole } from '../types/common';
+// import type { UserRole } from '../types/common';
 
 // 로그인 스키마
 const loginSchema = z.object({
@@ -48,10 +48,10 @@ const AuthPage: React.FC = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
+  // const location = useLocation();
   const { signIn, signUp, isLoading, isAuthenticated, user } = useAuthStore();
 
-  const from = location.state?.from?.pathname || '/';
+  // const from = location.state?.from?.pathname || '/';
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useOrderStore } from '../../stores/orderStore';
 
 const StoreOrders: React.FC = () => {
-  const { orders, isLoading, fetchOrders, subscribeToOrders, unsubscribeFromOrders, updateOrderStatus } = useOrderStore();
+  const { orders, fetchOrders, subscribeToOrders, unsubscribeFromOrders, updateOrderStatus } = useOrderStore();
 
   useEffect(() => {
     // 컴포넌트 마운트 시 주문 목록 조회 및 실시간 구독
@@ -36,7 +36,11 @@ const StoreOrders: React.FC = () => {
     }
     
     // 최신 주문부터 표시
-    setFilteredOrders(filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    setFilteredOrders(filtered.sort((a, b) => {
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime;
+    }));
   }, [orders, selectedTab]);
 
   const getStatusInfo = (status: string) => {
@@ -200,7 +204,7 @@ const StoreOrders: React.FC = () => {
                           )}
                         </div>
                         <div className="text-sm text-gray-600">
-                          <div>주문시간: {new Date(order.createdAt).toLocaleString('ko-KR')}</div>
+                          <div>주문시간: {order.createdAt ? new Date(order.createdAt).toLocaleString('ko-KR') : '알 수 없음'}</div>
                           {order.deliveryAddress && (
                             <div className="mt-1">
                               배송지: {order.deliveryAddress.address} {order.deliveryAddress.detailAddress}

@@ -25,3 +25,6 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Debugging and temporary files
+debug-research.txt

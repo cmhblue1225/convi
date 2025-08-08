@@ -36,7 +36,7 @@ const ProductCatalog: React.FC = () => {
     
     // URL 파라미터에서 카테고리 정보 읽기
     const categorySlug = searchParams.get('category');
-    const categoryName = location.state?.categoryName;
+    // const categoryName = location.state?.categoryName;
     
     fetchCategories().then(() => {
       // 카테고리 데이터 로드 후 URL 파라미터 처리
@@ -308,9 +308,10 @@ const ProductCatalog: React.FC = () => {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredProducts.map((product) => {
               const storeProduct = product.store_products[0];
-              const hasDiscount = storeProduct.discount_rate > 0;
-              const discountedPrice = hasDiscount
-                ? storeProduct.price * (1 - storeProduct.discount_rate)
+                            const discountRate = storeProduct.discount_rate || 0;
+              const hasDiscount = discountRate > 0;
+              const discountedPrice = hasDiscount 
+                ? storeProduct.price * (1 - discountRate)
                 : storeProduct.price;
               
               // 장바구니에 담긴 수량 계산
@@ -319,7 +320,8 @@ const ProductCatalog: React.FC = () => {
               
               // 실시간 재고 계산 (원래 재고 - 장바구니 수량)
               const realTimeStock = storeProduct.stock_quantity - cartQuantity;
-              const isLowStock = realTimeStock <= storeProduct.safety_stock;
+              const safetyStock = storeProduct.safety_stock || 0;
+              const isLowStock = realTimeStock <= safetyStock;
               const isOutOfStock = realTimeStock <= 0;
 
               return (
@@ -330,7 +332,7 @@ const ProductCatalog: React.FC = () => {
                   {/* 프로모션 배지 */}
                   {hasDiscount && (
                     <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">
-                      {Math.round(storeProduct.discount_rate * 100)}% OFF
+                      {Math.round(discountRate * 100)}% OFF
                     </div>
                   )}
                   

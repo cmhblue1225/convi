@@ -159,7 +159,7 @@ export const requestCardPayment = async (paymentInfo: TossPaymentInfo): Promise<
 };
 
 // 토스페이먼츠 간편결제 요청 (기존 인터페이스 호환성)
-export const requestEasyPayment = async (paymentInfo: TossPaymentInfo, method: string = '토스페이'): Promise<TossPaymentResult> => {
+export const requestEasyPayment = async (paymentInfo: TossPaymentInfo, _method: string = '토스페이'): Promise<TossPaymentResult> => {
   return requestTossPayment(paymentInfo);
 };
 

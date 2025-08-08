@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '../../stores/cartStore';
 
@@ -100,10 +100,11 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
             ) : (
               <div className="space-y-4">
                 {items.map((item) => {
-                  const hasDiscount = item.storeProduct.discount_rate > 0;
+                  const discountRate = item.storeProduct.discount_rate || 0;
+                  const hasDiscount = discountRate > 0;
                   const originalPrice = item.storeProduct.price;
                   const discountedPrice = hasDiscount 
-                    ? originalPrice * (1 - item.storeProduct.discount_rate)
+                    ? originalPrice * (1 - discountRate)
                     : originalPrice;
 
                   return (

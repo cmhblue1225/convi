@@ -1,11 +1,11 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button } from '../components/common/Button';
 import { useAuthStore } from '../stores/common/authStore';
 
 const LandingPage: React.FC = () => {
   const { isAuthenticated, user, profile, signOut } = useAuthStore();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   const handleSignOut = async () => {
     try {

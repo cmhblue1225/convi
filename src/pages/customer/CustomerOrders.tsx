@@ -89,7 +89,8 @@ const CustomerOrders: React.FC = () => {
         {/* 주문 목록 */}
         {isLoading ? (
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-            <LoadingSpinner size="lg" text="주문 내역을 불러오는 중..." />
+            <LoadingSpinner size="lg" />
+            <p className="text-gray-600 mt-4">주문 내역을 불러오는 중...</p>
           </div>
         ) : orders.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
@@ -120,7 +121,7 @@ const CustomerOrders: React.FC = () => {
                     </div>
                     <div className="text-gray-600 text-sm">
                       <div>{order.storeName} • {order.orderType === 'pickup' ? '픽업' : '배송'}</div>
-                      <div>주문일시: {new Date(order.createdAt).toLocaleString()}</div>
+                      <div>주문일시: {order.createdAt ? new Date(order.createdAt).toLocaleString() : '알 수 없음'}</div>
                       {order.completedAt && (
                         <div>완료일시: {new Date(order.completedAt).toLocaleString()}</div>
                       )}

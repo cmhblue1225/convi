@@ -21,7 +21,7 @@ interface RecentOrder {
 
 const CustomerHome: React.FC = () => {
   const navigate = useNavigate();
-  const { user, profile } = useAuthStore();
+  const { profile } = useAuthStore();
   const { getItemCount } = useCartStore();
   const [selectedStore, setSelectedStore] = useState<any>(null);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);

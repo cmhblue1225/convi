@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase/client';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
-import { useAuthStore } from '../../stores/common/authStore';
+// import { useAuthStore } from '../../stores/common/authStore';
 
 interface Store {
   id: string;
@@ -28,7 +28,7 @@ const HQStores: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [storeToDelete, setStoreToDelete] = useState<Store | null>(null);
-  const { user } = useAuthStore();
+  // const { user } = useAuthStore();
 
   // 실시간 구독 설정
   useEffect(() => {

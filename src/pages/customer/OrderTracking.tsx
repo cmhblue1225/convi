@@ -40,7 +40,7 @@ const OrderTracking: React.FC = () => {
 
   // 주문 상태는 점주가 관리하므로 고객은 조회만 가능
 
-  const getStatusInfo = (status: typeof order.status) => {
+  const getStatusInfo = (status: string) => {
     switch (status) {
       case 'pending':
         return {
@@ -269,7 +269,7 @@ const OrderTracking: React.FC = () => {
                   <span>부가세</span>
                   <span>{order.taxAmount.toLocaleString()}원</span>
                 </div>
-                {order.deliveryFee > 0 && (
+                {order.deliveryFee && order.deliveryFee > 0 && (
                   <div className="flex justify-between">
                     <span>배송비</span>
                     <span>{order.deliveryFee.toLocaleString()}원</span>

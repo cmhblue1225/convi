@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase/client';
-import type { Tables } from '../../lib/supabase/types';
+// import type { Tables } from '../../lib/supabase/types';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
-type Category = Tables<'categories'>;
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
 
 // 카테고리별 아이콘 매핑
 const categoryIcons: Record<string, string> = {
@@ -48,7 +56,7 @@ const CustomerCategories: React.FC = () => {
         throw error;
       }
 
-      setCategories(data || []);
+      setCategories(data as Category[] || []);
     } catch (err) {
       console.error('카테고리 로딩 오류:', err);
       setError('카테고리를 불러오는 중 오류가 발생했습니다.');
@@ -108,13 +116,13 @@ const CustomerCategories: React.FC = () => {
             onClick={() => handleCategoryClick(category)}
             className={`
               relative group cursor-pointer rounded-xl border-2 p-6 transition-all duration-200
-              ${categoryColors[category.name] || 'bg-gray-50 border-gray-200 hover:bg-gray-100'}
+              ${categoryColors[category.name || '기타'] || 'bg-gray-50 border-gray-200 hover:bg-gray-100'}
               transform hover:scale-105 hover:shadow-lg
             `}
           >
             {/* 카테고리 아이콘 */}
             <div className="text-4xl mb-4 text-center">
-              {categoryIcons[category.name] || '📦'}
+              {categoryIcons[category.name || '기타'] || '📦'}
             </div>
 
             {/* 카테고리 정보 */}

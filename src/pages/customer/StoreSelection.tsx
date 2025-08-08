@@ -48,6 +48,13 @@ const StoreSelection: React.FC = () => {
           name: store.name,
           address: store.address,
           phone: store.phone,
+          location: store.location,
+          owner_id: store.owner_id,
+          delivery_available: store.delivery_available,
+          delivery_fee: store.delivery_fee,
+          delivery_radius: store.delivery_radius,
+          created_at: store.created_at,
+          updated_at: store.updated_at,
           business_hours: store.business_hours || {
             monday: { open: '06:00', close: '24:00' },
             tuesday: { open: '06:00', close: '24:00' },
@@ -57,14 +64,9 @@ const StoreSelection: React.FC = () => {
             saturday: { open: '06:00', close: '24:00' },
             sunday: { open: '06:00', close: '24:00' }
           },
-          delivery_available: store.delivery_available || true,
           pickup_available: store.pickup_available || true,
-          delivery_radius: store.delivery_radius || 3000,
           min_order_amount: store.min_order_amount || 15000,
-          delivery_fee: store.delivery_fee || 3000,
-          is_active: store.is_active,
-          created_at: store.created_at,
-          updated_at: store.updated_at
+          is_active: store.is_active
         }));
         
         setStores(storesData);
