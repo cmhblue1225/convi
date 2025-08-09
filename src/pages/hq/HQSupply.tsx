@@ -394,18 +394,26 @@ const HQSupply: React.FC = () => {
 
       {/* 필터 */}
       <div className="mb-6 flex gap-4">
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        >
-          <option value="all">전체 상태</option>
-          <option value="submitted">요청됨</option>
-          <option value="approved">승인됨</option>
-          <option value="shipped">배송중</option>
-          <option value="delivered">배송완료</option>
-          <option value="rejected">거절됨</option>
-        </select>
+        <div className="relative">
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white min-w-[140px]"
+          >
+            <option value="all">전체 상태</option>
+            <option value="submitted">요청됨</option>
+            <option value="approved">승인됨</option>
+            <option value="shipped">배송중</option>
+            <option value="delivered">배송완료</option>
+            <option value="rejected">거절됨</option>
+          </select>
+          {/* 드롭다운 화살표 아이콘 */}
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
       </div>
 
       {/* 물류 요청 목록 */}
