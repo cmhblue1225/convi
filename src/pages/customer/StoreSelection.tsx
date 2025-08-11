@@ -4,12 +4,14 @@ import { supabase } from '../../lib/supabase/client';
 import type { Store } from '../../types/common';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import Location from '../../components/map/MapLocation';
+import { geocodeAddress, getDistanceFromCoordinates } from '../../lib/geocoding/geocoding';
 
 const StoreSelection: React.FC = () => {
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [storeCoordinates, setStoreCoordinates] = useState<Record<string, {lat: number, lng: number}>>({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -99,6 +101,24 @@ const StoreSelection: React.FC = () => {
         });
         
         setStores(storesData);
+        
+        // 각 지점의 주소를 좌표로 변환
+        const coordinatesMap: Record<string, {lat: number, lng: number}> = {};
+        
+        for (const store of storesData) {
+          const geocodingResult = await geocodeAddress(store.address);
+          
+          if (geocodingResult.success && geocodingResult.coordinates) {
+            coordinatesMap[store.id] = geocodingResult.coordinates;
+            console.log(`✅ ${store.name} 좌표 변환 성공:`, geocodingResult.coordinates);
+          } else {
+            console.warn(`⚠️ ${store.name} 주소 변환 실패: ${geocodingResult.error}`);
+            console.warn(`   주소: ${store.address}`);
+            // 좌표 변환에 실패한 경우 coordinatesMap에 추가하지 않음 (거리 계산 안함)
+          }
+        }
+        
+        setStoreCoordinates(coordinatesMap);
       } else {
         console.log('⚠️ 활성화된 지점이 없습니다.');
         setStores([]);
@@ -246,17 +266,11 @@ const StoreSelection: React.FC = () => {
         
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
           {stores.map((store) => {
-            // 위치 정보가 있을 경우 거리 계산 (임시로 서울 중심 좌표 사용)
+            // 실제 주소로부터 변환된 좌표를 사용하여 거리 계산
             let distance = null;
-            if (userLocation) {
-              // 임시 좌표 (실제로는 store.location에서 파싱해야 함)
-              const storeCoords = {
-                lat: store.name.includes('강남') ? 37.4979 : 
-                     store.name.includes('홍대') ? 37.5563 : 37.5133,
-                lng: store.name.includes('강남') ? 127.0276 : 
-                     store.name.includes('홍대') ? 126.9240 : 127.0982
-              };
-              distance = calculateDistance(
+            if (userLocation && storeCoordinates[store.id]) {
+              const storeCoords = storeCoordinates[store.id];
+              distance = getDistanceFromCoordinates(
                 userLocation.lat, userLocation.lng,
                 storeCoords.lat, storeCoords.lng
               );
