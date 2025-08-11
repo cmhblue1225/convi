@@ -33,6 +33,9 @@ export interface Order {
   taxAmount: number;
   deliveryFee: number;
   totalAmount: number;
+  // 포인트 정보 추가
+  pointsUsed?: number;
+  pointsDiscountAmount?: number;
   status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivering' | 'completed' | 'cancelled';
   createdAt: string;
   updatedAt: string;
@@ -108,6 +111,9 @@ export const useOrderStore = create<OrderState>()(
             tax_amount: orderData.taxAmount,
             delivery_fee: orderData.deliveryFee,
             total_amount: orderData.totalAmount,
+            // 포인트 정보 추가
+            points_used: (orderData as any).pointsUsed || 0,
+            points_discount_amount: (orderData as any).pointsDiscountAmount || 0,
             status: orderData.status,
             payment_status: 'paid', // 결제 성공 페이지에서 호출되므로 paid로 설정
             payment_data: orderData.paymentResult ? JSON.stringify(orderData.paymentResult) : null,
@@ -241,6 +247,40 @@ export const useOrderStore = create<OrderState>()(
             console.log('📦 재고 차감 완료');
           }
 
+          // 포인트 차감 처리
+          const pointsUsed = (orderData as any).pointsUsed || 0;
+          if (pointsUsed > 0) {
+            console.log('💰 포인트 차감 시작:', pointsUsed, '포인트');
+            try {
+              // 포인트 차감 레코드 생성
+              const { error: pointError } = await supabase
+                .from('points')
+                .insert({
+                  user_id: user.id,
+                  amount: -pointsUsed, // 차감이므로 음수
+                  type: 'used',
+                  description: `주문 #${orderData.orderNumber}에서 포인트 사용`,
+                  order_id: data.id
+                });
+
+              if (pointError) {
+                console.error('❌ 포인트 차감 실패:', pointError);
+                console.error('❌ 포인트 차감 오류 상세:', {
+                  message: pointError.message,
+                  details: pointError.details,
+                  hint: pointError.hint,
+                  code: pointError.code
+                });
+                // 포인트 차감 실패해도 주문은 계속 진행 (이미 결제 완료됨)
+              } else {
+                console.log('✅ 포인트 차감 완료:', pointsUsed, '포인트');
+              }
+            } catch (error) {
+              console.error('❌ 포인트 차감 중 예외 발생:', error);
+              // 포인트 차감 실패해도 주문은 계속 진행
+            }
+          }
+
           // 로컬 상태에 추가
           const newOrder: Order = {
             id: data.id,
@@ -255,6 +295,9 @@ export const useOrderStore = create<OrderState>()(
             taxAmount: data.tax_amount,
             deliveryFee: data.delivery_fee,
             totalAmount: data.total_amount,
+            // 포인트 정보 추가
+            pointsUsed: data.points_used || 0,
+            pointsDiscountAmount: data.points_discount_amount || 0,
             status: data.status,
             createdAt: data.created_at,
             updatedAt: data.updated_at,

@@ -149,14 +149,9 @@ const CustomerProfile: React.FC = () => {
       if (error) throw error;
       setPoints(data || []);
 
-      // 총 포인트 계산
+      // 총 포인트 계산 (amount가 이미 양수/음수로 저장되어 있으므로 그대로 합산)
       const total = (data || []).reduce((sum, point) => {
-        if (point.type === 'earned' || point.type === 'bonus') {
-          return sum + point.amount;
-        } else if (point.type === 'used' || point.type === 'expired') {
-          return sum - point.amount;
-        }
-        return sum;
+        return sum + point.amount;
       }, 0);
       setTotalPoints(total);
     } catch (error) {
