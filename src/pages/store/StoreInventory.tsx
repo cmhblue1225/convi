@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase/client';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { useAuthStore } from '../../stores/common/authStore';
@@ -62,19 +62,19 @@ interface AllInventoryItem {
 
 interface TransactionData {
   id: string;
-  store_product_id: string;
+  store_product_id: string | null;
   quantity: number;
   expires_at: string | null;
   notes: string | null;
-  created_at: string;
-  transaction_type: 'in' | 'out' | 'adjustment' | 'expired';
-  new_quantity: number | null;
+  created_at: string | null;
+  transaction_type: string;
+  new_quantity: number;
   store_products: {
     id: string;
     price: number;
-    safety_stock: number;
-    max_stock: number;
-    is_available: boolean;
+    safety_stock: number | null;
+    max_stock: number | null;
+    is_available: boolean | null;
     products: {
       id: string;
       name: string;
@@ -107,45 +107,20 @@ const StoreInventory: React.FC = () => {
     }
   };
 
-
-
-  // 실시간 구독 설정
-  useEffect(() => {
-    fetchData();
-
-    // 실시간 구독
-    const subscription = supabase
-      .channel('store_inventory_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'store_products' }, 
-        (payload) => {
-          console.log('🔄 재고 데이터 변경 감지:', payload);
-          fetchData(); // 데이터 새로고침
-        }
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  // viewMode가 변경될 때마다 데이터 다시 조회
-  useEffect(() => {
-    if (user?.id) {
-      fetchData();
-    }
-  }, [viewMode, user?.id]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       
       // 현재 사용자의 지점 ID 조회
+      if (!user?.id) {
+        console.error('❌ 사용자 정보 없음');
+        return;
+      }
+
       const { data: storeData, error: storeError } = await supabase
         .from('stores')
         .select('id')
-        .eq('owner_id', user?.id)
+        .eq('owner_id', user.id)
         .single();
 
       if (storeError || !storeData) {
@@ -168,7 +143,35 @@ const StoreInventory: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id, viewMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 실시간 구독 설정
+  useEffect(() => {
+    fetchData();
+
+    // 실시간 구독
+    const subscription = supabase
+      .channel('store_inventory_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'store_products' }, 
+        (payload) => {
+          console.log('🔄 재고 데이터 변경 감지:', payload);
+          fetchData(); // 데이터 새로고침
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [fetchData]); // fetchData를 의존성에 추가
+
+  // viewMode가 변경될 때마다 데이터 다시 조회
+  useEffect(() => {
+    if (user?.id) {
+      fetchData();
+    }
+  }, [fetchData, user?.id]);
 
   // 유통기한별 재고 정보 조회
   const fetchInventoryWithExpiry = async (storeId: string) => {
@@ -214,6 +217,8 @@ const StoreInventory: React.FC = () => {
       const inventoryMap = new Map<string, InventoryWithExpiry>();
 
       transactionsData.forEach((transaction: TransactionData) => {
+        if (!transaction.store_product_id || !transaction.store_products) return;
+        
         const productId = transaction.store_products.products.id;
         const productName = transaction.store_products.products.name;
         const expiresAt = transaction.expires_at;
@@ -228,9 +233,9 @@ const StoreInventory: React.FC = () => {
             product_id: productId,
             price: transaction.store_products.price,
             stock_quantity: 0, // 현재 재고는 트랜잭션에서 계산
-            safety_stock: transaction.store_products.safety_stock,
-            max_stock: transaction.store_products.max_stock,
-            is_available: transaction.store_products.is_available,
+            safety_stock: transaction.store_products.safety_stock || 0,
+            max_stock: transaction.store_products.max_stock || 0,
+            is_available: transaction.store_products.is_available || false,
             product: {
               name: productName,
               unit: transaction.store_products.products.unit,
@@ -313,7 +318,8 @@ const StoreInventory: React.FC = () => {
             id,
             name,
             unit,
-            base_price
+            base_price,
+            shelf_life_days
           )
         `)
         .eq('store_id', storeId);
@@ -367,7 +373,7 @@ const StoreInventory: React.FC = () => {
               name: storeProduct.products.name,
               unit: storeProduct.products.unit,
               base_price: storeProduct.products.base_price,
-              shelf_life_days: 30 // 기본값 설정
+              shelf_life_days: storeProduct.products.shelf_life_days // 실제 데이터베이스 값 사용
             },
             expiryDetails: [], // 모든 재고 모드에서는 유통기한 상세 정보는 표시하지 않음
           };
@@ -525,7 +531,7 @@ const StoreInventory: React.FC = () => {
           <div className="flex space-x-2">
             <select
               value={expiryFilter}
-              onChange={(e) => setExpiryFilter(e.target.value as any)}
+              onChange={(e) => setExpiryFilter(e.target.value as 'all' | 'normal' | 'warning' | 'danger' | 'expired')}
               className="px-3 py-1 border border-gray-300 rounded-md text-sm"
               title="유통기한 상태 필터"
             >
@@ -690,7 +696,7 @@ const StoreInventory: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          {allProduct.product.shelf_life_days ? `${allProduct.product.shelf_life_days}일` : '30일'}
+                          {allProduct.product.shelf_life_days ? `${allProduct.product.shelf_life_days}일` : '유통기한 없음'}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
