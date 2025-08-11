@@ -367,7 +367,7 @@ const StoreInventory: React.FC = () => {
               name: storeProduct.products.name,
               unit: storeProduct.products.unit,
               base_price: storeProduct.products.base_price,
-              shelf_life_days: 30 // 기본값 설정
+              shelf_life_days: storeProduct.products.shelf_life_days // 실제 데이터베이스 값 사용
             },
             expiryDetails: [], // 모든 재고 모드에서는 유통기한 상세 정보는 표시하지 않음
           };
