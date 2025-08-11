@@ -32,6 +32,8 @@ import StoreDashboard from './pages/store/StoreDashboard';
 import StoreOrders from './pages/store/StoreOrders';
 import StoreInventory from './pages/store/StoreInventory';
 import StoreSupply from './pages/store/StoreSupply';
+import StoreAnalytics from './pages/store/StoreAnalytics';
+import StoreInventoryAnalytics from './pages/store/StoreInventoryAnalytics';
 
 // HQ Pages
 import HQLayout from './pages/hq/HQLayout';
@@ -137,6 +139,8 @@ function App() {
               <Route path="orders" element={<StoreOrders />} />
               <Route path="inventory" element={<StoreInventory />} />
               <Route path="supply" element={<StoreSupply />} />
+              <Route path="analytics" element={<StoreAnalytics />} />
+              <Route path="inventory-analytics" element={<StoreInventoryAnalytics />} />
             </Route>
 
             {/* HQ Routes */}

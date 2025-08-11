@@ -1,11 +1,11 @@
 -- =====================================================
 -- 00_setup_all_advanced.sql
--- 고급 편의점 관리 시스템 전체 설정 (17개 테이블)
+-- 고급 편의점 관리 시스템 전체 설정 (22개 테이블)
 -- =====================================================
 
 -- 이 스크립트는 모든 고급 기능을 포함한 완전한 데이터베이스를 구축합니다.
 -- 실행 시간: 약 2-3분 소요
--- 최종 업데이트: 2025-08-07 (테스트 데이터 대폭 확장 - 카테고리 29개, 상품 52개)
+-- 최종 업데이트: 2025-08-11 (쿠폰/포인트/위시리스트 시스템 추가 - 총 22개 테이블)
 
 -- =====================================================
 -- 1. 확장 기능 활성화
@@ -19,10 +19,16 @@ CREATE EXTENSION IF NOT EXISTS "postgis";
 CREATE EXTENSION IF NOT EXISTS "postgis_topology";
 
 -- =====================================================
--- 2. 테이블 생성 (17개 테이블)
+-- 2. 테이블 생성 (22개 테이블)
 -- =====================================================
 
--- 기존 테이블 삭제
+-- 기존 테이블 삭제 (확장된 목록)
+DROP TABLE IF EXISTS product_wishlists CASCADE;
+DROP TABLE IF EXISTS wishlists CASCADE;
+DROP TABLE IF EXISTS user_coupons CASCADE;
+DROP TABLE IF EXISTS coupons CASCADE;
+DROP TABLE IF EXISTS points CASCADE;
+DROP TABLE IF EXISTS point_settings CASCADE;
 DROP TABLE IF EXISTS daily_sales_summary CASCADE;
 DROP TABLE IF EXISTS product_sales_summary CASCADE;
 DROP TABLE IF EXISTS order_status_history CASCADE;
@@ -51,7 +57,14 @@ CREATE TABLE profiles (
     preferences JSONB DEFAULT '{}'::jsonb,
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    -- 새로 추가된 컬럼들 (사용자 프로필 확장)
+    first_name TEXT NOT NULL,
+    last_name TEXT,
+    email TEXT,
+    birth_date DATE,
+    gender TEXT CHECK (gender IN ('male', 'female', 'other', 'prefer_not_to_say')),
+    notification_settings JSONB DEFAULT '{"newsletter": false, "promotions": true, "order_updates": true, "push_notifications": true, "email_notifications": true}'::jsonb
 );
 
 CREATE TABLE categories (
@@ -88,6 +101,9 @@ CREATE TABLE products (
     allergen_info TEXT[],
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    -- 새로 추가된 위시리스트 관련 컬럼들
+    is_wishlisted BOOLEAN DEFAULT false,
+    wishlist_count INTEGER DEFAULT 0,
     CONSTRAINT products_category_id_fkey FOREIGN KEY (category_id) REFERENCES categories(id)
 );
 
@@ -153,6 +169,11 @@ CREATE TABLE orders (
     cancel_reason TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    -- 새로 추가된 쿠폰/포인트 관련 컬럼들
+    coupon_discount_amount NUMERIC DEFAULT 0,
+    points_used INTEGER DEFAULT 0,
+    points_discount_amount NUMERIC DEFAULT 0,
+    applied_coupon_id UUID REFERENCES coupons(id),
     CONSTRAINT orders_customer_id_fkey FOREIGN KEY (customer_id) REFERENCES profiles(id),
     CONSTRAINT orders_store_id_fkey FOREIGN KEY (store_id) REFERENCES stores(id)
 );
@@ -315,6 +336,79 @@ CREATE TABLE system_settings (
 );
 
 -- =====================================================
+-- 새로 추가된 테이블들 (쿠폰/포인트/위시리스트 시스템)
+-- =====================================================
+
+-- 쿠폰 시스템
+CREATE TABLE coupons (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    code TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    description TEXT,
+    discount_type TEXT NOT NULL CHECK (discount_type IN ('percentage', 'fixed_amount')),
+    discount_value NUMERIC NOT NULL,
+    min_order_amount NUMERIC DEFAULT 0,
+    max_discount_amount NUMERIC,
+    usage_limit INTEGER,
+    used_count INTEGER DEFAULT 0,
+    is_active BOOLEAN DEFAULT true,
+    valid_from TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    valid_until TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 사용자 쿠폰 보유/사용 내역
+CREATE TABLE user_coupons (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES profiles(id),
+    coupon_id UUID NOT NULL REFERENCES coupons(id),
+    is_used BOOLEAN DEFAULT false,
+    used_at TIMESTAMP WITH TIME ZONE,
+    used_order_id UUID REFERENCES orders(id),
+    expires_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 포인트 시스템
+CREATE TABLE points (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES profiles(id),
+    amount INTEGER NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('earned', 'used', 'expired', 'bonus')),
+    description TEXT,
+    order_id UUID REFERENCES orders(id),
+    expires_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 포인트 정책 설정
+CREATE TABLE point_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    key TEXT NOT NULL UNIQUE,
+    value JSONB NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 위시리스트 시스템
+CREATE TABLE wishlists (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    user_id UUID NOT NULL REFERENCES auth.users(id),
+    product_id UUID NOT NULL REFERENCES products(id)
+);
+
+-- 상품별 위시리스트 매핑 (추가 기능용)
+CREATE TABLE product_wishlists (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    product_id UUID REFERENCES products(id),
+    user_id UUID REFERENCES auth.users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- =====================================================
 -- 3. 인덱스 생성
 -- =====================================================
 
@@ -328,6 +422,20 @@ CREATE INDEX idx_orders_customer_id ON orders(customer_id);
 CREATE INDEX idx_orders_store_id ON orders(store_id);
 CREATE INDEX idx_orders_status ON orders(status);
 CREATE INDEX idx_order_items_order_id ON order_items(order_id);
+
+-- 새로 추가된 테이블들의 인덱스들
+CREATE INDEX idx_coupons_code ON coupons(code);
+CREATE INDEX idx_coupons_is_active ON coupons(is_active);
+CREATE INDEX idx_user_coupons_user_id ON user_coupons(user_id);
+CREATE INDEX idx_user_coupons_coupon_id ON user_coupons(coupon_id);
+CREATE INDEX idx_user_coupons_is_used ON user_coupons(is_used);
+CREATE INDEX idx_points_user_id ON points(user_id);
+CREATE INDEX idx_points_type ON points(type);
+CREATE INDEX idx_points_order_id ON points(order_id);
+CREATE INDEX idx_wishlists_user_id ON wishlists(user_id);
+CREATE INDEX idx_wishlists_product_id ON wishlists(product_id);
+CREATE INDEX idx_product_wishlists_product_id ON product_wishlists(product_id);
+CREATE INDEX idx_product_wishlists_user_id ON product_wishlists(user_id);
 
 -- 고급 기능 인덱스들
 CREATE INDEX idx_daily_sales_summary_store_date ON daily_sales_summary(store_id, date);
@@ -893,6 +1001,14 @@ ALTER TABLE shipments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE system_settings ENABLE ROW LEVEL SECURITY;
 
+-- 새로 추가된 테이블들의 RLS 활성화
+ALTER TABLE coupons ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_coupons ENABLE ROW LEVEL SECURITY;
+ALTER TABLE points ENABLE ROW LEVEL SECURITY;
+ALTER TABLE point_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE wishlists ENABLE ROW LEVEL SECURITY;
+ALTER TABLE product_wishlists ENABLE ROW LEVEL SECURITY;
+
 -- =====================================================
 -- 7. RLS 정책 생성 (무한 재귀 방지 버전)
 -- =====================================================
@@ -1229,6 +1345,65 @@ CREATE POLICY "HQ can manage all settings" ON system_settings
     );
 
 -- =====================================================
+-- 새로 추가된 테이블들의 RLS 정책
+-- =====================================================
+
+-- coupons 테이블 정책
+CREATE POLICY "Anyone can view active coupons" ON coupons
+    FOR SELECT USING (is_active = true);
+
+CREATE POLICY "HQ can manage all coupons" ON coupons
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM profiles 
+            WHERE profiles.id = auth.uid() AND profiles.role = 'headquarters'
+        )
+    );
+
+-- user_coupons 테이블 정책
+CREATE POLICY "Users can view own coupons" ON user_coupons
+    FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY "Users can use own coupons" ON user_coupons
+    FOR UPDATE USING (user_id = auth.uid());
+
+CREATE POLICY "System can insert user coupons" ON user_coupons
+    FOR INSERT WITH CHECK (true);
+
+-- points 테이블 정책
+CREATE POLICY "Users can view own points" ON points
+    FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY "System can manage points" ON points
+    FOR ALL USING (true);
+
+-- point_settings 테이블 정책
+CREATE POLICY "Anyone can view point settings" ON point_settings
+    FOR SELECT USING (true);
+
+CREATE POLICY "HQ can manage point settings" ON point_settings
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM profiles 
+            WHERE profiles.id = auth.uid() AND profiles.role = 'headquarters'
+        )
+    );
+
+-- wishlists 테이블 정책
+CREATE POLICY "Users can view own wishlists" ON wishlists
+    FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY "Users can manage own wishlists" ON wishlists
+    FOR ALL USING (user_id = auth.uid());
+
+-- product_wishlists 테이블 정책
+CREATE POLICY "Users can view own product wishlists" ON product_wishlists
+    FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY "Users can manage own product wishlists" ON product_wishlists
+    FOR ALL USING (user_id = auth.uid());
+
+-- =====================================================
 -- 8. 초기 데이터 삽입 (대폭 확장된 테스트 데이터)
 -- =====================================================
 
@@ -1542,7 +1717,7 @@ $$ LANGUAGE plpgsql;
 -- =====================================================
 
 SELECT 
-    '✅ 고급 편의점 관리 시스템 설정 완료!' as "상태",
+    '✅ 고급 편의점 관리 시스템 설정 완료! (v2.0 - 쿠폰/포인트/위시리스트 포함)' as "상태",
     COUNT(*) as "생성된 테이블 수"
 FROM information_schema.tables 
 WHERE table_schema = 'public' 
@@ -1551,7 +1726,8 @@ WHERE table_schema = 'public'
         'profiles', 'categories', 'products', 'stores', 'store_products', 
         'orders', 'order_items', 'daily_sales_summary', 'product_sales_summary',
         'order_status_history', 'inventory_transactions', 'supply_requests',
-        'supply_request_items', 'shipments', 'notifications', 'system_settings'
+        'supply_request_items', 'shipments', 'notifications', 'system_settings',
+        'coupons', 'user_coupons', 'points', 'point_settings', 'wishlists', 'product_wishlists'
     );
 
 -- 테이블 목록 확인
