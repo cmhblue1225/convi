@@ -181,15 +181,17 @@ export const useAuthStore = create<AuthState>()(
           console.log('✅ 사용자 생성 완료:', data.user.id);
           
           // 2. profiles 테이블에 프로필 생성
+          const firstName = userData?.first_name || '사용자';
+          const lastName = userData?.last_name || '';
+          const fullName = lastName ? `${firstName} ${lastName}` : firstName;
+          
           const profileData = {
             id: data.user.id,
             role: userData?.role || 'customer',
-            full_name: userData?.first_name && userData?.last_name 
-              ? `${userData.first_name} ${userData.last_name}` 
-              : userData?.first_name || userData?.full_name || '',
-            first_name: userData?.first_name || userData?.full_name || '고객',
-            last_name: userData?.last_name || null,
-            email: userData?.email || email,
+            full_name: fullName,
+            first_name: firstName,
+            last_name: lastName || null,
+            email: email, // 회원가입 시 사용된 이메일 직접 사용
             phone: userData?.phone || null,
             avatar_url: null,
             birth_date: userData?.birth_date || null,
@@ -200,7 +202,8 @@ export const useAuthStore = create<AuthState>()(
               order_updates: true,
               promotions: true,
               newsletter: false
-            }
+            },
+            is_active: true // 기본적으로 활성 상태
           };
 
           console.log('📋 프로필 데이터:', profileData);
@@ -212,13 +215,19 @@ export const useAuthStore = create<AuthState>()(
 
           if (profileError) {
             console.error('❌ 프로필 생성 오류:', profileError);
+            console.error('❌ 프로필 생성 오류 상세:', {
+              message: profileError.message,
+              details: profileError.details,
+              hint: profileError.hint,
+              code: profileError.code
+            });
+            console.error('❌ 프로필 데이터 확인:', profileData);
             
-            // 프로필 생성 실패 시에도 사용자는 생성되었으므로, 
-            // 나중에 수동으로 프로필을 생성할 수 있도록 안내
-            console.warn('⚠️ 프로필 생성 실패했지만 사용자는 생성됨. 나중에 프로필을 수동으로 생성해야 함.');
-            
-            // 프로필 생성 실패해도 회원가입은 성공으로 처리 (사용자는 생성됨)
-            console.log('✅ 사용자 생성 완료 (프로필은 나중에 생성 필요)');
+            // 프로필 생성이 실패하면 회원가입을 실패로 처리
+            return { 
+              success: false, 
+              error: `프로필 생성 실패: ${profileError.message}` 
+            };
           } else {
             console.log('✅ 프로필 생성 완료');
           }

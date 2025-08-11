@@ -11,7 +11,8 @@
       "WebFetch(domain:guide.ncloud-docs.com)",
       "WebFetch(domain:api.ncloud-docs.com)",
       "WebFetch(domain:apidocs.ncloud.com)",
-      "Bash(node server.js)"
+      "Bash(node server.js)",
+      "mcp__supabase__apply_migration"
     ],
     "deny": []
   }
