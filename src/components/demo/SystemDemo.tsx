@@ -60,7 +60,7 @@ const demoTabs: DemoTab[] = [
         description: '고객이 앱을 통해 상품을 주문하고 결제합니다',
         role: 'customer',
         icon: <ShoppingCart className="w-6 h-6" />,
-        position: { x: 15, y: 20 },
+        position: { x: 15, y: 15 },
         connections: ['payment-process']
       },
       {
@@ -69,7 +69,7 @@ const demoTabs: DemoTab[] = [
         description: '토스페이먼츠를 통한 안전한 결제 처리',
         role: 'customer',
         icon: <CreditCardIcon className="w-6 h-6" />,
-        position: { x: 50, y: 20 },
+        position: { x: 50, y: 15 },
         connections: ['store-receive']
       },
       {
@@ -78,7 +78,7 @@ const demoTabs: DemoTab[] = [
         description: '점주가 실시간으로 새 주문을 확인합니다',
         role: 'store_owner',
         icon: <BellIcon className="w-6 h-6" />,
-        position: { x: 85, y: 20 },
+        position: { x: 85, y: 15 },
         connections: ['store-prepare']
       },
       {
@@ -87,7 +87,7 @@ const demoTabs: DemoTab[] = [
         description: '주문받은 상품을 준비하고 포장합니다',
         role: 'store_owner',
         icon: <Package className="w-6 h-6" />,
-        position: { x: 85, y: 50 },
+        position: { x: 85, y: 40 },
         connections: ['order-ready']
       },
       {
@@ -96,7 +96,7 @@ const demoTabs: DemoTab[] = [
         description: '고객에게 픽업 준비 완료 알림을 발송합니다',
         role: 'store_owner',
         icon: <CheckCircleIcon className="w-6 h-6" />,
-        position: { x: 50, y: 50 },
+        position: { x: 50, y: 40 },
         connections: ['customer-pickup']
       },
       {
@@ -105,7 +105,7 @@ const demoTabs: DemoTab[] = [
         description: '고객이 매장에서 상품을 픽업합니다',
         role: 'customer',
         icon: <User className="w-6 h-6" />,
-        position: { x: 15, y: 50 },
+        position: { x: 15, y: 40 },
         connections: ['customer-order']
       }
     ]
@@ -122,7 +122,7 @@ const demoTabs: DemoTab[] = [
         description: '점주가 실시간으로 재고 현황을 확인합니다',
         role: 'store_owner',
         icon: <ClipboardDocumentListIcon className="w-6 h-6" />,
-        position: { x: 15, y: 20 },
+        position: { x: 15, y: 15 },
         connections: ['low-stock-alert']
       },
       {
@@ -131,7 +131,7 @@ const demoTabs: DemoTab[] = [
         description: '안전재고 이하 상품에 대한 자동 알림',
         role: 'store_owner',
         icon: <ExclamationTriangleIcon className="w-6 h-6" />,
-        position: { x: 50, y: 20 },
+        position: { x: 50, y: 15 },
         connections: ['supply-request']
       },
       {
@@ -140,7 +140,7 @@ const demoTabs: DemoTab[] = [
         description: '본사에 필요한 상품의 공급을 요청합니다',
         role: 'store_owner',
         icon: <DocumentTextIcon className="w-6 h-6" />,
-        position: { x: 85, y: 20 },
+        position: { x: 85, y: 15 },
         connections: ['hq-review']
       },
       {
@@ -149,7 +149,7 @@ const demoTabs: DemoTab[] = [
         description: '본사에서 물류 요청을 검토하고 승인합니다',
         role: 'headquarters',
         icon: <Building2 className="w-6 h-6" />,
-        position: { x: 85, y: 50 },
+        position: { x: 85, y: 40 },
         connections: ['shipping']
       },
       {
@@ -158,7 +158,7 @@ const demoTabs: DemoTab[] = [
         description: '승인된 상품을 지점으로 배송 처리합니다',
         role: 'headquarters',
         icon: <Truck className="w-6 h-6" />,
-        position: { x: 50, y: 50 },
+        position: { x: 50, y: 40 },
         connections: ['stock-update']
       },
       {
@@ -167,7 +167,7 @@ const demoTabs: DemoTab[] = [
         description: '배송 완료 후 지점 재고가 자동 업데이트됩니다',
         role: 'store_owner',
         icon: <CubeIcon className="w-6 h-6" />,
-        position: { x: 15, y: 50 },
+        position: { x: 15, y: 40 },
         connections: ['stock-check']
       }
     ]
@@ -184,7 +184,7 @@ const demoTabs: DemoTab[] = [
         description: '모든 거래 데이터를 실시간으로 수집합니다',
         role: 'store_owner',
         icon: <ChartBarIcon className="w-6 h-6" />,
-        position: { x: 15, y: 20 },
+        position: { x: 15, y: 15 },
         connections: ['daily-summary']
       },
       {
@@ -193,7 +193,7 @@ const demoTabs: DemoTab[] = [
         description: '하루 매출을 자동으로 집계하고 요약합니다',
         role: 'store_owner',
         icon: <DocumentTextIcon className="w-6 h-6" />,
-        position: { x: 50, y: 20 },
+        position: { x: 50, y: 15 },
         connections: ['product-analysis']
       },
       {
@@ -202,7 +202,7 @@ const demoTabs: DemoTab[] = [
         description: '인기 상품과 매출 트렌드를 분석합니다',
         role: 'store_owner',
         icon: <CubeIcon className="w-6 h-6" />,
-        position: { x: 85, y: 20 },
+        position: { x: 85, y: 15 },
         connections: ['hq-consolidation']
       },
       {
@@ -211,7 +211,7 @@ const demoTabs: DemoTab[] = [
         description: '모든 지점 데이터를 본사에서 통합 관리합니다',
         role: 'headquarters',
         icon: <Building2 className="w-6 h-6" />,
-        position: { x: 85, y: 50 },
+        position: { x: 85, y: 40 },
         connections: ['business-insights']
       },
       {
@@ -220,7 +220,7 @@ const demoTabs: DemoTab[] = [
         description: '전체 네트워크 분석과 최적화 방안 제시',
         role: 'headquarters',
         icon: <ChartBarIcon className="w-6 h-6" />,
-        position: { x: 50, y: 50 },
+        position: { x: 50, y: 40 },
         connections: ['recommendations']
       },
       {
@@ -229,7 +229,7 @@ const demoTabs: DemoTab[] = [
         description: '데이터 기반 운영 개선 방안을 각 지점에 제공',
         role: 'headquarters',
         icon: <DocumentTextIcon className="w-6 h-6" />,
-        position: { x: 15, y: 50 },
+        position: { x: 15, y: 40 },
         connections: ['sales-data']
       }
     ]
@@ -246,7 +246,7 @@ const demoTabs: DemoTab[] = [
         description: '새로운 사용자가 역할별로 회원가입합니다',
         role: 'customer',
         icon: <UserIcon className="w-6 h-6" />,
-        position: { x: 15, y: 20 },
+        position: { x: 15, y: 15 },
         connections: ['role-assignment']
       },
       {
@@ -255,7 +255,7 @@ const demoTabs: DemoTab[] = [
         description: '고객, 점주, 본사 역할에 따른 권한 설정',
         role: 'headquarters',
         icon: <CogIcon className="w-6 h-6" />,
-        position: { x: 50, y: 20 },
+        position: { x: 50, y: 15 },
         connections: ['store-approval']
       },
       {
@@ -264,7 +264,7 @@ const demoTabs: DemoTab[] = [
         description: '점주 회원가입 시 지점 정보 검토 및 승인',
         role: 'headquarters',
         icon: <Store className="w-6 h-6" />,
-        position: { x: 85, y: 20 },
+        position: { x: 85, y: 15 },
         connections: ['access-control']
       },
       {
@@ -273,7 +273,7 @@ const demoTabs: DemoTab[] = [
         description: '역할별 시스템 접근 권한을 관리합니다',
         role: 'headquarters',
         icon: <CogIcon className="w-6 h-6" />,
-        position: { x: 85, y: 50 },
+        position: { x: 85, y: 40 },
         connections: ['user-monitoring']
       },
       {
@@ -282,7 +282,7 @@ const demoTabs: DemoTab[] = [
         description: '시스템 사용 패턴과 활성 사용자를 모니터링',
         role: 'headquarters',
         icon: <UserGroupIcon className="w-6 h-6" />,
-        position: { x: 50, y: 50 },
+        position: { x: 50, y: 40 },
         connections: ['account-management']
       },
       {
@@ -291,7 +291,7 @@ const demoTabs: DemoTab[] = [
         description: '사용자 계정 상태 관리 및 지원 서비스',
         role: 'headquarters',
         icon: <UserIcon className="w-6 h-6" />,
-        position: { x: 15, y: 50 },
+        position: { x: 15, y: 40 },
         connections: ['user-registration']
       }
     ]
