@@ -511,7 +511,7 @@ export const useAuthStore = create<AuthState>()(
           
           // 프로필 로드 실패 시에도 기본 역할 설정 (본사 계정의 경우)
           const currentUser = get().user;
-          if (currentUser && currentUser.email === 'hq@test.com') {
+          if (currentUser && currentUser.email === 'hq@example.com') {
             console.log('🏢 본사 계정 감지, 기본 역할 설정 중...');
             set({ 
               user: {
@@ -555,7 +555,7 @@ export const useAuthStore = create<AuthState>()(
           console.log('⚠️ 프로필 데이터 없음');
           // 프로필이 없어도 기본 역할 설정 (본사 계정의 경우)
           const currentUser = get().user;
-          if (currentUser && currentUser.email === 'hq@test.com') {
+          if (currentUser && currentUser.email === 'hq@example.com') {
             set({ 
               user: {
                 ...currentUser,
