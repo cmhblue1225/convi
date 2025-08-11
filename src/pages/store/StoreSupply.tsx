@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase/client';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { useAuthStore } from '../../stores/common/authStore';
@@ -22,33 +22,34 @@ interface StoreProduct {
 interface SupplyRequest {
   id: string;
   request_number: string;
-  status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'shipped' | 'delivered' | 'cancelled';
-  priority: 'low' | 'normal' | 'high' | 'urgent';
-  total_amount: number;
-  approved_amount: number;
-  expected_delivery_date: string;
-  actual_delivery_date: string;
-  notes: string;
-  rejection_reason: string;
-  created_at: string;
+  status: string;
+  priority: string | null;
+  total_amount: number | null;
+  approved_amount: number | null;
+  expected_delivery_date: string | null;
+  actual_delivery_date: string | null;
+  notes: string | null;
+  rejection_reason: string | null;
+  created_at: string | null;
   items?: SupplyRequestItem[];
 }
 
 interface SupplyRequestItem {
   id: string;
-  supply_request_id: string;
-  product_id: string;
+  supply_request_id: string | null;
+  product_id: string | null;
   product_name: string;
   requested_quantity: number;
-  approved_quantity: number;
-  unit_cost: number;
-  total_cost: number;
-  reason: string;
-  current_stock: number;
+  approved_quantity: number | null;
+  unit_cost: number | null;
+  total_cost: number | null;
+  reason: string | null;
+  current_stock: number | null;
 }
 
 const StoreSupply: React.FC = () => {
   const [supplyRequests, setSupplyRequests] = useState<SupplyRequest[]>([]);
+  const [storeProducts, setStoreProducts] = useState<StoreProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -57,28 +58,7 @@ const StoreSupply: React.FC = () => {
   const [modalProducts, setModalProducts] = useState<StoreProduct[]>([]);
   const { user } = useAuthStore();
 
-  // 실시간 구독 설정
-  useEffect(() => {
-    fetchData();
-
-    // 실시간 구독
-    const subscription = supabase
-      .channel('store_supply_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'supply_requests' }, 
-        (payload) => {
-          console.log('🔄 물류 요청 데이터 변경 감지:', payload);
-          fetchData(); // 데이터 새로고침
-        }
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -86,7 +66,7 @@ const StoreSupply: React.FC = () => {
       const { data: storeData, error: storeError } = await supabase
         .from('stores')
         .select('id')
-        .eq('owner_id', user?.id)
+        .eq('owner_id', user?.id || '')
         .single();
 
       if (storeError || !storeData) {
@@ -122,7 +102,7 @@ const StoreSupply: React.FC = () => {
         console.error('❌ 재고 현황 조회 실패:', productsError);
       } else {
         // 데이터 구조 변환
-        const transformedData = (productsData || []).map((product: any) => {
+        const transformedData = (productsData || []).map((product) => {
           const storeProduct = product.store_products?.[0];
           return {
             id: storeProduct?.id || `temp_${product.id}`,
@@ -166,12 +146,40 @@ const StoreSupply: React.FC = () => {
       }
     } catch (error) {
       console.error('❌ 상품 목록 조회 중 오류:', error);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [user?.id, filterStatus]);
+
+  // 실시간 구독 설정
+  useEffect(() => {
+    fetchData();
+
+    // 실시간 구독
+    const subscription = supabase
+      .channel('store_supply_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'supply_requests' }, 
+        (payload) => {
+          console.log('🔄 물류 요청 데이터 변경 감지:', payload);
+          fetchData(); // 데이터 새로고침
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [fetchData]);
 
   const handleViewDetail = (request: SupplyRequest) => {
     setSelectedRequest(request);
     setShowDetailModal(true);
+  };
+
+  const handleCreateRequest = async () => {
+    setModalProducts(storeProducts);
+    setShowCreateModal(true);
   };
 
   const createSupplyRequest = async (formData: FormData) => {
@@ -182,7 +190,7 @@ const StoreSupply: React.FC = () => {
       const { data: storeData, error: storeError } = await supabase
         .from('stores')
         .select('id, name')
-        .eq('owner_id', user?.id)
+        .eq('owner_id', user?.id || '')
         .single();
 
       if (storeError || !storeData) {
@@ -492,7 +500,7 @@ const StoreSupply: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                      {request.priority}
+                      {request.priority || 'normal'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -506,7 +514,7 @@ const StoreSupply: React.FC = () => {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(request.created_at).toLocaleDateString()}
+                    {request.created_at ? new Date(request.created_at).toLocaleDateString() : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button
@@ -677,8 +685,8 @@ const StoreSupply: React.FC = () => {
                               <td className="px-3 py-2 text-sm text-gray-900">{item.product_name}</td>
                               <td className="px-3 py-2 text-sm text-gray-900">{item.requested_quantity}</td>
                               <td className="px-3 py-2 text-sm text-gray-900">{item.approved_quantity || '-'}</td>
-                              <td className="px-3 py-2 text-sm text-gray-900">{item.current_stock}</td>
-                              <td className="px-3 py-2 text-sm text-gray-900">{item.reason}</td>
+                              <td className="px-3 py-2 text-sm text-gray-900">{item.current_stock || 0}</td>
+                              <td className="px-3 py-2 text-sm text-gray-900">{item.reason || '-'}</td>
                             </tr>
                           ))}
                         </tbody>
