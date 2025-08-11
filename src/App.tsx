@@ -20,6 +20,7 @@ import OrderTracking from './pages/customer/OrderTracking';
 import CustomerCategories from './pages/customer/CustomerCategories';
 import CustomerOrders from './pages/customer/CustomerOrders';
 import CustomerProfile from './pages/customer/CustomerProfile';
+import CartPage from './pages/customer/CartPage';
 
 // Payment Pages
 import PaymentSuccess from './pages/payment/PaymentSuccess';
@@ -106,6 +107,7 @@ function App() {
               <Route path="home" element={<CustomerHome />} />
               <Route path="store" element={<StoreSelection />} />
               <Route path="products" element={<ProductCatalog />} />
+              <Route path="cart" element={<CartPage />} />
               <Route path="checkout" element={<Checkout />} />
               <Route path="orders" element={<CustomerOrders />} />
               <Route path="orders/:orderId" element={<OrderTracking />} />

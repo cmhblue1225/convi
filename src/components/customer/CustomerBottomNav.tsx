@@ -1,7 +1,11 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useCartStore } from '../../stores/cartStore';
 
 const CustomerBottomNav: React.FC = () => {
+  const { getItemCount } = useCartStore();
+  const itemCount = getItemCount();
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
       <div className="flex justify-around">
@@ -30,6 +34,26 @@ const CustomerBottomNav: React.FC = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
           </svg>
           카테고리
+        </NavLink>
+        <NavLink
+          to="/customer/cart"
+          className={({ isActive }) =>
+            `flex flex-col items-center py-2 px-3 text-xs relative ${
+              isActive ? 'text-primary-600' : 'text-gray-500'
+            }`
+          }
+        >
+          <div className="relative">
+            <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m6 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
+            </svg>
+            {itemCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-medium">
+                {itemCount > 99 ? '99+' : itemCount}
+              </span>
+            )}
+          </div>
+          장바구니
         </NavLink>
         <NavLink
           to="/customer/orders"

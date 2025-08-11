@@ -67,12 +67,27 @@ const Checkout: React.FC = () => {
       return;
     }
 
+    // 재주문된 배송 주소가 있으면 복원
+    const reorderDeliveryAddress = localStorage.getItem('reorder-delivery-address');
+    if (reorderDeliveryAddress && orderType === 'delivery') {
+      try {
+        const restoredAddress = JSON.parse(reorderDeliveryAddress);
+        setDeliveryAddress(restoredAddress);
+        console.log('✅ 재주문 배송 주소 복원됨:', restoredAddress);
+        
+        // 복원 후 로컬 스토리지에서 제거
+        localStorage.removeItem('reorder-delivery-address');
+      } catch (error) {
+        console.error('❌ 재주문 배송 주소 복원 실패:', error);
+      }
+    }
+
     // 쿠폰/포인트 정보 로드
     if (user) {
       fetchUserCoupons();
       fetchTotalPoints();
     }
-  }, [items, selectedStore, navigate, user]);
+  }, [items, selectedStore, navigate, user, orderType]);
 
   useEffect(() => {
     calculateFinalAmount();

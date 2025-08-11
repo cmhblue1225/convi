@@ -1,11 +1,14 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOrderStore } from '../../stores/orderStore';
+import { useCartStore } from '../../stores/cartStore';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import ReorderHistory from '../../components/customer/ReorderHistory';
 
 const CustomerOrders: React.FC = () => {
   const navigate = useNavigate();
   const { orders, isLoading, fetchOrders, subscribeToOrders, unsubscribeFromOrders, clearOrders } = useOrderStore();
+  const { reorderFromOrder } = useCartStore();
 
   console.log('📋 주문 내역 페이지 - 총 주문 수:', orders.length);
 
@@ -46,6 +49,44 @@ const CustomerOrders: React.FC = () => {
     }
   };
 
+  const handleReorder = async (order: any) => {
+    console.log('🔄 재주문 시작:', order);
+    
+    try {
+      // 주문 타입과 배송 주소 정보 전달
+      const result = await reorderFromOrder(
+        order.items, 
+        order.storeId, 
+        order.storeName,
+        order.orderType,
+        order.deliveryAddress
+      );
+      
+      if (result.success) {
+        // 성공 메시지 표시
+        const message = result.message;
+        
+        // 더 친화적인 성공 메시지
+        const successMessage = `✅ 재주문이 완료되었습니다!\n\n${message}\n\n장바구니에 ${result.itemCount}개 상품이 담겼습니다.`;
+        alert(successMessage);
+        
+        // 체크아웃 페이지로 직접 이동 (장바구니를 거치지 않음)
+        navigate('/customer/checkout');
+      } else {
+        // 실패 시 상세 메시지 표시
+        if (result.unavailableItems && result.unavailableItems.length > 0) {
+          const errorMessage = `❌ 재주문이 불가능합니다:\n\n${result.message}`;
+          alert(errorMessage);
+        } else {
+          alert(`❌ 재주문 실패: ${result.message}`);
+        }
+      }
+    } catch (error) {
+      console.error('❌ 재주문 처리 중 오류:', error);
+      alert('재주문 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-6">
@@ -83,7 +124,7 @@ const CustomerOrders: React.FC = () => {
               )}
               <button
                 onClick={() => navigate('/customer/store')}
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
               >
                 쇼핑 계속하기
               </button>
@@ -91,10 +132,14 @@ const CustomerOrders: React.FC = () => {
           </div>
         </div>
 
+        {/* 재주문 히스토리 */}
+        <ReorderHistory />
+
         {/* 주문 목록 */}
         {isLoading ? (
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-            <LoadingSpinner size="lg" text="주문 내역을 불러오는 중..." />
+            <LoadingSpinner size="lg" />
+            <p className="mt-4 text-gray-600">주문 내역을 불러오는 중...</p>
           </div>
         ) : orders.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
@@ -164,9 +209,29 @@ const CustomerOrders: React.FC = () => {
                   >
                     주문 추적
                   </button>
-                  {order.status === 'completed' && (
-                    <button className="flex-1 bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600">
+                  {/* 재주문 가능한 상태: 완료, 취소된 주문 */}
+                  {(order.status === 'completed' || order.status === 'cancelled') && (
+                    <button 
+                      onClick={() => handleReorder(order)}
+                      className="flex-1 bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
                       재주문
+                    </button>
+                  )}
+                  {/* 진행 중인 주문의 경우 재주문 불가 안내 */}
+                  {['pending', 'confirmed', 'preparing', 'ready', 'delivering'].includes(order.status) && (
+                    <button 
+                      disabled
+                      className="flex-1 bg-gray-300 text-gray-500 py-2 px-4 rounded-lg cursor-not-allowed flex items-center justify-center gap-2"
+                      title="진행 중인 주문은 재주문할 수 없습니다"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                      재주문 불가
                     </button>
                   )}
                 </div>
