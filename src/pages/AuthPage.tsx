@@ -187,6 +187,27 @@ const AuthPage: React.FC = () => {
         <div className="absolute bottom-20 right-20 w-24 h-24 bg-gradient-to-br from-indigo-300/15 to-slate-300/15 rounded-full blur-2xl animate-float delay-1000"></div>
       </div>
 
+      {/* 뒤로가기 버튼 */}
+      <button
+        onClick={() => navigate('/')}
+        className="absolute top-6 left-6 z-20 flex items-center justify-center w-12 h-12 bg-white/80 backdrop-blur-lg rounded-full shadow-lg hover:shadow-xl border border-white/20 transition-all duration-300 hover:scale-110 group"
+        disabled={isLoading}
+      >
+        <svg
+          className="w-6 h-6 text-gray-600 group-hover:text-gray-800 transition-colors duration-200"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
+      </button>
+
       {/* 메인 컨테이너 */}
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
         <div className="max-w-md w-full">
