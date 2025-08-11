@@ -184,6 +184,11 @@ const CustomerOrders: React.FC = () => {
                     <div className="text-lg font-bold text-blue-600">
                       {order.totalAmount.toLocaleString()}원
                     </div>
+                    {order.pointsUsed && order.pointsUsed > 0 && (
+                      <div className="text-sm text-green-600 mt-1">
+                        포인트 {order.pointsUsed.toLocaleString()}P 사용
+                      </div>
+                    )}
                   </div>
                 </div>
 

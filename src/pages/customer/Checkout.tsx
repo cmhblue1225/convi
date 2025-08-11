@@ -167,7 +167,9 @@ const Checkout: React.FC = () => {
   };
 
   const handlePointsChange = (points: number) => {
-    const maxPoints = Math.min(totalPoints, finalAmount);
+    // 전액 포인트 결제를 허용하기 위해 finalAmount 대신 원래 totalAmount 사용
+    const remainingAmount = totalAmount - (couponValidation?.discount_amount || 0);
+    const maxPoints = Math.min(totalPoints, remainingAmount);
     setPointsToUse(Math.min(points, maxPoints));
   };
 
@@ -259,7 +261,34 @@ const Checkout: React.FC = () => {
     localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
     console.log('💾 결제 정보 저장:', checkoutData);
     
+    // 전액 포인트 결제 시 바로 결제 완료 처리
+    if (finalAmount === 0) {
+      console.log('💰 전액 포인트 결제 - 토스페이먼츠 우회');
+      handleZeroAmountPayment();
+      return;
+    }
+    
     setCurrentStep('payment');
+  };
+
+  // 전액 포인트 결제 처리
+  const handleZeroAmountPayment = async () => {
+    try {
+      const checkoutData = JSON.parse(localStorage.getItem('checkoutData') || '{}');
+      
+      // PaymentSuccess 페이지로 리다이렉트하면서 필요한 파라미터 전달
+      const params = new URLSearchParams({
+        paymentKey: `point_${Date.now()}`, // 포인트 결제용 고유 키
+        orderId: checkoutData.orderNumber,
+        amount: '0', // 전액 포인트 결제이므로 0원
+        method: 'point' // 포인트 결제임을 표시
+      });
+      
+      navigate(`/payment/success?${params.toString()}`);
+    } catch (error) {
+      console.error('❌ 전액 포인트 결제 처리 실패:', error);
+      alert('결제 처리 중 오류가 발생했습니다.');
+    }
   };
 
 
@@ -607,12 +636,30 @@ const Checkout: React.FC = () => {
                     </label>
                     <input
                       type="number"
-                      value={pointsToUse}
-                      onChange={(e) => handlePointsChange(Number(e.target.value))}
-                      max={Math.min(totalPoints, finalAmount)}
+                      value={pointsToUse || ''}
+                      onChange={(e) => {
+                        const inputValue = e.target.value;
+                        if (inputValue === '' || inputValue === '0') {
+                          setPointsToUse(0);
+                        } else {
+                          handlePointsChange(Number(inputValue));
+                        }
+                      }}
+                      max={Math.min(totalPoints, totalAmount - (couponValidation?.discount_amount || 0))}
                       min="0"
                       placeholder="사용할 포인트"
                       className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+                      onFocus={(e) => {
+                        if (e.target.value === '0') {
+                          e.target.value = '';
+                          setPointsToUse(0);
+                        }
+                      }}
+                      onBlur={(e) => {
+                        if (e.target.value === '') {
+                          setPointsToUse(0);
+                        }
+                      }}
                     />
                   </div>
                 )}
@@ -684,10 +731,12 @@ const Checkout: React.FC = () => {
               className={`w-full py-4 rounded-lg font-semibold text-lg transition-colors ${
                 !agreedToTerms
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : finalAmount === 0
+                  ? 'bg-green-600 text-white hover:bg-green-700'
                   : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
             >
-              결제 방법 선택하기
+              {finalAmount === 0 ? '💰 포인트로 주문하기' : '결제 방법 선택하기'}
             </button>
           </div>
         </div>

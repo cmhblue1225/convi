@@ -66,9 +66,9 @@ const PaymentSuccess: React.FC = () => {
           throw new Error('결제 정보가 올바르지 않습니다.');
         }
 
-        // 금액 검증
+        // 금액 검증 (0원 포인트 결제 허용)
         const paymentAmount = parseInt(amount);
-        if (isNaN(paymentAmount) || paymentAmount <= 0) {
+        if (isNaN(paymentAmount) || paymentAmount < 0) {
           throw new Error('결제 금액이 올바르지 않습니다.');
         }
 
@@ -124,15 +124,18 @@ const PaymentSuccess: React.FC = () => {
             subtotal: item.subtotal
           })),
           deliveryAddress: checkoutData.deliveryAddress,
-          paymentMethod: method as any,
+          paymentMethod: method === 'point' ? 'cash' : method as any, // 포인트 결제는 현금으로 매핑
           subtotal: checkoutData.subtotal,
           taxAmount: checkoutData.taxAmount,
           deliveryFee: checkoutData.deliveryFee,
-          totalAmount: paymentAmount,
+          totalAmount: checkoutData.originalAmount || paymentAmount, // 원래 금액 사용
+          // 포인트 정보 추가
+          pointsUsed: checkoutData.pointsUsed || 0,
+          pointsDiscountAmount: checkoutData.pointsUsed || 0,
           status: 'pending' as const,
           createdAt: new Date().toISOString(),
           paymentResult: {
-            paymentKey: paymentKey || `toss_${Date.now()}`,
+            paymentKey: paymentKey || (method === 'point' ? `point_${Date.now()}` : `toss_${Date.now()}`),
             method: method,
             amount: paymentAmount,
             status: 'paid',
@@ -240,7 +243,9 @@ const PaymentSuccess: React.FC = () => {
               <div className="flex justify-between">
                 <span className="text-gray-600">결제방법:</span>
                 <span className="font-medium">
-                  {paymentData.method === 'toss' ? '토스페이' : paymentData.method}
+                  {paymentData.method === 'toss' ? '토스페이' : 
+                   paymentData.method === 'point' ? '포인트 결제' : 
+                   paymentData.method}
                 </span>
               </div>
               {paymentData.paymentKey && (
