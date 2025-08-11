@@ -292,6 +292,66 @@ export const useAuthStore = create<AuthState>()(
                 };
               } else {
                 console.log('✅ 지점 생성 완료:', storeResult);
+                
+                // 5. 새로 생성된 지점에 모든 활성 상품을 재고 0으로 등록
+                console.log('🔄 신규 지점 초기 상품 등록 시작...');
+                try {
+                  if (storeResult && storeResult.length > 0) {
+                    const createdStoreId = storeResult[0].id;
+                    console.log('🏪 생성된 지점 ID:', createdStoreId);
+                    
+                    // 모든 활성 상품 조회
+                    const { data: activeProducts, error: productsError } = await supabase
+                      .from('products')
+                      .select('id, base_price')
+                      .eq('is_active', true);
+                      
+                    if (productsError) {
+                      console.error('❌ 활성 상품 조회 실패:', productsError);
+                    } else if (activeProducts && activeProducts.length > 0) {
+                      console.log(`📦 ${activeProducts.length}개의 활성 상품 발견`);
+                      
+                      // 각 상품을 store_products에 재고 0으로 등록
+                      const storeProductsData = activeProducts.map(product => ({
+                        store_id: createdStoreId,
+                        product_id: product.id,
+                        price: product.base_price,
+                        stock_quantity: 0,
+                        safety_stock: 10,
+                        max_stock: 100,
+                        is_available: true,
+                        discount_rate: null
+                      }));
+                      
+                      console.log('📋 등록할 상품 데이터 (처음 3개):', storeProductsData.slice(0, 3));
+                      
+                      const { error: insertError } = await supabase
+                        .from('store_products')
+                        .insert(storeProductsData);
+                        
+                      if (insertError) {
+                        console.error('❌ 초기 상품 등록 실패:', insertError);
+                        console.error('❌ 상품 등록 오류 상세:', {
+                          message: insertError.message,
+                          details: insertError.details,
+                          hint: insertError.hint,
+                          code: insertError.code
+                        });
+                        // 상품 등록 실패해도 지점 생성은 성공이므로 에러로 처리하지 않음
+                        console.warn('⚠️ 상품 등록은 실패했지만 지점 생성은 완료됨');
+                      } else {
+                        console.log('✅ 초기 상품 등록 완료!', storeProductsData.length, '개 상품 등록됨');
+                      }
+                    } else {
+                      console.warn('⚠️ 등록할 활성 상품이 없습니다.');
+                    }
+                  } else {
+                    console.warn('⚠️ 생성된 지점 정보를 가져올 수 없습니다.');
+                  }
+                } catch (productError) {
+                  console.error('❌ 초기 상품 등록 중 예외:', productError);
+                  // 상품 등록 실패해도 지점 생성은 성공이므로 에러로 처리하지 않음
+                }
               }
             } catch (error) {
               console.error('❌ 지점 생성 중 예외 발생:', error);

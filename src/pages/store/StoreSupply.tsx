@@ -104,7 +104,7 @@ const StoreSupply: React.FC = () => {
 
       const storeId = storeData.id;
 
-      // 재고 현황 조회 - LEFT JOIN을 사용하여 재고가 없는 상품도 포함
+      // 재고 현황 조회 - 모든 활성 상품과 지점별 재고 정보를 조회
       const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select(`
@@ -119,19 +119,21 @@ const StoreSupply: React.FC = () => {
             stock_quantity,
             safety_stock,
             max_stock,
-            is_available
+            is_available,
+            store_id
           )
         `)
         .eq('is_active', true)
-        .eq('store_products.store_id', storeId)
         .order('name', { ascending: true });
 
       if (productsError) {
         console.error('❌ 재고 현황 조회 실패:', productsError);
       } else {
-        // 데이터 구조 변환
+        // 데이터 구조 변환 - 해당 지점의 상품만 필터링
         const transformedData = (productsData || []).map((product: any) => {
-          const storeProduct = product.store_products?.[0];
+          // store_products 배열에서 해당 지점의 상품을 찾음
+          const storeProduct = product.store_products?.find((sp: any) => sp.store_id === storeId);
+          
           return {
             id: storeProduct?.id || `temp_${product.id}`,
             store_id: storeId,
