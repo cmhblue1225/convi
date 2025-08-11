@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/common/Button';
 import { useAuthStore } from '../stores/common/authStore';
+import SystemDemo from '../components/demo/SystemDemo';
 
 const LandingPage: React.FC = () => {
   const { isAuthenticated, user, profile, signOut } = useAuthStore();
   const navigate = useNavigate();
+  const [showDemo, setShowDemo] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -96,7 +98,12 @@ const LandingPage: React.FC = () => {
                   무료로 시작하기
                 </Button>
               </Link>
-              <Button variant="outline" size="lg" className="w-full sm:w-auto">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="w-full sm:w-auto"
+                onClick={() => setShowDemo(true)}
+              >
                 데모 보기
               </Button>
             </div>
@@ -234,6 +241,9 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
       </footer>
+
+      {/* Demo Modal */}
+      <SystemDemo isOpen={showDemo} onClose={() => setShowDemo(false)} />
     </div>
   );
 };
