@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase/client';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { useAuthStore } from '../../stores/common/authStore';
 
+
 interface StoreProduct {
   id: string;
   store_id: string;
@@ -31,6 +32,7 @@ interface SupplyRequest {
   approved_amount: number;
   expected_delivery_date: string;
   actual_delivery_date: string;
+  delivered_at: string | null; // 배송 완료 시간 추가
   notes: string;
   rejection_reason: string;
   created_at: string;
@@ -365,6 +367,140 @@ const StoreSupply: React.FC = () => {
     }
   };
 
+  const updateRequestStatus = async (requestId: string, newStatus: string) => {
+    try {
+      setLoading(true);
+      
+      // 배송 완료 상태로 변경하는 경우 특별 처리
+      if (newStatus === 'delivered') {
+        const { data: requestData, error: requestError } = await supabase
+          .from('supply_requests')
+          .select('*')
+          .eq('id', requestId)
+          .single();
+
+        if (requestError || !requestData) {
+          console.error('❌ 물류 요청 조회 실패:', requestError);
+          return;
+        }
+
+        // 배송 완료 시간과 처리자 기록
+        const { error: updateError } = await supabase
+          .from('supply_requests')
+          .update({ 
+            status: newStatus,
+            delivered_at: new Date().toISOString(),
+            delivered_by: user?.id
+          })
+          .eq('id', requestId);
+
+        if (updateError) {
+          console.error('❌ 상태 업데이트 실패:', updateError);
+          return;
+        }
+
+        // 해당 물류 요청의 상품들에 대해 유통기한 설정
+        await setExpiryDatesForDeliveredItems(requestId, requestData, user?.id);
+
+        console.log('✅ 배송 완료 처리되었습니다. 유통기한이 자동으로 설정되었습니다.');
+      } else {
+        // 일반적인 상태 변경
+        const { error } = await supabase
+          .from('supply_requests')
+          .update({ status: newStatus })
+          .eq('id', requestId);
+
+        if (error) {
+          console.error('❌ 상태 업데이트 실패:', error);
+          console.error('❌ 상태 업데이트에 실패했습니다.');
+          return;
+        }
+
+        console.log('✅ 상태가 업데이트되었습니다.');
+      }
+
+      // 데이터 새로고침
+      fetchData();
+    } catch (error) {
+      console.error('❌ 상태 업데이트 중 오류:', error);
+      console.error('❌ 상태 업데이트 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 배송 완료된 상품들의 유통기한 설정
+  const setExpiryDatesForDeliveredItems = async (requestId: string, requestData: any, userId?: string) => {
+    try {
+      // 물류 요청의 상품 목록 조회
+      const { data: itemsData, error: itemsError } = await supabase
+        .from('supply_request_items')
+        .select(`
+          *,
+          product:products(
+            id,
+            name,
+            shelf_life_days
+          )
+        `)
+        .eq('supply_request_id', requestId);
+
+      if (itemsError || !itemsData) {
+        console.error('❌ 물류 요청 상품 조회 실패:', itemsError);
+        return;
+      }
+
+      const now = new Date();
+      const deliveredAt = new Date(requestData.delivered_at || now);
+
+      // 각 상품에 대해 유통기한 설정
+      for (const item of itemsData) {
+        const product = item.product;
+        if (!product || !product.shelf_life_days) continue;
+
+        // 배송 완료 시간 + 유통기한 = 만료 시간
+        const expiryDate = new Date(deliveredAt);
+        expiryDate.setDate(expiryDate.getDate() + product.shelf_life_days);
+
+        // 해당 지점의 상품 ID 조회
+        const { data: storeProductData, error: storeProductError } = await supabase
+          .from('store_products')
+          .select('id')
+          .eq('store_id', requestData.store_id)
+          .eq('product_id', product.id)
+          .single();
+
+        if (storeProductError || !storeProductData) {
+          console.error(`❌ 지점 상품 조회 실패 (${product.name}):`, storeProductError);
+          continue;
+        }
+
+        // 재고 트랜잭션에 유통기한 정보 추가
+        const { error: transactionError } = await supabase
+          .from('inventory_transactions')
+          .insert({
+            store_product_id: storeProductData.id,
+            transaction_type: 'supply_delivery',
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            total_amount: item.total_amount,
+            expires_at: expiryDate.toISOString(),
+            notes: `물류 요청 #${requestData.request_number} 배송 완료 - 유통기한 ${product.shelf_life_days}일`,
+            reference_id: requestId,
+            reference_type: 'supply_request'
+          });
+
+        if (transactionError) {
+          console.error(`❌ 재고 트랜잭션 생성 실패 (${product.name}):`, transactionError);
+        } else {
+          console.log(`✅ ${product.name} 유통기한 설정 완료: ${expiryDate.toISOString()}`);
+        }
+      }
+    } catch (error) {
+      console.error('❌ 유통기한 설정 중 오류:', error);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'draft': return 'bg-gray-100 text-gray-800';
@@ -483,6 +619,16 @@ const StoreSupply: React.FC = () => {
             >
               배송중
             </button>
+            <button
+              onClick={() => setFilterStatus('delivered')}
+              className={`px-3 py-1 text-xs rounded ${
+                filterStatus === 'delivered' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              배송완료
+            </button>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -503,6 +649,9 @@ const StoreSupply: React.FC = () => {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   요청일
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  배송완료시간
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   관리
@@ -537,6 +686,23 @@ const StoreSupply: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(request.created_at).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {request.delivered_at ? (
+                      <div>
+                        <div className="font-medium text-green-600">
+                          {new Date(request.delivered_at).toLocaleDateString()}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {new Date(request.delivered_at).toLocaleTimeString('ko-KR', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button

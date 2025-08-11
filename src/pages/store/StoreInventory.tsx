@@ -16,17 +16,74 @@ interface StoreProduct {
     name: string;
     unit: string;
     base_price: number;
+    shelf_life_days: number | null;
   };
+  // 유통기한별 재고 정보 추가
+  expiryGroup?: string; // 유통기한 그룹 식별자
+  batchId?: string; // 배치별 식별자
+}
+
+interface ExpiryInfo {
+  expiresAt: string | null;
+  daysRemaining: number | null;
+  hoursRemaining: number | null;
+  minutesRemaining: number | null;
+  status: 'normal' | 'warning' | 'danger' | 'expired' | null;
+  formattedRemaining: string;
+}
+
+// 유통기한별 재고 정보를 포함한 확장된 인터페이스
+interface InventoryWithExpiry {
+  id: string;
+  store_id: string;
+  product_id: string;
+  price: number;
+  stock_quantity: number;
+  safety_stock: number;
+  max_stock: number;
+  is_available: boolean;
+  product: {
+    name: string;
+    unit: string;
+    base_price: number;
+    shelf_life_days: number | null;
+  };
+  expiryGroup: string; // 유통기한 그룹 식별자
+  batchId: string; // 배치별 식별자
+  expiryInfo: ExpiryInfo;
+  batchQuantity: number; // 해당 배치의 수량
 }
 
 const StoreInventory: React.FC = () => {
   const [storeProducts, setStoreProducts] = useState<StoreProduct[]>([]);
+  const [inventoryWithExpiry, setInventoryWithExpiry] = useState<InventoryWithExpiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStock, setFilterStock] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'current' | 'all'>('current');
   const [expiryFilter, setExpiryFilter] = useState<'all' | 'normal' | 'warning' | 'danger' | 'expired'>('all');
-  const [expiryByStoreProductId, setExpiryByStoreProductId] = useState<Record<string, { expiresAt: string | null; daysRemaining: number | null; status: 'normal' | 'warning' | 'danger' | 'expired' | null }>>({});
+  const [expiryByStoreProductId, setExpiryByStoreProductId] = useState<Record<string, ExpiryInfo>>({});
   const { user } = useAuthStore();
+
+  // 유통기한 남은 시간을 포맷팅하는 함수
+  const formatExpiryRemaining = (days: number, hours: number, minutes: number): string => {
+    if (days > 0) {
+      return `${days}일 ${hours}시간 ${minutes}분`;
+    } else if (hours > 0) {
+      return `${hours}시간 ${minutes}분`;
+    } else if (minutes > 0) {
+      return `${minutes}분`;
+    } else {
+      return '0분';
+    }
+  };
+
+  // 유통기한 상태를 결정하는 함수
+  const getExpiryStatus = (totalMinutes: number): 'normal' | 'warning' | 'danger' | 'expired' => {
+    if (totalMinutes <= 0) return 'expired';
+    if (totalMinutes <= 3 * 24 * 60) return 'danger'; // 3일 이하
+    if (totalMinutes <= 7 * 24 * 60) return 'warning'; // 7일 이하
+    return 'normal';
+  };
 
   // 실시간 구독 설정
   useEffect(() => {
@@ -65,105 +122,180 @@ const StoreInventory: React.FC = () => {
         return;
       }
 
-      const storeId = storeData.id;
+      const storeId = storeData.id as string;
 
-      // 재고 현황 조회 - LEFT JOIN을 사용하여 재고가 없는 상품도 포함
-      const { data: productsData, error: productsError } = await supabase
-        .from('products')
-        .select(`
-          id,
-          name,
-          unit,
-          base_price,
-          is_active,
-          store_products!left(
-            id,
-            price,
-            stock_quantity,
-            safety_stock,
-            max_stock,
-            is_available
-          )
-        `)
-        .eq('is_active', true)
-        .eq('store_products.store_id', storeId)
-        .order('name', { ascending: true });
-
-      if (productsError) {
-        console.error('❌ 재고 현황 조회 실패:', productsError);
-      } else {
-        // 데이터 구조 변환
-        const transformedData = (productsData || []).map((product: any) => {
-          const storeProduct = product.store_products?.[0];
-          return {
-            id: storeProduct?.id || `temp_${product.id}`,
-            store_id: storeId,
-            product_id: product.id,
-            price: storeProduct?.price || product.base_price,
-            stock_quantity: storeProduct?.stock_quantity || 0,
-            safety_stock: storeProduct?.safety_stock || 10,
-            max_stock: storeProduct?.max_stock || 100,
-            is_available: storeProduct?.is_available ?? true,
-            product: {
-              name: product.name,
-              unit: product.unit,
-              base_price: product.base_price
-            }
-          };
-        });
-        setStoreProducts(transformedData);
-
-        // 유통기한 정보 조회: 각 store_product_id 별 가장 빠른 expires_at
-        const realIds = transformedData
-          .map((p) => p.id)
-          .filter((id) => typeof id === 'string' && !id.startsWith('temp_')) as string[];
-        if (realIds.length > 0) {
-          const { data: txRows, error: txError } = await supabase
-            .from('inventory_transactions')
-            .select('store_product_id, expires_at')
-            .in('store_product_id', realIds)
-            .not('expires_at', 'is', null);
-
-          if (txError) {
-            console.error('❌ 유통기한 조회 실패:', txError);
-          } else {
-            const earliestMap = new Map<string, string>();
-            for (const row of txRows || []) {
-              const spId = (row as any).store_product_id as string;
-              const expiresAt = (row as any).expires_at as string;
-              const prev = earliestMap.get(spId);
-              if (!prev || new Date(expiresAt) < new Date(prev)) {
-                earliestMap.set(spId, expiresAt);
-              }
-            }
-
-            const now = Date.now();
-            const mapObj: Record<string, { expiresAt: string | null; daysRemaining: number | null; status: 'normal' | 'warning' | 'danger' | 'expired' | null }> = {};
-            for (const spId of realIds) {
-              const exp = earliestMap.get(spId) || null;
-              if (exp) {
-                const diffDays = Math.ceil((new Date(exp).getTime() - now) / (1000 * 60 * 60 * 24));
-                let status: 'normal' | 'warning' | 'danger' | 'expired';
-                if (diffDays <= 0) status = 'expired';
-                else if (diffDays <= 3) status = 'danger';
-                else if (diffDays <= 7) status = 'warning';
-                else status = 'normal';
-                mapObj[spId] = { expiresAt: exp, daysRemaining: diffDays, status };
-              } else {
-                mapObj[spId] = { expiresAt: null, daysRemaining: null, status: null };
-              }
-            }
-            setExpiryByStoreProductId(mapObj);
-          }
-        } else {
-          setExpiryByStoreProductId({});
-        }
+      // 유통기한별 재고 정보 조회
+      if (storeId) {
+        await fetchInventoryWithExpiry(storeId);
       }
     } catch (error) {
-      console.error('❌ 데이터 조회 중 오류:', error);
+      console.error('❌ 데이터 조회 오류:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  // 유통기한별 재고 정보 조회
+  const fetchInventoryWithExpiry = async (storeId: string) => {
+    try {
+      // 모든 재고 트랜잭션 조회 (유통기한 유무와 관계없이)
+      const { data: transactionsData, error: transactionsError } = await supabase
+        .from('inventory_transactions')
+        .select(`
+          id,
+          store_product_id,
+          quantity,
+          expires_at,
+          notes,
+          created_at,
+          transaction_type,
+          new_quantity,
+          store_products!inner(
+            id,
+            price,
+            safety_stock,
+            max_stock,
+            is_available,
+            products!inner(
+              id,
+              name,
+              unit,
+              base_price,
+              shelf_life_days
+            )
+          )
+        `)
+        .eq('store_products.store_id', storeId)
+        .order('created_at', { ascending: false });
+
+      if (transactionsError) {
+        console.error('재고 트랜잭션 조회 오류:', transactionsError);
+        return;
+      }
+
+      if (!transactionsData) return;
+
+      // 유통기한별로 재고를 그룹화
+      const inventoryMap = new Map<string, InventoryWithExpiry>();
+
+      transactionsData.forEach((transaction: any) => {
+        const productId = transaction.store_products.products.id;
+        const productName = transaction.store_products.products.name;
+        const expiresAt = transaction.expires_at;
+        
+        // 유통기한별로 고유 키 생성 (상품ID + 유통기한)
+        const key = `${productId}_${expiresAt || 'no_expiry'}`;
+        
+        if (!inventoryMap.has(key)) {
+          inventoryMap.set(key, {
+            id: transaction.store_product_id,
+            store_id: storeId,
+            product_id: productId,
+            price: transaction.store_products.price,
+            stock_quantity: 0, // 현재 재고는 트랜잭션에서 계산
+            safety_stock: transaction.store_products.safety_stock,
+            max_stock: transaction.store_products.max_stock,
+            is_available: transaction.store_products.is_available,
+            product: {
+              name: productName,
+              unit: transaction.store_products.products.unit,
+              base_price: transaction.store_products.products.base_price,
+              shelf_life_days: transaction.store_products.products.shelf_life_days
+            },
+            expiryGroup: key, // 유통기한별 그룹 키
+            batchId: transaction.id,
+            expiryInfo: calculateExpiryInfo(expiresAt),
+            batchQuantity: 0 // 배치별 수량은 트랜잭션에서 계산
+          });
+        }
+
+        const item = inventoryMap.get(key)!;
+        
+        // 입고/출고에 따라 재고 계산
+        if (transaction.transaction_type === 'in') {
+          item.stock_quantity += transaction.quantity;
+          item.batchQuantity += transaction.quantity;
+        } else if (transaction.transaction_type === 'out') {
+          item.stock_quantity -= transaction.quantity;
+          item.batchQuantity -= transaction.quantity;
+        } else if (transaction.transaction_type === 'adjustment') {
+          item.stock_quantity = transaction.new_quantity || 0;
+          item.batchQuantity = transaction.new_quantity || 0;
+        } else if (transaction.transaction_type === 'expired') {
+          item.stock_quantity -= transaction.quantity;
+          item.batchQuantity -= transaction.quantity;
+        }
+      });
+
+      // 재고가 0 이하인 항목은 제거 (선택사항)
+      const validInventory = Array.from(inventoryMap.values())
+        .filter(item => item.stock_quantity > 0)
+        .sort((a, b) => {
+          // 유통기한이 있는 항목을 먼저 정렬
+          if (a.expiryInfo.expiresAt && !b.expiryInfo.expiresAt) return -1;
+          if (!a.expiryInfo.expiresAt && b.expiryInfo.expiresAt) return 1;
+          
+          // 유통기한이 있는 경우 빠른 순서로 정렬
+          if (a.expiryInfo.expiresAt && b.expiryInfo.expiresAt) {
+            return new Date(a.expiryInfo.expiresAt).getTime() - new Date(b.expiryInfo.expiresAt).getTime();
+          }
+          
+          // 상품명 순서로 정렬
+          return a.product.name.localeCompare(b.product.name);
+        });
+
+      setInventoryWithExpiry(validInventory);
+    } catch (error) {
+      console.error('재고 조회 오류:', error);
+    }
+  };
+
+  // 유통기한 정보를 계산하는 함수
+  const calculateExpiryInfo = (expiresAt: string | null): ExpiryInfo => {
+    if (!expiresAt) {
+      return {
+        expiresAt: null,
+        daysRemaining: null,
+        hoursRemaining: null,
+        minutesRemaining: null,
+        status: 'normal',
+        formattedRemaining: '유통기한 없음'
+      };
+    }
+
+    const now = new Date();
+    const expiryDate = new Date(expiresAt);
+    const diffMs = expiryDate.getTime() - now.getTime();
+    const totalMinutes = Math.floor(diffMs / (1000 * 60));
+
+    let status: 'normal' | 'warning' | 'danger' | 'expired';
+    let daysRemaining: number;
+    let hoursRemaining: number;
+    let minutesRemaining: number;
+
+    if (totalMinutes <= 0) {
+      status = 'expired';
+      daysRemaining = 0;
+      hoursRemaining = 0;
+      minutesRemaining = 0;
+    } else {
+      daysRemaining = Math.floor(totalMinutes / (24 * 60));
+      hoursRemaining = Math.floor((totalMinutes % (24 * 60)) / 60);
+      minutesRemaining = totalMinutes % 60;
+      
+      if (totalMinutes <= 3 * 24 * 60) status = 'danger';
+      else if (totalMinutes <= 7 * 24 * 60) status = 'warning';
+      else status = 'normal';
+    }
+
+    return {
+      expiresAt,
+      daysRemaining,
+      hoursRemaining,
+      minutesRemaining,
+      status,
+      formattedRemaining: formatExpiryRemaining(daysRemaining || 0, hoursRemaining || 0, minutesRemaining || 0)
+    };
   };
 
   const getStockStatus = (current: number, safety: number) => {
@@ -172,8 +304,8 @@ const StoreInventory: React.FC = () => {
     return { color: 'bg-green-100 text-green-800', text: '충분' };
   };
 
-  const filteredProducts = storeProducts
-    .filter((product) => (viewMode === 'all' ? true : product.stock_quantity > 0))
+  const filteredProducts = inventoryWithExpiry
+    .filter((product) => (viewMode === 'all' ? true : product.batchQuantity > 0))
     .filter(product => {
       if (filterStock === 'all') return true;
       if (filterStock === 'low' && product.stock_quantity <= product.safety_stock) return true;
@@ -182,8 +314,7 @@ const StoreInventory: React.FC = () => {
     })
     .filter((product) => {
       if (expiryFilter === 'all') return true;
-      const info = expiryByStoreProductId[product.id];
-      const status = info?.status || null;
+      const status = product.expiryInfo?.status || null;
       if (!status) return expiryFilter === 'normal';
       return status === expiryFilter;
     });
@@ -204,21 +335,29 @@ const StoreInventory: React.FC = () => {
       </div>
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-sm font-medium text-gray-500">전체 상품</div>
-          <div className="text-2xl font-bold text-gray-900">{storeProducts.length}</div>
+          <div className="text-2xl font-bold text-gray-900">{inventoryWithExpiry.length}</div>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-sm font-medium text-gray-500">재고 부족</div>
           <div className="text-2xl font-bold text-orange-600">
-            {storeProducts.filter(p => p.stock_quantity <= p.safety_stock).length}
+            {inventoryWithExpiry.filter(p => p.stock_quantity <= p.safety_stock).length}
           </div>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-sm font-medium text-gray-500">품절</div>
           <div className="text-2xl font-bold text-red-600">
-            {storeProducts.filter(p => p.stock_quantity <= 0).length}
+            {inventoryWithExpiry.filter(p => p.stock_quantity <= 0).length}
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="text-sm font-medium text-gray-500">유통기한 임박</div>
+          <div className="text-2xl font-bold text-yellow-600">
+            {inventoryWithExpiry.filter(info => 
+              info.expiryInfo.status === 'warning' || info.expiryInfo.status === 'danger'
+            ).length}
           </div>
         </div>
       </div>
@@ -279,7 +418,7 @@ const StoreInventory: React.FC = () => {
                   상품명
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  현재재고
+                  배치별 재고
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   안전재고
@@ -307,9 +446,7 @@ const StoreInventory: React.FC = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredProducts.map((product) => {
                 const stockStatus = getStockStatus(product.stock_quantity, product.safety_stock);
-                const expiryInfo = expiryByStoreProductId[product.id];
-                const daysRemaining = expiryInfo?.daysRemaining ?? null;
-                const expiryStatus = expiryInfo?.status ?? null;
+                const expiryStatus = product.expiryInfo?.status ?? null;
                 const expiryColor = expiryStatus === 'expired'
                   ? 'bg-gray-100 text-gray-800'
                   : expiryStatus === 'danger'
@@ -317,13 +454,15 @@ const StoreInventory: React.FC = () => {
                     : expiryStatus === 'warning'
                       ? 'bg-orange-100 text-orange-800'
                       : 'bg-green-100 text-green-800';
+                
                 return (
                   <tr key={product.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{product.product.name}</div>
+                      <div className="text-xs text-gray-500">배치: {product.batchId}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{product.stock_quantity}</div>
+                      <div className="text-sm text-gray-900">{product.batchQuantity}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{product.safety_stock}</div>
@@ -332,11 +471,21 @@ const StoreInventory: React.FC = () => {
                       <div className="text-sm text-gray-900">{product.max_stock}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{daysRemaining === null ? '-' : `${daysRemaining}일`}</div>
+                      <div className="text-sm text-gray-900">
+                        {product.expiryInfo?.formattedRemaining || '-'}
+                      </div>
+                      {product.expiryInfo?.expiresAt && (
+                        <div className="text-xs text-gray-500">
+                          만료: {new Date(product.expiryInfo.expiresAt).toLocaleDateString()}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${expiryColor}`}>
-                        {expiryStatus === 'expired' ? '만료' : expiryStatus === 'danger' ? '위험' : expiryStatus === 'warning' ? '임박' : '정상'}
+                        {expiryStatus === 'expired' ? '만료' : 
+                         expiryStatus === 'danger' ? '위험' : 
+                         expiryStatus === 'warning' ? '임박' : 
+                         expiryStatus === 'normal' ? '정상' : '정보없음'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
