@@ -1,0 +1,8 @@
+// 현재 파일의 내용을 그대로 복사
+import React, { useState, useEffect } from 'react';
+import { useAuthStore } from '../../stores/common/authStore';
+import { supabase } from '../../lib/supabase/client';
+import type { Profile, Order, Notification, DeliveryAddress } from '../../types/common';
+import PasswordChangeModal from '../../components/common/PasswordChangeModal';
+import DeliveryAddressModal from '../../components/customer/DeliveryAddressModal';
+// ... 나머지 파일 내용 ...

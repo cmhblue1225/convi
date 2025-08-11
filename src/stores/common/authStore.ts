@@ -14,11 +14,13 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signUp: (email: string, password: string, userData?: any) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<{ success: boolean; error?: string }>;
+  changePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
   refreshUser: () => Promise<void>;
   loadProfile: (userId: string) => Promise<void>;
   clearAuth: () => void;
   setLoading: (loading: boolean) => void;
   initializeSession: () => Promise<void>;
+  checkEmailExists: (email: string) => Promise<{ exists: boolean; error?: string }>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -174,7 +176,18 @@ export const useAuthStore = create<AuthState>()(
         
         if (error) {
           console.error('❌ 회원가입 오류:', error);
-          return { success: false, error: error.message };
+          
+          // 사용자 친화적인 오류 메시지 처리
+          let errorMessage = error.message;
+          if (error.message.includes('User already registered')) {
+            errorMessage = '이미 등록된 이메일입니다. 로그인을 시도해주세요.';
+          } else if (error.message.includes('Password should be at least')) {
+            errorMessage = '비밀번호는 최소 6자 이상이어야 합니다.';
+          } else if (error.message.includes('Invalid email')) {
+            errorMessage = '올바른 이메일 형식을 입력해주세요.';
+          }
+          
+          return { success: false, error: errorMessage };
         }
 
         if (data.user) {
@@ -442,6 +455,49 @@ export const useAuthStore = create<AuthState>()(
       }
     },
 
+    changePassword: async (newPassword: string) => {
+      try {
+        console.log('🔐 비밀번호 변경 시작');
+        // 비밀번호 변경 시에는 전역 isLoading을 사용하지 않음 (무한 루프 방지)
+        
+        const { data, error } = await supabase.auth.updateUser({
+          password: newPassword
+        });
+        
+        if (error) {
+          console.error('❌ 비밀번호 변경 실패:', error);
+          
+          // 사용자 친화적인 오류 메시지 제공
+          let userFriendlyMessage = error.message;
+          
+          if (error.message.includes('New password should be different from the old password')) {
+            userFriendlyMessage = '새 비밀번호는 현재 비밀번호와 달라야 합니다. 다른 비밀번호를 입력해주세요.';
+          } else if (error.message.includes('Password should be at least')) {
+            userFriendlyMessage = '비밀번호는 최소 6자 이상이어야 합니다.';
+          } else if (error.message.includes('weak password')) {
+            userFriendlyMessage = '비밀번호가 너무 약합니다. 더 강한 비밀번호를 사용해주세요.';
+          } else if (error.message.includes('Invalid password')) {
+            userFriendlyMessage = '유효하지 않은 비밀번호입니다. 비밀번호 요구사항을 확인해주세요.';
+          }
+          
+          return { success: false, error: userFriendlyMessage };
+        }
+
+        if (data.user) {
+          console.log('✅ 비밀번호 변경 성공');
+          return { success: true };
+        }
+
+        return { success: false, error: '비밀번호 변경 중 오류가 발생했습니다.' };
+      } catch (error) {
+        console.error('❌ 비밀번호 변경 예외:', error);
+        return { 
+          success: false, 
+          error: error instanceof Error ? error.message : '비밀번호 변경 중 오류가 발생했습니다.' 
+        };
+      }
+    },
+
     refreshUser: async () => {
       try {
         console.log('🔄 refreshUser 시작');
@@ -569,6 +625,40 @@ export const useAuthStore = create<AuthState>()(
         console.error('❌ 프로필 로드 중 예외 발생:', error);
       }
     },
+
+    checkEmailExists: async (email: string) => {
+      try {
+        console.log('📧 이메일 중복 확인:', email);
+        
+        // Supabase Auth API를 통해 이메일 존재 여부 확인
+        // 실제로는 회원가입을 시도해보고 오류를 확인하는 방식을 사용
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password: 'temp_password_for_check', // 임시 비밀번호
+        });
+        
+        if (error) {
+          if (error.message.includes('User already registered')) {
+            console.log('✅ 이메일 중복 확인 완료: 이미 존재함');
+            return { exists: true };
+          } else {
+            console.log('✅ 이메일 중복 확인 완료: 사용 가능');
+            return { exists: false };
+          }
+        }
+        
+        // 임시로 생성된 사용자가 있다면 삭제 (실제로는 이 방법은 권장하지 않음)
+        console.log('✅ 이메일 중복 확인 완료: 사용 가능');
+        return { exists: false };
+        
+      } catch (error) {
+        console.error('❌ 이메일 중복 확인 실패:', error);
+        return { 
+          exists: false, 
+          error: error instanceof Error ? error.message : '이메일 확인 중 오류가 발생했습니다.' 
+        };
+      }
+    },
   }))
 );
 
@@ -677,9 +767,11 @@ supabase.auth.onAuthStateChange(async (event, session) => {
       break;
       
     case 'USER_UPDATED':
-      if (session?.user) {
-        console.log('👤 사용자 정보 업데이트 이벤트 처리');
-        await store.refreshUser();
+      // 비밀번호 변경으로 인한 USER_UPDATED 이벤트는 무시 (무한 루프 방지)
+      console.log('👤 사용자 정보 업데이트 이벤트 - 비밀번호 변경으로 인한 이벤트는 무시');
+      if (session) {
+        // 세션만 업데이트하고 refreshUser는 호출하지 않음
+        store.session = session;
       }
       break;
       

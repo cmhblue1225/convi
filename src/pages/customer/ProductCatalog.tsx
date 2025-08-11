@@ -5,6 +5,8 @@ import type { Product, Category, StoreProduct } from '../../types/common';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import Cart from '../../components/customer/Cart';
 import { useCartStore } from '../../stores/cartStore';
+import { WishlistButton } from '../../components/common/WishlistButton';
+import { useAuthStore } from '../../stores/common/authStore';
 
 interface ProductWithStock extends Product {
   store_products: StoreProduct[];
@@ -18,6 +20,8 @@ const ProductCatalog: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [wishlistedProducts, setWishlistedProducts] = useState<Record<string, boolean>>({});
+  const { user } = useAuthStore();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const location = useLocation();
@@ -26,6 +30,28 @@ const ProductCatalog: React.FC = () => {
 
   // 선택된 지점 정보 가져오기
   const selectedStore = JSON.parse(localStorage.getItem('selectedStore') || '{}');
+
+  // 찜 목록 로드
+  const loadWishlist = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('wishlists')
+        .select('product_id')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      const wishlistMap: Record<string, boolean> = {};
+      data.forEach(item => {
+        wishlistMap[item.product_id] = true;
+      });
+      setWishlistedProducts(wishlistMap);
+    } catch (error) {
+      console.error('찜 목록 로드 중 오류:', error);
+    }
+  };
 
   useEffect(() => {
     if (!selectedStore.id) {
@@ -37,6 +63,9 @@ const ProductCatalog: React.FC = () => {
     // URL 파라미터에서 카테고리 정보 읽기
     const categorySlug = searchParams.get('category');
     const categoryName = location.state?.categoryName;
+
+    // 찜 목록 로드
+    loadWishlist();
     
     fetchCategories().then(() => {
       // 카테고리 데이터 로드 후 URL 파라미터 처리
@@ -325,6 +354,20 @@ const ProductCatalog: React.FC = () => {
                   key={product.id} 
                   className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow relative"
                 >
+                  {/* 찜하기 버튼 */}
+                  <div className="absolute top-2 right-2 z-20">
+                    <WishlistButton
+                      productId={product.id}
+                      isWishlisted={wishlistedProducts[product.id] || false}
+                      onToggle={(newState) => {
+                        setWishlistedProducts(prev => ({
+                          ...prev,
+                          [product.id]: newState
+                        }));
+                      }}
+                    />
+                  </div>
+
                   {/* 프로모션 배지 */}
                   {hasDiscount && (
                     <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">
