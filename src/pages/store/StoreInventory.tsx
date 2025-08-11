@@ -94,6 +94,42 @@ const StoreInventory: React.FC = () => {
   const [expiryFilter, setExpiryFilter] = useState<'all' | 'normal' | 'warning' | 'danger' | 'expired'>('all');
   const { user } = useAuthStore();
 
+  // 폐기 처리 함수
+  const handleDisposal = async (product: InventoryWithExpiry) => {
+    if (!window.confirm(`${product.product.name} (배치: ${product.batchId})을 폐기하시겠습니까?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('inventory_transactions')
+        .insert({
+          store_product_id: product.id,
+          transaction_type: 'expired',
+          quantity: product.batchQuantity,
+          previous_quantity: product.stock_quantity,
+          new_quantity: product.stock_quantity - product.batchQuantity,
+          reason: '유통기한 만료로 인한 폐기',
+          notes: `만료일: ${product.expiryInfo.expiresAt ? new Date(product.expiryInfo.expiresAt).toLocaleDateString() : '정보없음'}`,
+          created_by: user?.id,
+          expires_at: product.expiryInfo.expiresAt
+        });
+
+      if (error) {
+        console.error('폐기 처리 실패:', error);
+        alert('폐기 처리에 실패했습니다.');
+        return;
+      }
+
+      alert('폐기 처리가 완료되었습니다.');
+      // 데이터 새로고침
+      fetchData();
+    } catch (error) {
+      console.error('폐기 처리 중 오류:', error);
+      alert('폐기 처리 중 오류가 발생했습니다.');
+    }
+  };
+
   // 유통기한 남은 시간을 포맷팅하는 함수
   const formatExpiryRemaining = (days: number, hours: number, minutes: number): string => {
     if (days > 0) {
@@ -612,6 +648,11 @@ const StoreInventory: React.FC = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   단위
                 </th>
+                {viewMode === 'current' && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    작업
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -672,6 +713,16 @@ const StoreInventory: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{currentProduct.product.unit}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {currentProduct.expiryInfo?.status === 'expired' && (
+                          <button
+                            onClick={() => handleDisposal(currentProduct)}
+                            className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                          >
+                            폐기완료
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
