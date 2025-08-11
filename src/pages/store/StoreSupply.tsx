@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase/client';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { useAuthStore } from '../../stores/common/authStore';
+import * as ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 interface StoreProduct {
   id: string;
@@ -47,7 +49,7 @@ interface SupplyRequestItem {
   current_stock: number;
 }
 
-const StoreSupply: React.FC = () => {
+const StoreSupply = () => {
   const [storeProducts, setStoreProducts] = useState<StoreProduct[]>([]);
   const [supplyRequests, setSupplyRequests] = useState<SupplyRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -375,6 +377,492 @@ const StoreSupply: React.FC = () => {
     return false;
   });
 
+  // 엑셀 다운로드 함수 - 거래명세서 형식
+  const downloadExcel = async (request: SupplyRequest) => {
+    try {
+      // 워크북 생성
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('물류요청서');
+      
+      // 현재 사용자의 지점 정보 조회
+      const { data: storeData } = await supabase
+        .from('stores')
+        .select('name, address, phone')
+        .eq('owner_id', user?.id)
+        .single();
+
+      const storeName = storeData?.name || '지점명';
+      const storeAddress = storeData?.address || '주소';
+      const storePhone = storeData?.phone || '연락처';
+
+      // ====== 첫 번째(공급받는자 보관용) 물류요청서 ======
+      
+      // 셀 병합
+      worksheet.mergeCells('B2:G2');
+      worksheet.mergeCells('B3:J4');
+      worksheet.mergeCells('K3:M3');
+      worksheet.mergeCells('N3:Q3');
+      worksheet.mergeCells('R3:S3');
+      worksheet.mergeCells('T3:AC3');
+      worksheet.mergeCells('K4:N4');
+      worksheet.mergeCells('O4:AC4');
+      worksheet.mergeCells('B5:E5');
+      worksheet.mergeCells('F5:O5');
+      worksheet.mergeCells('P5:S5');
+      worksheet.mergeCells('T5:AC5');
+      worksheet.mergeCells('B6:C6');
+      worksheet.mergeCells('D6:H6');
+      worksheet.mergeCells('I6:J6');
+      worksheet.mergeCells('K6:N6');
+      worksheet.mergeCells('P6:Q6');
+      worksheet.mergeCells('R6:U6');
+      worksheet.mergeCells('V6:W6');
+      worksheet.mergeCells('X6:AB6');
+      worksheet.mergeCells('B7:C7');
+      worksheet.mergeCells('D7:O7');
+      worksheet.mergeCells('P7:Q7');
+      worksheet.mergeCells('R7:AC7');
+      worksheet.mergeCells('B8:C8');
+      worksheet.mergeCells('D8:H8');
+      worksheet.mergeCells('I8:J8');
+      worksheet.mergeCells('K8:O8');
+      worksheet.mergeCells('P8:Q8');
+      worksheet.mergeCells('R8:U8');
+      worksheet.mergeCells('V8:W8');
+      worksheet.mergeCells('X8:AC8');
+      worksheet.mergeCells('B9:C9');
+      worksheet.mergeCells('D9:H9');
+      worksheet.mergeCells('I9:J9');
+      worksheet.mergeCells('K9:L9');
+      worksheet.mergeCells('M9:O9');
+      worksheet.mergeCells('P9:T9');
+      worksheet.mergeCells('U9:Y9');
+      worksheet.mergeCells('Z9:AC9');
+
+      // 헤더 정보 입력
+      worksheet.getCell('B2').value = '<공급받는자 보관용>';
+      worksheet.getCell('B3').value = '물류요청서';
+      worksheet.getCell('K3').value = '일자';
+      worksheet.getCell('N3').value = new Date(request.created_at).toLocaleDateString();
+      worksheet.getCell('R3').value = 'No.';
+      worksheet.getCell('K4').value = '지점 연락처';
+      worksheet.getCell('O4').value = storePhone;
+
+      worksheet.getCell('B5').value = '지점';
+      worksheet.getCell('P5').value = '본사';
+
+      worksheet.getCell('B6').value = '상호';
+      worksheet.getCell('D6').value = storeName;
+      worksheet.getCell('I6').value = '담당자';
+      worksheet.getCell('K6').value = user?.email || '사용자';
+      worksheet.getCell('O6').value = '(인)';
+      worksheet.getCell('P6').value = '상호';
+      worksheet.getCell('R6').value = '본사';
+      worksheet.getCell('V6').value = '담당자';
+      worksheet.getCell('X6').value = '본사담당자';
+      worksheet.getCell('AC6').value = '(인)';
+
+      worksheet.getCell('B7').value = '주소';
+      worksheet.getCell('D7').value = storeAddress;
+      worksheet.getCell('P7').value = '주소';
+      worksheet.getCell('R7').value = '본사주소';
+
+      worksheet.getCell('B8').value = '업태';
+      worksheet.getCell('D8').value = '소매';
+      worksheet.getCell('I8').value = '종목';
+      worksheet.getCell('K8').value = '소매';
+      worksheet.getCell('P8').value = '비고';
+      worksheet.getCell('R8').value = '요청자';
+      worksheet.getCell('X8').value = user?.email || '사용자';
+
+      worksheet.getCell('B9').value = '월일';
+      worksheet.getCell('D9').value = '품명/규격';
+      worksheet.getCell('I9').value = '단위';
+      worksheet.getCell('K9').value = '요청수량';
+      worksheet.getCell('N9').value = '단가';
+      worksheet.getCell('P9').value = '공급가액';
+      worksheet.getCell('U9').value = '현재재고';
+      worksheet.getCell('Z9').value = '요청사유';
+
+      // 품목 데이터 입력
+      if (request.items && request.items.length > 0) {
+        for (let i = 0; i < request.items.length && i < 10; i++) {
+          const item = request.items[i];
+          const row = 10 + i;
+          
+          worksheet.getCell(`B${row}`).value = new Date(request.created_at).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' });
+          worksheet.getCell(`D${row}`).value = item.product_name;
+          worksheet.getCell(`I${row}`).value = '-';
+          worksheet.getCell(`K${row}`).value = item.requested_quantity > 0 ? item.requested_quantity : '';
+          worksheet.getCell(`M${row}`).value = item.unit_cost > 0 ? item.unit_cost : '';
+          worksheet.getCell(`P${row}`).value = item.total_cost > 0 ? item.total_cost : '';
+          worksheet.getCell(`U${row}`).value = item.current_stock;
+          worksheet.getCell(`Z${row}`).value = item.reason;
+
+          // 품목 행 셀 병합
+          worksheet.mergeCells(`B${row}:C${row}`);
+          worksheet.mergeCells(`D${row}:H${row}`);
+          worksheet.mergeCells(`I${row}:J${row}`);
+          worksheet.mergeCells(`K${row}:L${row}`);
+          worksheet.mergeCells(`M${row}:O${row}`);
+          worksheet.mergeCells(`P${row}:T${row}`);
+          worksheet.mergeCells(`U${row}:Y${row}`);
+          worksheet.mergeCells(`Z${row}:AC${row}`);
+        }
+      }
+
+      // 합계 행
+      const totalAmount = request.items?.reduce((sum, item) => sum + (item.total_cost || 0), 0) || 0;
+      worksheet.getCell('B20').value = '합계';
+      worksheet.getCell('D20').value = `${totalAmount.toLocaleString()} (총 요청금액)`;
+      worksheet.getCell('S20').value = '우선순위';
+      worksheet.getCell('V20').value = request.priority;
+      worksheet.getCell('B21').value = '메모';
+      worksheet.getCell('D21').value = request.notes || '추가 요청사항 없음';
+      worksheet.getCell('S21').value = '희망배송일';
+      worksheet.getCell('V21').value = request.expected_delivery_date ? new Date(request.expected_delivery_date).toLocaleDateString() : '-';
+
+      worksheet.getCell('B22').value = '-------------------------------------------------------------------------------------------------------------------------------------------------------------';
+
+      // 합계 행 셀 병합
+      worksheet.mergeCells('B20:C20');
+      worksheet.mergeCells('D20:R20');
+      worksheet.mergeCells('S20:U20');
+      worksheet.mergeCells('V20:AC20');
+      worksheet.mergeCells('B21:C21');
+      worksheet.mergeCells('D21:R21');
+      worksheet.mergeCells('S21:U21');
+      worksheet.mergeCells('V21:AC21');
+      worksheet.mergeCells('B22:AC22');
+
+      // ====== 두 번째(공급자 보관용) 물류요청서 복사 ======
+      
+      // 1. 셀 병합 (행 번호 +21씩 증가)
+      const mergeList = [
+        ['B2:G2'], ['B3:J4'], ['K3:M3'], ['N3:Q3'], ['R3:S3'], ['T3:AC3'],
+        ['K4:N4'], ['O4:AC4'], ['B5:E5'], ['F5:O5'], ['P5:S5'], ['T5:AC5'],
+        ['B6:C6'], ['D6:H6'], ['I6:J6'], ['K6:N6'], ['P6:Q6'], ['R6:U6'], ['V6:W6'], ['X6:AB6'],
+        ['B7:C7'], ['D7:O7'], ['P7:Q7'], ['R7:AC7'],
+        ['B8:C8'], ['D8:H8'], ['I8:J8'], ['K8:O8'], ['P8:Q8'], ['R8:U8'], ['V8:W8'], ['X8:AC8'],
+        ['B9:C9'], ['D9:H9'], ['I9:J9'], ['K9:L9'], ['M9:O9'], ['P9:T9'], ['U9:Y9'], ['Z9:AC9'],
+        ['B20:C20'], ['D20:R20'], ['S20:U20'], ['V20:AC20'],
+        ['B21:C21'], ['D21:R21'], ['S21:U21'], ['V21:AC21'],
+        ['B22:AC22']
+      ];
+
+      for (const [range] of mergeList) {
+        const [start, end] = range.split(':');
+        const startColMatch = start.match(/[A-Z]+/);
+        const startRowMatch = start.match(/[0-9]+/);
+        const endColMatch = end.match(/[A-Z]+/);
+        const endRowMatch = end.match(/[0-9]+/);
+        
+        if (startColMatch && startRowMatch && endColMatch && endRowMatch) {
+          const startCol = startColMatch[0];
+          const startRow = parseInt(startRowMatch[0]);
+          const endCol = endColMatch[0];
+          const endRow = parseInt(endRowMatch[0]);
+          worksheet.mergeCells(`${startCol}${startRow + 21}:${endCol}${endRow + 21}`);
+        }
+      }
+
+      // 품목 행 셀 병합 복사
+      for (let row = 10; row <= 19; row++) {
+        worksheet.mergeCells(`B${row+21}:C${row+21}`);
+        worksheet.mergeCells(`D${row+21}:H${row+21}`);
+        worksheet.mergeCells(`I${row+21}:J${row+21}`);
+        worksheet.mergeCells(`K${row+21}:L${row+21}`);
+        worksheet.mergeCells(`M${row+21}:O${row+21}`);
+        worksheet.mergeCells(`P${row+21}:T${row+21}`);
+        worksheet.mergeCells(`U${row+21}:Y${row+21}`);
+        worksheet.mergeCells(`Z${row+21}:AC${row+21}`);
+      }
+
+      // 2. 값+스타일 복사 (B2:AC21 -> B23:AC41)
+      for (let row = 2; row <= 21; row++) {
+        for (let col = 2; col <= 29; col++) {
+          const sourceCell = worksheet.getCell(row, col);
+          const destCell = worksheet.getCell(row + 21, col);
+          destCell.value = sourceCell.value;
+        }
+      }
+
+      // 3. 공급자 보관용 표시
+      worksheet.getCell('B23').value = '<공급자 보관용>';
+
+      // ====== 스타일 적용 ======
+      
+      // 폰트/정렬
+      for (let row = 2; row <= 42; row++) {
+        for (let col = 2; col <= 29; col++) {
+          const cell = worksheet.getCell(row, col);
+          cell.font = { name: '맑은 고딕', size: 8 };
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        }
+      }
+
+      // 제목 폰트 크기
+      worksheet.getCell('B3').font = { name: '맑은 고딕', size: 18, bold: true };
+      worksheet.getCell('B24').font = { name: '맑은 고딕', size: 18, bold: true };
+
+      // 열너비, 행높이
+      for (let i = 1; i <= worksheet.columnCount; i++) {
+        worksheet.getColumn(i).width = 2.5;
+      }
+      for (let i = 1; i <= worksheet.rowCount; i++) {
+        worksheet.getRow(i).height = 15;
+      }
+
+      // 기본 테두리 적용
+      for (let row = 2; row <= 42; row++) {
+        for (let col = 2; col <= 29; col++) {
+          const cell = worksheet.getCell(row, col);
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FF000000' } },
+            left: { style: 'thin', color: { argb: 'FF000000' } },
+            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+            right: { style: 'thin', color: { argb: 'FF000000' } }
+          };
+        }
+      }
+
+
+
+      // 첫 번째 행 숨김 처리
+      worksheet.getRow(1).height = 0.1;
+
+      // ====== 파일 저장 ======
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+      
+      const fileName = `물류요청서_거래명세서_${request.request_number}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      saveAs(blob, fileName);
+      
+    } catch (error) {
+      console.error('❌ 엑셀 다운로드 중 오류:', error);
+      alert('엑셀 파일 생성 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 컬럼명을 숫자로 변환하는 함수
+  const colNameToNumber = (colName: string) => {
+    let num = 0;
+    for (let i = 0; i < colName.length; i++) {
+      num = num * 26 + (colName.charCodeAt(i) - 64);
+    }
+    return num;
+  };
+
+  
+
+  // 인쇄 기능 추가
+  const printDocument = (request: SupplyRequest) => {
+    try {
+      // 인쇄용 창 생성
+      const printWindow = window.open('', '_blank', 'width=800,height=600');
+      
+      if (!printWindow) {
+        alert('팝업이 차단되었습니다. 팝업 차단을 해제해주세요.');
+        return;
+      }
+      
+      // 현재 사용자의 지점 정보 조회
+      supabase
+        .from('stores')
+        .select('name, address, phone')
+        .eq('owner_id', user?.id)
+        .single()
+        .then(({ data: storeData }) => {
+          const storeName = storeData?.name || '지점명';
+          const storeAddress = storeData?.address || '주소';
+          const storePhone = storeData?.phone || '연락처';
+
+          // 인쇄용 HTML 생성
+          const printHTML = generatePrintHTML(request, storeName, storeAddress, storePhone);
+
+          // 인쇄 창에 HTML 작성 및 인쇄
+          printWindow.document.write(printHTML);
+          printWindow.document.close();
+          
+          // 이미지 로딩 대기 후 인쇄
+          setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+          }, 500);
+        });
+      
+    } catch (error) {
+      console.error('❌ 인쇄 중 오류:', error);
+      alert('인쇄 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 인쇄용 HTML 생성 함수
+  const generatePrintHTML = (request: SupplyRequest, storeName: string, storeAddress: string, storePhone: string) => {
+    let itemRows = '';
+    if (request.items && request.items.length > 0) {
+      request.items.forEach((item, index) => {
+        itemRows += `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${item.product_name}</td>
+            <td>-</td>
+            <td>-</td>
+            <td>${item.requested_quantity}</td>
+            <td>${item.unit_cost?.toLocaleString()}</td>
+            <td>${item.total_cost?.toLocaleString()}</td>
+            <td>${item.current_stock}</td>
+            <td>-</td>
+            <td>${item.reason}</td>
+            <td></td>
+          </tr>
+        `;
+      });
+    }
+
+    const totalAmount = request.items?.reduce((sum, item) => sum + (item.total_cost || 0), 0) || 0;
+
+    return `
+      <!DOCTYPE html>
+      <html lang="ko">
+      <head>
+        <meta charset="UTF-8">
+        <title>물류요청서</title>
+        <style>
+          @page { 
+            size: A4 landscape; 
+            margin: 10mm; 
+          }
+          body { 
+            font-family: '맑은 고딕', Arial, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            font-size: 9px; 
+            line-height: 1.2;
+          }
+          table { 
+            border-collapse: collapse; 
+            width: 100%; 
+            margin-bottom: 2px; 
+          }
+          th, td { 
+            border: 1px solid #000; 
+            padding: 2px 3px; 
+            text-align: center; 
+            font-size: 8px; 
+            word-wrap: break-word; 
+            vertical-align: middle;
+          }
+          th { 
+            background: #f1f1f1; 
+            font-weight: bold; 
+          }
+          .title { 
+            font-size: 18px; 
+            font-weight: bold; 
+            text-align: center; 
+            padding: 8px 0; 
+            border: 2px solid #000;
+          }
+          .header-row th { 
+            background: #e6e6e6; 
+            font-weight: bold; 
+            font-size: 9px;
+          }
+          .info-row td { 
+            text-align: left; 
+            padding: 3px 5px;
+          }
+          .total-row { 
+            background: #f0f8ff; 
+            font-weight: bold; 
+          }
+          .note-row td { 
+            text-align: left; 
+            padding: 5px;
+          }
+          .signature-row th { 
+            background: #f9f9f9; 
+            font-size: 8px;
+          }
+          .item-table th:nth-child(1), .item-table td:nth-child(1) { width: 4%; }
+          .item-table th:nth-child(2), .item-table td:nth-child(2) { width: 15%; }
+          .item-table th:nth-child(3), .item-table td:nth-child(3) { width: 10%; }
+          .item-table th:nth-child(4), .item-table td:nth-child(4) { width: 6%; }
+          .item-table th:nth-child(5), .item-table td:nth-child(5) { width: 8%; }
+          .item-table th:nth-child(6), .item-table td:nth-child(6) { width: 8%; }
+          .item-table th:nth-child(7), .item-table td:nth-child(7) { width: 10%; }
+          .item-table th:nth-child(8), .item-table td:nth-child(8) { width: 8%; }
+          .item-table th:nth-child(9), .item-table td:nth-child(9) { width: 8%; }
+          .item-table th:nth-child(10), .item-table td:nth-child(10) { width: 15%; }
+          .item-table th:nth-child(11), .item-table td:nth-child(11) { width: 18%; }
+        </style>
+      </head>
+      <body>
+        <div class="title">물류요청서</div>
+        
+        <table>
+          <tr>
+            <th>요청일자</th>
+            <td>${new Date(request.created_at).toLocaleDateString()}</td>
+            <th>요청번호</th>
+            <td>${request.request_number}</td>
+            <th>요청자</th>
+            <td>${user?.email || '사용자'}</td>
+            <th>희망배송일</th>
+            <td>${request.expected_delivery_date ? new Date(request.expected_delivery_date).toLocaleDateString() : '-'}</td>
+          </tr>
+          <tr>
+            <th>지점명</th>
+            <td colspan="7" class="info-row">${storeName}</td>
+          </tr>
+        </table>
+
+        <table class="item-table">
+          <tr class="header-row">
+            <th>순번</th><th>품명</th><th>규격</th><th>단위</th><th>요청수량</th><th>단가</th><th>금액</th><th>현재재고</th><th>안전재고</th><th>요청사유</th><th>비고</th>
+          </tr>
+          ${itemRows}
+          <tr class="total-row">
+            <td colspan="6" style="text-align:right;font-weight:bold;">합계</td>
+            <td style="font-weight:bold;">${totalAmount.toLocaleString()}</td>
+            <td colspan="4"></td>
+          </tr>
+        </table>
+
+        <table>
+          <tr class="note-row">
+            <th>비고</th>
+            <td colspan="10">${request.notes || '추가 요청사항 없음'}</td>
+          </tr>
+        </table>
+
+        <table>
+          <tr>
+            <th>지점 주소</th>
+            <td colspan="3">${storeAddress}</td>
+            <th>지점 연락처</th>
+            <td colspan="5">${storePhone}</td>
+          </tr>
+        </table>
+
+        <table>
+          <tr class="signature-row">
+            <th>요청자</th>
+            <td colspan="2">지점장</td>
+            <th>검토자</th>
+            <td colspan="2">본사 담당자</td>
+            <th>승인자</th>
+            <td colspan="2">본사 책임자</td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `;
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -596,12 +1084,28 @@ const StoreSupply: React.FC = () => {
                     {new Date(request.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => handleViewDetail(request)}
-                      className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-                    >
-                      상세
-                    </button>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleViewDetail(request)}
+                        className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                      >
+                        상세
+                      </button>
+                      <button
+                        onClick={() => downloadExcel(request)}
+                        className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
+                        title="엑셀로 다운로드"
+                      >
+                        📊 엑셀
+                      </button>
+                      <button
+                        onClick={() => printDocument(request)}
+                        className="px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
+                        title="인쇄"
+                      >
+                        🖨️ 인쇄
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -727,7 +1231,25 @@ const StoreSupply: React.FC = () => {
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white">
             <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">물류 요청 상세</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">물류 요청 상세</h3>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => downloadExcel(selectedRequest)}
+                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm flex items-center space-x-2"
+                  >
+                    <span>📊</span>
+                    <span>엑셀로 다운로드</span>
+                  </button>
+                  <button
+                    onClick={() => printDocument(selectedRequest)}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 text-sm flex items-center space-x-2"
+                  >
+                    <span>🖨️</span>
+                    <span>인쇄</span>
+                  </button>
+                </div>
+              </div>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
