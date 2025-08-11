@@ -36,6 +36,30 @@ interface InventoryWithExpiry {
   batchQuantity: number; // 해당 배치의 수량
 }
 
+// 모든 재고 모드를 위한 인터페이스 (상품별로 그룹화)
+interface AllInventoryItem {
+  id: string;
+  store_id: string;
+  product_id: string;
+  price: number;
+  total_stock_quantity: number; // 전체 재고 수량
+  safety_stock: number;
+  max_stock: number;
+  is_available: boolean;
+  product: {
+    name: string;
+    unit: string;
+    base_price: number;
+    shelf_life_days: number | null;
+  };
+  expiryDetails: Array<{
+    expiresAt: string | null;
+    quantity: number;
+    formattedRemaining: string;
+    status: 'normal' | 'warning' | 'danger' | 'expired' | null;
+  }>;
+}
+
 interface TransactionData {
   id: string;
   store_product_id: string;
@@ -63,6 +87,7 @@ interface TransactionData {
 
 const StoreInventory: React.FC = () => {
   const [inventoryWithExpiry, setInventoryWithExpiry] = useState<InventoryWithExpiry[]>([]);
+  const [allInventoryItems, setAllInventoryItems] = useState<AllInventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStock, setFilterStock] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'current' | 'all'>('current');
@@ -105,6 +130,13 @@ const StoreInventory: React.FC = () => {
     };
   }, []);
 
+  // viewMode가 변경될 때마다 데이터 다시 조회
+  useEffect(() => {
+    if (user?.id) {
+      fetchData();
+    }
+  }, [viewMode, user?.id]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -125,7 +157,11 @@ const StoreInventory: React.FC = () => {
 
       // 유통기한별 재고 정보 조회
       if (storeId) {
-        await fetchInventoryWithExpiry(storeId);
+        if (viewMode === 'current') {
+          await fetchInventoryWithExpiry(storeId);
+        } else {
+          await fetchAllInventoryItems(storeId);
+        }
       }
     } catch (error) {
       console.error('❌ 데이터 조회 오류:', error);
@@ -226,26 +262,125 @@ const StoreInventory: React.FC = () => {
         }
       });
 
-      // 재고가 0 이하인 항목은 제거 (선택사항)
-      const validInventory = Array.from(inventoryMap.values())
-        .filter(item => item.stock_quantity > 0)
-        .sort((a, b) => {
-          // 유통기한이 있는 항목을 먼저 정렬
-          if (a.expiryInfo.expiresAt && !b.expiryInfo.expiresAt) return -1;
-          if (!a.expiryInfo.expiresAt && b.expiryInfo.expiresAt) return 1;
-          
-          // 유통기한이 있는 경우 빠른 순서로 정렬
-          if (a.expiryInfo.expiresAt && b.expiryInfo.expiresAt) {
-            return new Date(a.expiryInfo.expiresAt).getTime() - new Date(b.expiryInfo.expiresAt).getTime();
-          }
-          
-          // 상품명 순서로 정렬
-          return a.product.name.localeCompare(b.product.name);
-        });
+      // viewMode에 따라 필터링
+      let validInventory: InventoryWithExpiry[];
+      
+      if (viewMode === 'current') {
+        // 현재 재고: 재고가 0인 항목 제외
+        validInventory = Array.from(inventoryMap.values())
+          .filter(item => item.stock_quantity > 0);
+      } else {
+        // 모든 재고: 모든 항목 포함 (재고가 0인 항목도 포함)
+        validInventory = Array.from(inventoryMap.values());
+      }
+
+      // 정렬
+      validInventory.sort((a, b) => {
+        // 유통기한이 있는 항목을 먼저 정렬
+        if (a.expiryInfo.expiresAt && !b.expiryInfo.expiresAt) return -1;
+        if (!a.expiryInfo.expiresAt && b.expiryInfo.expiresAt) return 1;
+        
+        // 유통기한이 있는 경우 빠른 순서로 정렬
+        if (a.expiryInfo.expiresAt && b.expiryInfo.expiresAt) {
+          return new Date(a.expiryInfo.expiresAt).getTime() - new Date(b.expiryInfo.expiresAt).getTime();
+        }
+        
+        // 상품명 순서로 정렬
+        return a.product.name.localeCompare(b.product.name);
+      });
 
       setInventoryWithExpiry(validInventory);
     } catch (error) {
       console.error('재고 조회 오류:', error);
+    }
+  };
+
+  // 모든 재고 모드를 위한 데이터 조회 함수
+  const fetchAllInventoryItems = async (storeId: string) => {
+    try {
+      // store_products 테이블에서 상품 정보 조회
+      const { data: storeProductsData, error: storeProductsError } = await supabase
+        .from('store_products')
+        .select(`
+          id,
+          store_id,
+          product_id,
+          price,
+          safety_stock,
+          max_stock,
+          is_available,
+          products!inner(
+            id,
+            name,
+            unit,
+            base_price
+          )
+        `)
+        .eq('store_id', storeId);
+
+      if (storeProductsError) {
+        console.error('상품 정보 조회 오류:', storeProductsError);
+        return;
+      }
+
+      if (!storeProductsData) return;
+
+      // 각 상품별로 재고 트랜잭션을 조회하여 총 재고량 계산
+      const allInventoryItems: (AllInventoryItem | null)[] = await Promise.all(
+        storeProductsData.map(async (storeProduct) => {
+          const { data: transactionsData, error: transactionsError } = await supabase
+            .from('inventory_transactions')
+            .select('quantity, transaction_type, new_quantity')
+            .eq('store_product_id', storeProduct.id);
+
+          if (transactionsError) {
+            console.error('트랜잭션 조회 오류:', transactionsError);
+            return null;
+          }
+
+          // 총 재고량 계산
+          let totalStock = 0;
+          if (transactionsData) {
+            transactionsData.forEach((transaction) => {
+              if (transaction.transaction_type === 'in') {
+                totalStock += transaction.quantity;
+              } else if (transaction.transaction_type === 'out') {
+                totalStock -= transaction.quantity;
+              } else if (transaction.transaction_type === 'adjustment') {
+                totalStock = transaction.new_quantity || 0;
+              } else if (transaction.transaction_type === 'expired') {
+                totalStock -= transaction.quantity;
+              }
+            });
+          }
+
+          return {
+            id: storeProduct.id,
+            store_id: storeProduct.store_id || '',
+            product_id: storeProduct.product_id || '',
+            price: storeProduct.price,
+            total_stock_quantity: totalStock,
+            safety_stock: storeProduct.safety_stock || 0,
+            max_stock: storeProduct.max_stock || 0,
+            is_available: storeProduct.is_available || false,
+            product: {
+              name: storeProduct.products.name,
+              unit: storeProduct.products.unit,
+              base_price: storeProduct.products.base_price,
+              shelf_life_days: 30 // 기본값 설정
+            },
+            expiryDetails: [], // 모든 재고 모드에서는 유통기한 상세 정보는 표시하지 않음
+          };
+        })
+      );
+
+      // null 값 제거하고 정렬
+      const validItems = allInventoryItems.filter(item => item !== null) as AllInventoryItem[];
+      validItems.sort((a, b) => a.product.name.localeCompare(b.product.name));
+
+      setAllInventoryItems(validItems);
+    } catch (error) {
+      console.error('모든 재고 조회 오류:', error);
     }
   };
 
@@ -304,7 +439,6 @@ const StoreInventory: React.FC = () => {
   };
 
   const filteredProducts = inventoryWithExpiry
-    .filter((product) => (viewMode === 'all' ? true : product.batchQuantity > 0))
     .filter(product => {
       if (filterStock === 'all') return true;
       if (filterStock === 'low' && product.stock_quantity <= product.safety_stock) return true;
@@ -317,6 +451,16 @@ const StoreInventory: React.FC = () => {
       if (!status) return expiryFilter === 'normal';
       return status === expiryFilter;
     });
+
+  // viewMode에 따라 표시할 데이터 결정
+  const filteredAllProducts = allInventoryItems.filter(product => {
+    if (filterStock === 'all') return true;
+    if (filterStock === 'low' && product.total_stock_quantity <= product.safety_stock) return true;
+    if (filterStock === 'out' && product.total_stock_quantity <= 0) return true;
+    return false;
+  });
+
+  const finalDisplayData = viewMode === 'current' ? filteredProducts : filteredAllProducts;
 
   if (loading) {
     return (
@@ -337,26 +481,39 @@ const StoreInventory: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-sm font-medium text-gray-500">전체 상품</div>
-          <div className="text-2xl font-bold text-gray-900">{inventoryWithExpiry.length}</div>
+          <div className="text-2xl font-bold text-gray-900">
+            {viewMode === 'current' ? inventoryWithExpiry.length : allInventoryItems.length}
+          </div>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-sm font-medium text-gray-500">재고 부족</div>
           <div className="text-2xl font-bold text-orange-600">
-            {inventoryWithExpiry.filter(p => p.stock_quantity <= p.safety_stock).length}
+            {viewMode === 'current' 
+              ? inventoryWithExpiry.filter(p => p.stock_quantity <= p.safety_stock).length
+              : allInventoryItems.filter(p => p.total_stock_quantity <= p.safety_stock).length
+            }
           </div>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-sm font-medium text-gray-500">품절</div>
           <div className="text-2xl font-bold text-red-600">
-            {inventoryWithExpiry.filter(p => p.stock_quantity <= 0).length}
+            {viewMode === 'current' 
+              ? inventoryWithExpiry.filter(p => p.stock_quantity <= 0).length
+              : allInventoryItems.filter(p => p.total_stock_quantity <= 0).length
+            }
           </div>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm font-medium text-gray-500">유통기한 임박</div>
+          <div className="text-sm font-medium text-gray-500">
+            {viewMode === 'current' ? '유통기한 임박' : '재고 현황'}
+          </div>
           <div className="text-2xl font-bold text-yellow-600">
-            {inventoryWithExpiry.filter(info => 
-              info.expiryInfo.status === 'warning' || info.expiryInfo.status === 'danger'
-            ).length}
+            {viewMode === 'current' 
+              ? inventoryWithExpiry.filter(info => 
+                  info.expiryInfo.status === 'warning' || info.expiryInfo.status === 'danger'
+                ).length
+              : allInventoryItems.filter(p => p.total_stock_quantity > 0).length
+            }
           </div>
         </div>
       </div>
@@ -417,7 +574,7 @@ const StoreInventory: React.FC = () => {
                   상품명
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  배치별 재고
+                  {viewMode === 'current' ? '현재 재고' : '배치별 재고'}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   안전재고
@@ -425,12 +582,21 @@ const StoreInventory: React.FC = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   최대재고
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  유통기한
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  유통기한 상태
-                </th>
+                {viewMode === 'current' && (
+                  <>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      유통기한
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      유통기한 상태
+                    </th>
+                  </>
+                )}
+                {viewMode === 'all' && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    상품별 유통기한
+                  </th>
+                )}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   상태
                 </th>
@@ -443,63 +609,104 @@ const StoreInventory: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredProducts.map((product) => {
-                const stockStatus = getStockStatus(product.stock_quantity, product.safety_stock);
-                const expiryStatus = product.expiryInfo?.status ?? null;
-                const expiryColor = expiryStatus === 'expired'
-                  ? 'bg-gray-100 text-gray-800'
-                  : expiryStatus === 'danger'
-                    ? 'bg-red-100 text-red-800'
-                    : expiryStatus === 'warning'
-                      ? 'bg-orange-100 text-orange-800'
-                      : 'bg-green-100 text-green-800';
-                
-                return (
-                  <tr key={`${product.id}_${product.expiryGroup}_${product.batchId}`} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{product.product.name}</div>
-                      <div className="text-xs text-gray-500">배치: {product.batchId}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{product.batchQuantity}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{product.safety_stock}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{product.max_stock}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {product.expiryInfo?.formattedRemaining || '-'}
-                      </div>
-                      {product.expiryInfo?.expiresAt && (
-                        <div className="text-xs text-gray-500">
-                          만료: {new Date(product.expiryInfo.expiresAt).toLocaleDateString()}
+              {finalDisplayData.map((product) => {
+                if (viewMode === 'current') {
+                  // 현재 재고 모드
+                  const currentProduct = product as InventoryWithExpiry;
+                  const stockStatus = getStockStatus(currentProduct.stock_quantity, currentProduct.safety_stock);
+                  const expiryStatus = currentProduct.expiryInfo?.status ?? null;
+                  const expiryColor = expiryStatus === 'expired'
+                    ? 'bg-gray-100 text-gray-800'
+                    : expiryStatus === 'danger'
+                      ? 'bg-red-100 text-red-800'
+                      : expiryStatus === 'warning'
+                        ? 'bg-orange-100 text-orange-800'
+                        : 'bg-green-100 text-green-800';
+                  
+                  return (
+                    <tr key={`${currentProduct.id}_${currentProduct.expiryGroup}_${currentProduct.batchId}`} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{currentProduct.product.name}</div>
+                        <div className="text-xs text-gray-500">배치: {currentProduct.batchId}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{currentProduct.batchQuantity}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{currentProduct.safety_stock}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{currentProduct.max_stock}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {currentProduct.expiryInfo?.formattedRemaining || '-'}
                         </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${expiryColor}`}>
-                        {expiryStatus === 'expired' ? '만료' : 
-                         expiryStatus === 'danger' ? '위험' : 
-                         expiryStatus === 'warning' ? '임박' : 
-                         expiryStatus === 'normal' ? '정상' : '정보없음'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${stockStatus.color}`}>
-                        {stockStatus.text}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{product.price.toLocaleString()}원</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{product.product.unit}</div>
-                    </td>
-                  </tr>
-                );
+                        {currentProduct.expiryInfo?.expiresAt && (
+                          <div className="text-xs text-gray-500">
+                            만료: {new Date(currentProduct.expiryInfo.expiresAt).toLocaleDateString()}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${expiryColor}`}>
+                          {expiryStatus === 'expired' ? '만료' : 
+                           expiryStatus === 'danger' ? '위험' : 
+                           expiryStatus === 'warning' ? '임박' : 
+                           expiryStatus === 'normal' ? '정상' : '정보없음'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${stockStatus.color}`}>
+                          {stockStatus.text}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{currentProduct.price.toLocaleString()}원</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{currentProduct.product.unit}</div>
+                      </td>
+                    </tr>
+                  );
+                } else {
+                  // 모든 재고 모드
+                  const allProduct = product as AllInventoryItem;
+                  const stockStatus = getStockStatus(allProduct.total_stock_quantity, allProduct.safety_stock);
+                  
+                  return (
+                    <tr key={allProduct.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{allProduct.product.name}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{allProduct.total_stock_quantity}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{allProduct.safety_stock}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{allProduct.max_stock}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {allProduct.product.shelf_life_days ? `${allProduct.product.shelf_life_days}일` : '30일'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${stockStatus.color}`}>
+                          {stockStatus.text}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{allProduct.price.toLocaleString()}원</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{allProduct.product.unit}</div>
+                      </td>
+                    </tr>
+                  );
+                }
               })}
             </tbody>
           </table>
