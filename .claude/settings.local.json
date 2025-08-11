@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(npm run server:*)",
+      "Bash(curl:*)",
+      "Bash(pkill:*)",
+      "Bash(NAVER_CLIENT_ID=w7wdlooyhk NAVER_CLIENT_SECRET=9UzooXWcNe0yVVq9FE0EcXX2ar6UydThxaUgDKJG node server.js)",
+      "Bash(cat:*)",
+      "Bash(true)",
+      "WebFetch(domain:guide.ncloud-docs.com)",
+      "WebFetch(domain:api.ncloud-docs.com)",
+      "WebFetch(domain:apidocs.ncloud.com)",
+      "Bash(node server.js)"
+    ],
+    "deny": []
+  }
+}
