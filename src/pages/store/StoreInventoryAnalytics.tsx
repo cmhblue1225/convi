@@ -106,7 +106,7 @@ export default function StoreInventoryAnalytics() {
   ].filter(item => item.value > 0) : [];
 
   const topPerformanceData = performanceRanking.slice(0, 10).map(item => ({
-    name: item.product_name.length > 10 ? item.product_name.substring(0, 10) + '...' : item.product_name,
+    name: item.product_name.length > 15 ? item.product_name.substring(0, 15) + '...' : item.product_name,
     회전율: item.turnover_ratio_monthly,
     판매량: item.sales_last_30_days
   }));
@@ -227,14 +227,27 @@ export default function StoreInventoryAnalytics() {
         {/* 상위 회전율 상품 */}
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <h3 className="text-lg font-medium text-gray-900 mb-4">재고 회전율 TOP 10</h3>
-          <div className="h-80">
+          <div className="h-96">
             {topPerformanceData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={topPerformanceData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
+                  <XAxis 
+                    dataKey="name" 
+                    angle={-30} 
+                    textAnchor="end" 
+                    height={100}
+                    fontSize={11}
+                    tick={{ fontSize: 11 }}
+                  />
                   <YAxis />
-                  <Tooltip />
+                  <Tooltip 
+                    formatter={(value: number, name: string) => [
+                      `${value.toFixed(2)}회`, 
+                      name === '회전율' ? '월간 회전율' : name
+                    ]}
+                    labelFormatter={(label: string) => `상품: ${label}`}
+                  />
                   <Bar dataKey="회전율" fill="#3B82F6" />
                 </BarChart>
               </ResponsiveContainer>
