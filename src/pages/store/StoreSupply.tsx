@@ -48,14 +48,13 @@ interface SupplyRequestItem {
 }
 
 const StoreSupply: React.FC = () => {
-  const [storeProducts, setStoreProducts] = useState<StoreProduct[]>([]);
   const [supplyRequests, setSupplyRequests] = useState<SupplyRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<SupplyRequest | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterStock, setFilterStock] = useState<string>('all');
+  const [modalProducts, setModalProducts] = useState<StoreProduct[]>([]);
   const { user } = useAuthStore();
 
   // 실시간 구독 설정
@@ -65,13 +64,6 @@ const StoreSupply: React.FC = () => {
     // 실시간 구독
     const subscription = supabase
       .channel('store_supply_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'store_products' }, 
-        (payload) => {
-          console.log('🔄 재고 데이터 변경 감지:', payload);
-          fetchData(); // 데이터 새로고침
-        }
-      )
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'supply_requests' }, 
         (payload) => {
@@ -104,7 +96,7 @@ const StoreSupply: React.FC = () => {
 
       const storeId = storeData.id;
 
-      // 재고 현황 조회 - 모든 활성 상품과 지점별 재고 정보를 조회
+      // 재고 현황 조회 - LEFT JOIN을 사용하여 재고가 없는 상품도 포함
       const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select(`
@@ -129,11 +121,9 @@ const StoreSupply: React.FC = () => {
       if (productsError) {
         console.error('❌ 재고 현황 조회 실패:', productsError);
       } else {
-        // 데이터 구조 변환 - 해당 지점의 상품만 필터링
+        // 데이터 구조 변환
         const transformedData = (productsData || []).map((product: any) => {
-          // store_products 배열에서 해당 지점의 상품을 찾음
-          const storeProduct = product.store_products?.find((sp: any) => sp.store_id === storeId);
-          
+          const storeProduct = product.store_products?.[0];
           return {
             id: storeProduct?.id || `temp_${product.id}`,
             store_id: storeId,
@@ -175,14 +165,8 @@ const StoreSupply: React.FC = () => {
         setSupplyRequests(requestsData || []);
       }
     } catch (error) {
-      console.error('❌ 데이터 조회 중 오류:', error);
-    } finally {
-      setLoading(false);
+      console.error('❌ 상품 목록 조회 중 오류:', error);
     }
-  };
-
-  const handleCreateRequest = () => {
-    setShowCreateModal(true);
   };
 
   const handleViewDetail = (request: SupplyRequest) => {
@@ -276,7 +260,14 @@ const StoreSupply: React.FC = () => {
             totalAmount += itemCost;
 
             // 현재 재고 확인
-            const currentStock = storeProducts.find(sp => sp.product_id === productId)?.stock_quantity || 0;
+            const { data: stockData } = await supabase
+              .from('store_products')
+              .select('stock_quantity')
+              .eq('store_id', storeId)
+              .eq('product_id', productId)
+              .single();
+            
+            const currentStock = stockData?.stock_quantity || 0;
 
             items.push({
               supply_request_id: requestData.id,
@@ -292,8 +283,14 @@ const StoreSupply: React.FC = () => {
 
             // 재고가 없는 상품의 경우 store_products 레코드 생성
             if (currentStock === 0) {
-              const existingProduct = storeProducts.find(sp => sp.product_id === productId);
-              if (!existingProduct || existingProduct.id.startsWith('temp_')) {
+              const { data: existingProduct } = await supabase
+                .from('store_products')
+                .select('id')
+                .eq('store_id', storeId)
+                .eq('product_id', productId)
+                .single();
+              
+              if (!existingProduct) {
                 await supabase
                   .from('store_products')
                   .insert({
@@ -364,18 +361,7 @@ const StoreSupply: React.FC = () => {
     }
   };
 
-  const getStockStatus = (current: number, safety: number) => {
-    if (current <= 0) return { color: 'bg-red-100 text-red-800', text: '품절' };
-    if (current <= safety) return { color: 'bg-orange-100 text-orange-800', text: '부족' };
-    return { color: 'bg-green-100 text-green-800', text: '충분' };
-  };
 
-  const filteredProducts = storeProducts.filter(product => {
-    if (filterStock === 'all') return true;
-    if (filterStock === 'low' && product.stock_quantity <= product.safety_stock) return true;
-    if (filterStock === 'out' && product.stock_quantity <= 0) return true;
-    return false;
-  });
 
   if (loading) {
     return (
@@ -393,22 +379,10 @@ const StoreSupply: React.FC = () => {
       </div>
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm font-medium text-gray-500">전체 상품</div>
-          <div className="text-2xl font-bold text-gray-900">{storeProducts.length}</div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm font-medium text-gray-500">재고 부족</div>
-          <div className="text-2xl font-bold text-orange-600">
-            {storeProducts.filter(p => p.stock_quantity <= p.safety_stock).length}
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm font-medium text-gray-500">품절</div>
-          <div className="text-2xl font-bold text-red-600">
-            {storeProducts.filter(p => p.stock_quantity <= 0).length}
-          </div>
+          <div className="text-sm font-medium text-gray-500">전체 요청</div>
+          <div className="text-2xl font-bold text-gray-900">{supplyRequests.length}</div>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-sm font-medium text-gray-500">대기중 요청</div>
@@ -416,85 +390,22 @@ const StoreSupply: React.FC = () => {
             {supplyRequests.filter(r => r.status === 'submitted').length}
           </div>
         </div>
-      </div>
-
-      {/* 재고 현황 */}
-      <div className="bg-white rounded-lg shadow mb-6">
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-gray-900">재고 현황</h2>
-          <div className="flex space-x-2">
-            <select
-              value={filterStock}
-              onChange={(e) => setFilterStock(e.target.value)}
-              className="px-3 py-1 border border-gray-300 rounded-md text-sm"
-            >
-              <option value="all">전체</option>
-              <option value="low">재고 부족</option>
-              <option value="out">품절</option>
-            </select>
-            <button
-              onClick={handleCreateRequest}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
-            >
-              물류 요청
-            </button>
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="text-sm font-medium text-gray-500">배송중</div>
+          <div className="text-2xl font-bold text-purple-600">
+            {supplyRequests.filter(r => r.status === 'shipped').length}
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  상품명
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  현재재고
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  안전재고
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  상태
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  판매가
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  단위
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredProducts.map((product) => {
-                const stockStatus = getStockStatus(product.stock_quantity, product.safety_stock);
-                return (
-                  <tr key={product.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{product.product.name}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{product.stock_quantity}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{product.safety_stock}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${stockStatus.color}`}>
-                        {stockStatus.text}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{product.price.toLocaleString()}원</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{product.product.unit}</div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+      </div>
+
+      {/* 물류 요청 생성 버튼 */}
+      <div className="mb-6 flex justify-end">
+        <button
+          onClick={handleCreateRequest}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+        >
+          물류 요청
+        </button>
       </div>
 
       {/* 물류 요청 목록 */}
@@ -664,7 +575,7 @@ const StoreSupply: React.FC = () => {
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {storeProducts.map((product) => (
+                          {modalProducts.map((product) => (
                             <tr key={product.id}>
                               <td className="px-3 py-2 text-sm text-gray-900">{product.product.name}</td>
                               <td className="px-3 py-2 text-sm text-gray-900">{product.stock_quantity}</td>
