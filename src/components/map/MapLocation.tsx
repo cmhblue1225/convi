@@ -1,7 +1,11 @@
 // 네이버 지도로 위치 정보 가져오기
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabase/client';
 import { geocodeAddress, getDistanceFromCoordinates } from '../../lib/geocoding/geocoding';
+
+// 전역 플래그로 중복 호출 완전 차단
+let isStoreDataLoading = false;
+let storeDataCache: any[] = [];
 
 declare global {
   interface Window {
@@ -28,10 +32,27 @@ const Location: React.FC<LocationProps> = ({ width = '80%', height = '600px' }) 
   const [isLoading, setIsLoading] = useState(true);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [realStores, setRealStores] = useState<MapStore[]>([]);
+  const isDataLoaded = useRef(false);
+  const markersRef = useRef<any[]>([]);
 
-
-  const fetchRealStores = async () => {
+  const fetchRealStores = useCallback(async () => {
+    // 전역 플래그로 중복 호출 차단
+    if (isStoreDataLoading) {
+      console.log('🔄 이미 지점 데이터 로딩 중 - 중복 호출 차단');
+      return;
+    }
+    
+    // 캐시된 데이터가 있으면 사용
+    if (storeDataCache.length > 0) {
+      console.log('💾 캐시된 지점 데이터 사용:', storeDataCache.length, '개 지점');
+      setRealStores(storeDataCache);
+      return;
+    }
+    
+    isStoreDataLoading = true;
+    
     try {
+      console.log('📍 지점 데이터 로드 시작...');
       const { data: storesData, error } = await supabase
         .from('stores')
         .select('id, name, address')
@@ -40,11 +61,13 @@ const Location: React.FC<LocationProps> = ({ width = '80%', height = '600px' }) 
 
       if (error) {
         console.error('지점 데이터 조회 실패:', error);
+        isStoreDataLoading = false;
         return;
       }
 
       if (!storesData || storesData.length === 0) {
         console.log('활성화된 지점이 없습니다.');
+        isStoreDataLoading = false;
         return;
       }
 
@@ -69,11 +92,17 @@ const Location: React.FC<LocationProps> = ({ width = '80%', height = '600px' }) 
         }
       }
 
+      // 캐시에 저장
+      storeDataCache = storesWithCoordinates;
       setRealStores(storesWithCoordinates);
+      console.log('📍 지점 데이터 로드 완료:', storesWithCoordinates.length, '개 지점');
+      
     } catch (error) {
       console.error('지점 좌표 변환 중 오류:', error);
+    } finally {
+      isStoreDataLoading = false;
     }
-  };
+  }, []);
 
   const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
     const R = 6371;
@@ -88,6 +117,12 @@ const Location: React.FC<LocationProps> = ({ width = '80%', height = '600px' }) 
   };
 
   const addAllStoreMarkers = (naverMap: any, userLat: number, userLng: number) => {
+    // 기존 마커들 제거
+    markersRef.current.forEach(marker => {
+      marker.setMap(null);
+    });
+    markersRef.current = [];
+
     // 실제 지점들 추가
     realStores.forEach(store => {
       if (store.lat !== null && store.lng !== null) {
@@ -96,6 +131,9 @@ const Location: React.FC<LocationProps> = ({ width = '80%', height = '600px' }) 
           map: naverMap,
           title: store.name,
         });
+
+        // 마커를 참조 배열에 추가
+        markersRef.current.push(marker);
 
         const distance = getDistanceFromCoordinates(userLat, userLng, store.lat, store.lng);
         const infoWindow = new window.naver.maps.InfoWindow({
@@ -148,15 +186,15 @@ const Location: React.FC<LocationProps> = ({ width = '80%', height = '600px' }) 
             });
 
             naverMap.setCenter(userPosition);
-            addAllStoreMarkers(naverMap, lat, lng);
+            // 초기 마커는 여기서 추가하지 않음 - 지점 데이터 로드 후 추가됨
           },
           (error) => {
             console.warn('위치 정보를 가져올 수 없습니다:', error);
-            addAllStoreMarkers(naverMap, 37.5665, 126.9780);
+            setUserLocation({ lat: 37.5665, lng: 126.9780 });
           }
         );
       } else {
-        addAllStoreMarkers(naverMap, 37.5665, 126.9780);
+        setUserLocation({ lat: 37.5665, lng: 126.9780 });
       }
     };
 
@@ -183,12 +221,12 @@ const Location: React.FC<LocationProps> = ({ width = '80%', height = '600px' }) 
       const scripts = document.querySelectorAll('script[src*="oapi.map.naver.com"]');
       scripts.forEach(script => script.remove());
     };
-  }, []);
+  }, [fetchRealStores]);
 
-  // 실제 지점 데이터가 로드된 후 지도에 마커 추가
+  // 실제 지점 데이터가 로드된 후 지도에 마커 추가 (한 번만)
   useEffect(() => {
     if (map && realStores.length > 0 && userLocation) {
-      // 기존 마커들 제거하고 다시 추가
+      console.log('📍 마커 추가 시작 - 지점 수:', realStores.length);
       addAllStoreMarkers(map, userLocation.lat, userLocation.lng);
     }
   }, [realStores, map, userLocation]);
