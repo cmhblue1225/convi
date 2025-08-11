@@ -53,13 +53,17 @@ const CustomerOrders: React.FC = () => {
     console.log('🔄 재주문 시작:', order);
     
     try {
-      // 주문 타입과 배송 주소 정보 전달
+      // 주문 타입과 배송 주소 정보, 주문 정보 전달
       const result = await reorderFromOrder(
         order.items, 
         order.storeId, 
         order.storeName,
         order.orderType,
-        order.deliveryAddress
+        order.deliveryAddress,
+        {
+          orderId: order.id,
+          orderNumber: order.orderNumber
+        }
       );
       
       if (result.success) {

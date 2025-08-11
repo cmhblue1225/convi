@@ -1,9 +1,18 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useCartStore } from '../../stores/cartStore';
 
 const ReorderHistory: React.FC = () => {
-  const { reorderHistory, getReorderHistory } = useCartStore();
-  const history = getReorderHistory();
+  const { reorderHistory, getReorderHistory, cleanupReorderHistory } = useCartStore();
+  const history = getReorderHistory().filter(item => item.orderNumber !== 'unknown'); // unknown 항목 제외
+  
+  // 컴포넌트 마운트 시 자동으로 invalid 데이터 정리
+  useEffect(() => {
+    const invalidItems = reorderHistory.filter(item => item.orderNumber === 'unknown');
+    if (invalidItems.length > 0) {
+      console.log(`🧹 ${invalidItems.length}개의 잘못된 재주문 히스토리 정리`);
+      cleanupReorderHistory();
+    }
+  }, [reorderHistory, cleanupReorderHistory]);
 
   if (history.length === 0) {
     return null;
