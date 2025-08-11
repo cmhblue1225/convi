@@ -4,8 +4,17 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '../components/common/Button';
+import AddressSearch from '../components/common/AddressSearch';
 import { useAuthStore } from '../stores/common/authStore';
 import type { UserRole } from '../types/common';
+
+interface AddressData {
+  address: string;           // 기본 주소
+  zonecode: string;         // 우편번호
+  addressType: string;      // 도로명(R) / 지번(J) 구분
+  buildingName?: string;    // 건물명
+  detailAddress?: string;   // 상세 주소
+}
 
 // 로그인 스키마
 const loginSchema = z.object({
@@ -23,20 +32,10 @@ const signupSchema = z.object({
   role: z.enum(['customer', 'store_owner', 'headquarters']),
   // 점주 회원가입 시 지점 정보
   storeName: z.string().optional(),
-  storeAddress: z.string().optional(),
   storePhone: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "비밀번호가 일치하지 않습니다",
   path: ["confirmPassword"],
-}).refine((data) => {
-  // 점주인 경우 지점 정보 필수
-  if (data.role === 'store_owner') {
-    return data.storeName && data.storeAddress && data.storePhone;
-  }
-  return true;
-}, {
-  message: "점주 회원가입 시 지점 정보를 모두 입력해주세요",
-  path: ["storeName"],
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -47,6 +46,8 @@ const AuthPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState<AddressData | null>(null);
+  const [addressError, setAddressError] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { signIn, signUp, isLoading, isAuthenticated, user } = useAuthStore();
@@ -103,6 +104,23 @@ const AuthPage: React.FC = () => {
   const onSignupSubmit = async (data: SignupFormData) => {
     setError(null);
     setSuccess(null);
+    setAddressError(null);
+    
+    // 점주 회원가입인 경우 추가 유효성 검사
+    if (data.role === 'store_owner') {
+      if (!data.storeName) {
+        setError('지점명을 입력해주세요');
+        return;
+      }
+      if (!selectedAddress?.address) {
+        setAddressError('주소를 검색하여 선택해주세요');
+        return;
+      }
+      if (!data.storePhone) {
+        setError('지점 전화번호를 입력해주세요');
+        return;
+      }
+    }
     
     try {
       const userData = {
@@ -112,7 +130,9 @@ const AuthPage: React.FC = () => {
         // 점주인 경우 지점 정보 추가
         ...(data.role === 'store_owner' && {
           storeName: data.storeName,
-          storeAddress: data.storeAddress,
+          storeAddress: selectedAddress?.address,
+          storeAddressDetail: selectedAddress?.detailAddress || '',
+          storeZonecode: selectedAddress?.zonecode,
           storePhone: data.storePhone,
         }),
       };
@@ -142,10 +162,18 @@ const AuthPage: React.FC = () => {
       setIsLogin(!isLogin);
       setError(null);
       setSuccess(null);
+      setSelectedAddress(null);
+      setAddressError(null);
       loginForm.reset();
       signupForm.reset();
       setIsAnimating(false);
     }, 300);
+  };
+
+  const handleAddressSelect = (addressData: AddressData) => {
+    console.log('📍 선택된 주소:', addressData);
+    setSelectedAddress(addressData.address ? addressData : null);
+    setAddressError(null);
   };
 
   return (
@@ -406,22 +434,16 @@ const AuthPage: React.FC = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <label htmlFor="storeAddress" className="block text-sm font-semibold text-gray-700">
+                      <label className="block text-sm font-semibold text-gray-700">
                         📍 지점 주소 *
                       </label>
-                      <input
-                        {...signupForm.register('storeAddress')}
-                        type="text"
-                        id="storeAddress"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
-                        placeholder="지점 주소를 입력하세요"
+                      <AddressSearch
+                        onAddressSelect={handleAddressSelect}
+                        selectedAddress={selectedAddress}
+                        placeholder="주소를 검색하세요"
                         disabled={isLoading}
+                        error={addressError}
                       />
-                      {signupForm.formState.errors.storeAddress && (
-                        <p className="text-sm text-red-500 animate-pulse">
-                          {signupForm.formState.errors.storeAddress.message}
-                        </p>
-                      )}
                     </div>
 
                     <div className="space-y-2">

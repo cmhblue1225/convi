@@ -229,10 +229,15 @@ export const useAuthStore = create<AuthState>()(
             console.log('👤 사용자 ID:', data.user.id);
             console.log('🏪 지점명:', userData.storeName);
             
+            // 주소 정보 구성 - 상세주소 포함
+            const fullAddress = userData.storeAddressDetail 
+              ? `${userData.storeAddress} ${userData.storeAddressDetail}`.trim()
+              : userData.storeAddress;
+
             const storeData = {
               name: userData.storeName,
               owner_id: data.user.id,
-              address: userData.storeAddress,
+              address: fullAddress,
               phone: userData.storePhone,
               business_hours: {
                 "mon": { "open": "07:00", "close": "23:00" },
@@ -247,6 +252,13 @@ export const useAuthStore = create<AuthState>()(
               delivery_available: true,
               pickup_available: true,
               is_active: true,
+              // 주소 상세 정보를 JSON으로 저장 (향후 확장 가능)
+              address_details: {
+                zonecode: userData.storeZonecode,
+                baseAddress: userData.storeAddress,
+                detailAddress: userData.storeAddressDetail || '',
+                fullAddress: fullAddress
+              }
             };
 
             console.log('📋 지점 데이터:', storeData);
