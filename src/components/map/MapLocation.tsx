@@ -29,16 +29,6 @@ const Location: React.FC<LocationProps> = ({ width = '80%', height = '600px' }) 
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [realStores, setRealStores] = useState<MapStore[]>([]);
 
-  const mockGSStores = [
-    { id: '1', name: 'GS25 강남역점', lat: 37.4979, lng: 127.0276, address: '서울시 강남구 강남대로 지하396' },
-    { id: '2', name: 'GS25 홍대입구점', lat: 37.5563, lng: 126.9240, address: '서울시 마포구 양화로 지하 188' },
-    { id: '3', name: 'GS25 명동점', lat: 37.5636, lng: 126.9832, address: '서울시 중구 명동길 14' },
-    { id: '4', name: 'GS25 종로점', lat: 37.5703, lng: 126.9816, address: '서울시 종로구 종로 69' },
-    { id: '5', name: 'GS25 이태원점', lat: 37.5344, lng: 126.9946, address: '서울시 용산구 이태원로 지하 지하 175' },
-    { id: '6', name: 'GS25 신촌점', lat: 37.5595, lng: 126.9425, address: '서울시 서대문구 신촌로 83' },
-    { id: '7', name: 'GS25 건대입구점', lat: 37.5403, lng: 127.0698, address: '서울시 광진구 능동로 지하 110' },
-    { id: '8', name: 'GS25 잠실점', lat: 37.5133, lng: 127.0982, address: '서울시 송파구 올림픽로 지하 265' }
-  ];
 
   const fetchRealStores = async () => {
     try {
@@ -98,56 +88,22 @@ const Location: React.FC<LocationProps> = ({ width = '80%', height = '600px' }) 
   };
 
   const addAllStoreMarkers = (naverMap: any, userLat: number, userLng: number) => {
-    // Mock 지점들 추가 (파란색 마커)
-    mockGSStores.forEach(store => {
-      const marker = new window.naver.maps.Marker({
-        position: new window.naver.maps.LatLng(store.lat, store.lng),
-        map: naverMap,
-        title: store.name
-      });
-
-      const distance = calculateDistance(userLat, userLng, store.lat, store.lng);
-      const infoWindow = new window.naver.maps.InfoWindow({
-        content: `
-          <div style="padding: 10px; font-size: 14px;">
-            <strong>${store.name}</strong><br/>
-            <span style="color: #666;">${store.address}</span><br/>
-            <span style="color: #4285f4; font-size: 12px;">거리: ${distance.toFixed(1)}km</span>
-          </div>
-        `
-      });
-
-      window.naver.maps.Event.addListener(marker, 'click', () => {
-        if (infoWindow.getMap()) {
-          infoWindow.close();
-        } else {
-          infoWindow.open(naverMap, marker);
-        }
-      });
-    });
-
-    // 실제 지점들 추가 (빨간색 마커)
+    // 실제 지점들 추가
     realStores.forEach(store => {
       if (store.lat !== null && store.lng !== null) {
         const marker = new window.naver.maps.Marker({
           position: new window.naver.maps.LatLng(store.lat, store.lng),
           map: naverMap,
           title: store.name,
-          icon: {
-            content: '<div style="background: red; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white;"></div>',
-            size: new window.naver.maps.Size(24, 24),
-            anchor: new window.naver.maps.Point(12, 12)
-          }
         });
 
         const distance = getDistanceFromCoordinates(userLat, userLng, store.lat, store.lng);
         const infoWindow = new window.naver.maps.InfoWindow({
           content: `
             <div style="padding: 10px; font-size: 14px;">
-              <strong style="color: red;">${store.name}</strong><br/>
+              <strong>${store.name}</strong><br/>
               <span style="color: #666;">${store.address}</span><br/>
-              <span style="color: #e74c3c; font-size: 12px;">거리: ${distance.toFixed(1)}km</span>
-              <br/><span style="color: #e74c3c; font-size: 11px;">실제 지점</span>
+              <span style="color: #4285f4; font-size: 12px;">거리: ${distance.toFixed(1)}km</span>
             </div>
           `
         });
