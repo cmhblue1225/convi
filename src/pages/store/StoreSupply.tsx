@@ -16,10 +16,11 @@ interface StoreProduct {
     name: string;
     unit: string;
     base_price: number;
+    shelf_life_days: number | null;
   };
 }
 
-type ExpiryInfo = { expiresAt: string | null; daysRemaining: number | null; status: 'normal' | 'warning' | 'danger' | 'expired' | null };
+
 
 interface SupplyRequest {
   id: string;
@@ -57,7 +58,6 @@ const StoreSupply: React.FC = () => {
   const [selectedRequest, setSelectedRequest] = useState<SupplyRequest | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [modalProducts, setModalProducts] = useState<StoreProduct[]>([]);
-  const [modalExpiryBySpId, setModalExpiryBySpId] = useState<Record<string, ExpiryInfo>>({});
   const { user } = useAuthStore();
 
   // 실시간 구독 설정
@@ -151,6 +151,7 @@ const StoreSupply: React.FC = () => {
           name,
           unit,
           base_price,
+          shelf_life_days,
           is_active,
           store_products!left(
             id,
@@ -185,54 +186,13 @@ const StoreSupply: React.FC = () => {
           product: {
             name: product.name,
             unit: product.unit,
-            base_price: product.base_price
+            base_price: product.base_price,
+            shelf_life_days: product.shelf_life_days
           }
         };
       });
 
       setModalProducts(transformedData);
-
-      // 유통기한(가장 빠른 expires_at) 조회
-      const realIds = transformedData
-        .map((p) => p.id)
-        .filter((id) => typeof id === 'string' && !id.startsWith('temp_')) as string[];
-      if (realIds.length > 0) {
-        const { data: txRows, error: txError } = await supabase
-          .from('inventory_transactions')
-          .select('store_product_id, expires_at')
-          .in('store_product_id', realIds)
-          .not('expires_at', 'is', null);
-        if (!txError) {
-          const earliestMap = new Map<string, string>();
-          for (const row of txRows || []) {
-            const spId = (row as any).store_product_id as string;
-            const exp = (row as any).expires_at as string;
-            const prev = earliestMap.get(spId);
-            if (!prev || new Date(exp) < new Date(prev)) earliestMap.set(spId, exp);
-          }
-          const now = Date.now();
-          const mapObj: Record<string, ExpiryInfo> = {};
-          for (const spId of realIds) {
-            const exp = earliestMap.get(spId) || null;
-            if (exp) {
-              const diffDays = Math.ceil((new Date(exp).getTime() - now) / (1000 * 60 * 60 * 24));
-              let status: ExpiryInfo['status'];
-              if (diffDays <= 0) status = 'expired';
-              else if (diffDays <= 3) status = 'danger';
-              else if (diffDays <= 7) status = 'warning';
-              else status = 'normal';
-              mapObj[spId] = { expiresAt: exp, daysRemaining: diffDays, status };
-            } else {
-              mapObj[spId] = { expiresAt: null, daysRemaining: null, status: null };
-            }
-          }
-          setModalExpiryBySpId(mapObj);
-        } else {
-          setModalExpiryBySpId({});
-        }
-      } else {
-        setModalExpiryBySpId({});
-      }
       setShowCreateModal(true);
     } catch (error) {
       console.error('❌ 상품 목록 조회 중 오류:', error);
@@ -624,6 +584,7 @@ const StoreSupply: React.FC = () => {
                       <input
                         type="date"
                         name="expected_delivery"
+                        defaultValue={new Date().toISOString().split('T')[0]}
                         min={new Date().toISOString().split('T')[0]}
                         className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                         required
@@ -640,8 +601,7 @@ const StoreSupply: React.FC = () => {
                             <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">상품명</th>
                             <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">현재재고</th>
                             <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">안전재고</th>
-                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">유통기한(남은일)</th>
-                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">유통기한 상태</th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">유통기한</th>
                             <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">요청수량</th>
                             <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">요청사유</th>
                           </tr>
@@ -652,20 +612,11 @@ const StoreSupply: React.FC = () => {
                               <td className="px-3 py-2 text-sm text-gray-900">{product.product.name}</td>
                               <td className="px-3 py-2 text-sm text-gray-900">{product.stock_quantity}</td>
                               <td className="px-3 py-2 text-sm text-gray-900">{product.safety_stock}</td>
-                              <td className="px-3 py-2 text-sm text-gray-900">{modalExpiryBySpId[product.id]?.daysRemaining ?? '-'}</td>
                               <td className="px-3 py-2 text-sm text-gray-900">
-                                {(() => {
-                                  const status = modalExpiryBySpId[product.id]?.status;
-                                  const color = status === 'expired'
-                                    ? 'bg-gray-100 text-gray-800'
-                                    : status === 'danger'
-                                      ? 'bg-red-100 text-red-800'
-                                      : status === 'warning'
-                                        ? 'bg-orange-100 text-orange-800'
-                                        : 'bg-green-100 text-green-800';
-                                  const label = status === 'expired' ? '만료' : status === 'danger' ? '위험' : status === 'warning' ? '임박' : '정상';
-                                  return <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${color}`}>{label}</span>;
-                                })()}
+                                {product.product.shelf_life_days 
+                                  ? `${product.product.shelf_life_days}일` 
+                                  : '유통기한 없음'
+                                }
                               </td>
                               <td className="px-3 py-2">
                                 <input
