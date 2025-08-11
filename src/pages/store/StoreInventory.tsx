@@ -3,25 +3,7 @@ import { supabase } from '../../lib/supabase/client';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { useAuthStore } from '../../stores/common/authStore';
 
-interface StoreProduct {
-  id: string;
-  store_id: string;
-  product_id: string;
-  price: number;
-  stock_quantity: number;
-  safety_stock: number;
-  max_stock: number;
-  is_available: boolean;
-  product: {
-    name: string;
-    unit: string;
-    base_price: number;
-    shelf_life_days: number | null;
-  };
-  // 유통기한별 재고 정보 추가
-  expiryGroup?: string; // 유통기한 그룹 식별자
-  batchId?: string; // 배치별 식별자
-}
+
 
 interface ExpiryInfo {
   expiresAt: string | null;
@@ -54,14 +36,37 @@ interface InventoryWithExpiry {
   batchQuantity: number; // 해당 배치의 수량
 }
 
+interface TransactionData {
+  id: string;
+  store_product_id: string;
+  quantity: number;
+  expires_at: string | null;
+  notes: string | null;
+  created_at: string;
+  transaction_type: 'in' | 'out' | 'adjustment' | 'expired';
+  new_quantity: number | null;
+  store_products: {
+    id: string;
+    price: number;
+    safety_stock: number;
+    max_stock: number;
+    is_available: boolean;
+    products: {
+      id: string;
+      name: string;
+      unit: string;
+      base_price: number;
+      shelf_life_days: number | null;
+    };
+  };
+}
+
 const StoreInventory: React.FC = () => {
-  const [storeProducts, setStoreProducts] = useState<StoreProduct[]>([]);
   const [inventoryWithExpiry, setInventoryWithExpiry] = useState<InventoryWithExpiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStock, setFilterStock] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'current' | 'all'>('current');
   const [expiryFilter, setExpiryFilter] = useState<'all' | 'normal' | 'warning' | 'danger' | 'expired'>('all');
-  const [expiryByStoreProductId, setExpiryByStoreProductId] = useState<Record<string, ExpiryInfo>>({});
   const { user } = useAuthStore();
 
   // 유통기한 남은 시간을 포맷팅하는 함수
@@ -77,13 +82,7 @@ const StoreInventory: React.FC = () => {
     }
   };
 
-  // 유통기한 상태를 결정하는 함수
-  const getExpiryStatus = (totalMinutes: number): 'normal' | 'warning' | 'danger' | 'expired' => {
-    if (totalMinutes <= 0) return 'expired';
-    if (totalMinutes <= 3 * 24 * 60) return 'danger'; // 3일 이하
-    if (totalMinutes <= 7 * 24 * 60) return 'warning'; // 7일 이하
-    return 'normal';
-  };
+
 
   // 실시간 구독 설정
   useEffect(() => {
@@ -178,7 +177,7 @@ const StoreInventory: React.FC = () => {
       // 유통기한별로 재고를 그룹화
       const inventoryMap = new Map<string, InventoryWithExpiry>();
 
-      transactionsData.forEach((transaction: any) => {
+      transactionsData.forEach((transaction: TransactionData) => {
         const productId = transaction.store_products.products.id;
         const productName = transaction.store_products.products.name;
         const expiresAt = transaction.expires_at;
@@ -456,7 +455,7 @@ const StoreInventory: React.FC = () => {
                       : 'bg-green-100 text-green-800';
                 
                 return (
-                  <tr key={product.id} className="hover:bg-gray-50">
+                  <tr key={`${product.id}_${product.expiryGroup}_${product.batchId}`} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{product.product.name}</div>
                       <div className="text-xs text-gray-500">배치: {product.batchId}</div>
