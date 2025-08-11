@@ -36,9 +36,10 @@ interface CartStore {
   calculateTotals: () => void;
   getItemCount: () => number;
   setOrderType: (type: 'pickup' | 'delivery') => void;
-  reorderFromOrder: (orderItems: any[], storeId: string, storeName: string, orderType?: 'pickup' | 'delivery', deliveryAddress?: any) => Promise<{ success: boolean; message: string; unavailableItems?: string[]; itemCount?: number; totalAmount?: number }>;
+  reorderFromOrder: (orderItems: any[], storeId: string, storeName: string, orderType?: 'pickup' | 'delivery', deliveryAddress?: any, orderInfo?: { orderId: string; orderNumber: string }) => Promise<{ success: boolean; message: string; unavailableItems?: string[]; itemCount?: number; totalAmount?: number }>;
   addToReorderHistory: (orderInfo: { orderId: string; orderNumber: string; reorderDate: string; itemCount: number; totalAmount: number }) => void;
   getReorderHistory: () => Array<{ orderId: string; orderNumber: string; reorderDate: string; itemCount: number; totalAmount: number }>;
+  cleanupReorderHistory: () => void;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -212,7 +213,7 @@ export const useCartStore = create<CartStore>()(
         get().calculateTotals(); // 배송비 재계산
       },
 
-      reorderFromOrder: async (orderItems, storeId, storeName, orderType = 'pickup', deliveryAddress = null) => {
+      reorderFromOrder: async (orderItems, storeId, storeName, orderType = 'pickup', deliveryAddress = null, orderInfo = null) => {
         console.log('🔄 재주문 시작:', { orderItems, storeId, storeName, orderType, deliveryAddress });
         
         try {
@@ -330,8 +331,8 @@ export const useCartStore = create<CartStore>()(
           
           // 재주문 히스토리에 추가
           const reorderInfo = {
-            orderId: orderItems[0]?.orderId || 'unknown',
-            orderNumber: orderItems[0]?.orderNumber || 'unknown',
+            orderId: orderInfo?.orderId || 'unknown',
+            orderNumber: orderInfo?.orderNumber || 'unknown',
             reorderDate: new Date().toISOString(),
             itemCount: availableItems.length,
             totalAmount: get().totalAmount
@@ -363,6 +364,12 @@ export const useCartStore = create<CartStore>()(
 
       getReorderHistory: () => {
         return get().reorderHistory;
+      },
+
+      cleanupReorderHistory: () => {
+        set((state) => ({
+          reorderHistory: state.reorderHistory.filter(item => item.orderNumber !== 'unknown')
+        }));
       }
     }),
     {
