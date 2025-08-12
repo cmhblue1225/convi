@@ -24,7 +24,13 @@ const CustomerHeader: React.FC = () => {
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
-            <h1 className="text-lg font-semibold text-gray-900">편의점 솔루션</h1>
+            <h1
+              className="text-lg font-semibold text-gray-900 cursor-pointer"
+              onClick={() => navigate('/')}
+              style={{ userSelect: 'none' }}
+            >
+              편의점 솔루션
+            </h1>
             <div className="flex items-center space-x-4">
               {/* 장바구니 아이콘 */}
               <button

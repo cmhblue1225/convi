@@ -215,9 +215,63 @@ const LandingPage: React.FC = () => {
             <div>
               <h4 className="font-semibold mb-4">제품</h4>
               <ul className="space-y-2 text-gray-400">
-                <li>고객 앱</li>
-                <li>점주 대시보드</li>
-                <li>본사 관리 시스템</li>
+                <li>
+                  <Button
+                  variant="link"
+                  className="p-0 h-auto text-left hover:underline"
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                    window.location.href = '/auth';
+                    return;
+                    }
+                    if (user?.role === 'customer') {
+                    window.location.href = '/customer';
+                    } else {
+                    alert('계정을 확인해주세요!');
+                    }
+                  }}
+                  >
+                  고객 앱
+                  </Button>
+                </li>
+                <li>
+                  <Button
+                  variant="link"
+                  className="p-0 h-auto text-left hover:underline"
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                    window.location.href = '/auth';
+                    return;
+                    }
+                    if (user?.role === 'store_owner') {
+                    window.location.href = '/store';
+                    } else {
+                    alert('계정을 확인해주세요!');
+                    }
+                  }}
+                  >
+                  점주 대시보드
+                  </Button>
+                </li>
+                <li>
+                  <Button
+                  variant="link"
+                  className="p-0 h-auto text-left hover:underline"
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                    window.location.href = '/auth';
+                    return;
+                    }
+                    if (user?.role === 'headquarters' || user?.role === 'hq_admin') {
+                    window.location.href = '/hq';
+                    } else {
+                    alert('계정을 확인해주세요!');
+                    }
+                  }}
+                  >
+                  본사 관리 시스템
+                  </Button>
+                </li>
               </ul>
             </div>
             <div>
