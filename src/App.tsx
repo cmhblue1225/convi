@@ -22,6 +22,8 @@ import CustomerOrders from './pages/customer/CustomerOrders';
 import CustomerProfile from './pages/customer/CustomerProfile';
 import CartPage from './pages/customer/CartPage';
 import PromotionProducts from './pages/customer/PromotionProducts';
+import CustomerRefunds from './pages/customer/CustomerRefunds';
+import CreateRefund from './pages/customer/CreateRefund';
 
 // Payment Pages
 import PaymentSuccess from './pages/payment/PaymentSuccess';
@@ -35,6 +37,7 @@ import StoreInventory from './pages/store/StoreInventory';
 import StoreSupply from './pages/store/StoreSupply';
 import StoreAnalytics from './pages/store/StoreAnalytics';
 import StoreInventoryAnalytics from './pages/store/StoreInventoryAnalytics';
+import StoreRefunds from './pages/store/StoreRefunds';
 
 // HQ Pages
 import HQLayout from './pages/hq/HQLayout';
@@ -119,6 +122,8 @@ function App() {
               <Route path="categories" element={<CustomerCategories />} />
               <Route path="profile" element={<CustomerProfile />} />
               <Route path="promotions" element={<PromotionProducts />} />
+              <Route path="refunds" element={<CustomerRefunds />} />
+              <Route path="refunds/create" element={<CreateRefund />} />
             </Route>
 
             {/* Payment Routes */}
@@ -144,6 +149,7 @@ function App() {
               <Route path="supply" element={<StoreSupply />} />
               <Route path="analytics" element={<StoreAnalytics />} />
               <Route path="inventory-analytics" element={<StoreInventoryAnalytics />} />
+              <Route path="refunds" element={<StoreRefunds />} />
             </Route>
 
             {/* HQ Routes */}
