@@ -1,0 +1,45 @@
+{
+  "excelDownload": {
+    "enabled": true,
+    "packages": {
+      "exceljs": "^4.4.0",
+      "file-saver": "^2.0.5",
+      "@types/file-saver": "^2.0.7"
+    },
+    "features": {
+      "storeSupply": {
+        "enabled": true,
+        "template": "물류요청서_거래명세서",
+        "filename": "물류요청서_거래명세서_{요청번호}_{날짜}.xlsx"
+      },
+      "hqSupply": {
+        "enabled": true,
+        "template": "본사_물류요청관리",
+        "filename": "본사_물류요청관리_{요청번호}_{날짜}.xlsx"
+      },
+      "orderManagement": {
+        "enabled": false,
+        "template": "주문관리",
+        "filename": "주문관리_{주문번호}_{날짜}.xlsx"
+      },
+      "inventoryReport": {
+        "enabled": false,
+        "template": "재고현황",
+        "filename": "재고현황_{날짜}.xlsx"
+      }
+    },
+    "styling": {
+      "defaultFont": "맑은 고딕",
+      "defaultFontSize": 10,
+      "headerFontSize": 12,
+      "titleFontSize": 16,
+      "colors": {
+        "header": "FFF0F8FF",
+        "summary": "FFFFF0F0",
+        "label": "FFF5F5F5",
+        "border": "FF000000"
+      }
+    }
+  }
+}
+

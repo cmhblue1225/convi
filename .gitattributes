@@ -1,0 +1,21 @@
+# 줄바꿈 문자 자동 변환 설정
+* text=auto
+
+# 특정 파일 타입별 설정
+*.md text eol=lf
+*.js text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+
+# 바이너리 파일은 변환하지 않음
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.exe binary
+

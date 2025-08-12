@@ -3,13 +3,26 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "excelDownload": {
+    "enabled": true,
+    "configFile": "./excel-config.json",
+    "autoSetup": true,
+    "features": [
+      "storeSupply",
+      "hqSupply",
+      "orderManagement",
+      "inventoryReport"
+    ]
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "server": "node server.js",
-    "dev:full": "concurrently \"npm run server\" \"npm run dev\""
+    "dev:full": "concurrently \"npm run server\" \"npm run dev\"",
+    "setup:excel": "node scripts/setup-excel.js",
+    "postinstall": "npm run setup:excel"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.7",

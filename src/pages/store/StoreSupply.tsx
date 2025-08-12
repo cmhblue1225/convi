@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase/client';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { useAuthStore } from '../../stores/common/authStore';
+import * as ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 interface StoreProduct {
   id: string;
@@ -150,6 +152,235 @@ const StoreSupply: React.FC = () => {
       setLoading(false);
     }
   }, [user?.id, filterStatus]);
+
+  // 엑셀 다운로드 함수
+  const downloadExcel = async (request: SupplyRequest) => {
+    try {
+      console.log('📊 엑셀 다운로드 시작:', request.request_number);
+      
+      // 현재 사용자의 지점 정보 조회
+      const { data: storeData, error: storeError } = await supabase
+        .from('stores')
+        .select('name, address, phone')
+        .eq('owner_id', user?.id || '')
+        .single();
+
+      if (storeError || !storeData) {
+        console.error('❌ 지점 정보 조회 실패:', storeError);
+        alert('지점 정보를 찾을 수 없습니다.');
+        return;
+      }
+
+      // 워크북 생성
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('물류요청서');
+
+      // 제목 행
+      worksheet.getCell('A1').value = '물류 요청서';
+      worksheet.getCell('A1').font = { name: '맑은 고딕', size: 16, bold: true };
+      worksheet.mergeCells('A1:F1');
+      worksheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
+
+      // 기본 정보 섹션
+      const basicInfoStartRow = 3;
+      worksheet.getCell(`A${basicInfoStartRow}`).value = '요청번호';
+      worksheet.getCell(`B${basicInfoStartRow}`).value = request.request_number;
+      worksheet.getCell(`A${basicInfoStartRow + 1}`).value = '요청일시';
+      worksheet.getCell(`B${basicInfoStartRow + 1}`).value = request.created_at ? new Date(request.created_at).toLocaleDateString('ko-KR') : '-';
+      worksheet.getCell(`A${basicInfoStartRow + 2}`).value = '상태';
+      worksheet.getCell(`B${basicInfoStartRow + 2}`).value = getStatusText(request.status);
+      worksheet.getCell(`A${basicInfoStartRow + 3}`).value = '우선순위';
+      worksheet.getCell(`B${basicInfoStartRow + 3}`).value = request.priority || '-';
+      worksheet.getCell(`A${basicInfoStartRow + 4}`).value = '예상배송일';
+      worksheet.getCell(`B${basicInfoStartRow + 4}`).value = request.expected_delivery_date ? new Date(request.expected_delivery_date).toLocaleDateString('ko-KR') : '-';
+
+      // 지점 정보
+      worksheet.getCell(`D${basicInfoStartRow}`).value = '지점명';
+      worksheet.getCell(`E${basicInfoStartRow}`).value = storeData.name;
+      worksheet.getCell(`D${basicInfoStartRow + 1}`).value = '주소';
+      worksheet.getCell(`E${basicInfoStartRow + 1}`).value = storeData.address || '-';
+      worksheet.getCell(`D${basicInfoStartRow + 2}`).value = '연락처';
+      worksheet.getCell(`E${basicInfoStartRow + 2}`).value = storeData.phone || '-';
+
+      // 기본 정보 스타일 적용
+      for (let row = basicInfoStartRow; row <= basicInfoStartRow + 4; row++) {
+        for (let col = 1; col <= 6; col++) {
+          const cell = worksheet.getCell(row, col);
+          if (col === 1 || col === 4) {
+            cell.font = { name: '맑은 고딕', size: 10, bold: true };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+          } else {
+            cell.font = { name: '맑은 고딕', size: 10 };
+          }
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FF000000' } },
+            left: { style: 'thin', color: { argb: 'FF000000' } },
+            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+            right: { style: 'thin', color: { argb: 'FF000000' } }
+          };
+          cell.alignment = { vertical: 'middle', horizontal: col === 1 || col === 4 ? 'center' : 'left' };
+        }
+      }
+
+      // 셀 병합
+      worksheet.mergeCells(`B${basicInfoStartRow}:C${basicInfoStartRow}`);
+      worksheet.mergeCells(`B${basicInfoStartRow + 1}:C${basicInfoStartRow + 1}`);
+      worksheet.mergeCells(`B${basicInfoStartRow + 2}:C${basicInfoStartRow + 2}`);
+      worksheet.mergeCells(`B${basicInfoStartRow + 3}:C${basicInfoStartRow + 3}`);
+      worksheet.mergeCells(`B${basicInfoStartRow + 4}:C${basicInfoStartRow + 4}`);
+      worksheet.mergeCells(`E${basicInfoStartRow}:F${basicInfoStartRow}`);
+      worksheet.mergeCells(`E${basicInfoStartRow + 1}:F${basicInfoStartRow + 1}`);
+      worksheet.mergeCells(`E${basicInfoStartRow + 2}:F${basicInfoStartRow + 2}`);
+
+      // 요청 상품 테이블 헤더
+      const itemsStartRow = basicInfoStartRow + 6;
+      worksheet.getCell(`A${itemsStartRow}`).value = '상품명';
+      worksheet.getCell(`B${itemsStartRow}`).value = '요청수량';
+      worksheet.getCell(`C${itemsStartRow}`).value = '단위';
+      worksheet.getCell(`D${itemsStartRow}`).value = '승인수량';
+      worksheet.getCell(`E${itemsStartRow}`).value = '현재재고';
+      worksheet.getCell(`F${itemsStartRow}`).value = '요청사유';
+
+      // 요청 상품 테이블 헤더 스타일
+      for (let col = 1; col <= 6; col++) {
+        const cell = worksheet.getCell(itemsStartRow, col);
+        cell.font = { name: '맑은 고딕', size: 10, bold: true };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F8FF' } };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FF000000' } },
+          left: { style: 'thin', color: { argb: 'FF000000' } },
+          bottom: { style: 'thin', color: { argb: 'FF000000' } },
+          right: { style: 'thin', color: { argb: 'FF000000' } }
+        };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      }
+
+      // 요청 상품 데이터 추가
+      if (request.items && request.items.length > 0) {
+        request.items.forEach((item, index) => {
+          const row = itemsStartRow + 1 + index;
+          worksheet.getCell(`A${row}`).value = item.product_name;
+          worksheet.getCell(`B${row}`).value = item.requested_quantity;
+          worksheet.getCell(`C${row}`).value = '개'; // 기본 단위
+          worksheet.getCell(`D${row}`).value = item.approved_quantity || '-';
+          worksheet.getCell(`E${row}`).value = item.current_stock || 0;
+          worksheet.getCell(`F${row}`).value = item.reason || '-';
+
+          // 데이터 행 스타일
+          for (let col = 1; col <= 6; col++) {
+            const cell = worksheet.getCell(row, col);
+            cell.font = { name: '맑은 고딕', size: 10 };
+            cell.border = {
+              top: { style: 'thin', color: { argb: 'FF000000' } },
+              left: { style: 'thin', color: { argb: 'FF000000' } },
+              bottom: { style: 'thin', color: { argb: 'FF000000' } },
+              right: { style: 'thin', color: { argb: 'FF000000' } }
+            };
+            cell.alignment = { vertical: 'middle', horizontal: col === 2 || col === 4 || col === 5 ? 'center' : 'left' };
+          }
+        });
+      }
+
+      // 요약 정보
+      const summaryStartRow = itemsStartRow + (request.items?.length || 0) + 2;
+      worksheet.getCell(`A${summaryStartRow}`).value = '총 요청 금액';
+      worksheet.getCell(`B${summaryStartRow}`).value = request.total_amount || 0;
+      worksheet.getCell(`A${summaryStartRow + 1}`).value = '승인 금액';
+      worksheet.getCell(`B${summaryStartRow + 1}`).value = request.approved_amount || 0;
+
+      // 요약 정보 스타일
+      for (let row = summaryStartRow; row <= summaryStartRow + 1; row++) {
+        for (let col = 1; col <= 2; col++) {
+          const cell = worksheet.getCell(row, col);
+          if (col === 1) {
+            cell.font = { name: '맑은 고딕', size: 10, bold: true };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF0F0' } };
+          } else {
+            cell.font = { name: '맑은 고딕', size: 10, bold: true };
+          }
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FF000000' } },
+            left: { style: 'thin', color: { argb: 'FF000000' } },
+            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+            right: { style: 'thin', color: { argb: 'FF000000' } }
+          };
+          cell.alignment = { vertical: 'middle', horizontal: col === 1 ? 'center' : 'right' };
+        }
+      }
+
+      // 셀 병합
+      worksheet.mergeCells(`B${summaryStartRow}:F${summaryStartRow}`);
+      worksheet.mergeCells(`B${summaryStartRow + 1}:F${summaryStartRow + 1}`);
+
+      // 비고 및 거절사유
+      const memoStartRow = summaryStartRow + 3;
+      if (request.notes) {
+        worksheet.getCell(`A${memoStartRow}`).value = '비고';
+        worksheet.getCell(`B${memoStartRow}`).value = request.notes;
+        worksheet.mergeCells(`B${memoStartRow}:F${memoStartRow}`);
+        
+        // 비고 스타일
+        worksheet.getCell(`A${memoStartRow}`).font = { name: '맑은 고딕', size: 10, bold: true };
+        worksheet.getCell(`A${memoStartRow}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+        worksheet.getCell(`B${memoStartRow}`).font = { name: '맑은 고딕', size: 10 };
+        
+        for (let col = 1; col <= 6; col++) {
+          const cell = worksheet.getCell(memoStartRow, col);
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FF000000' } },
+            left: { style: 'thin', color: { argb: 'FF000000' } },
+            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+            right: { style: 'thin', color: { argb: 'FF000000' } }
+          };
+          cell.alignment = { vertical: 'middle', horizontal: col === 1 ? 'center' : 'left' };
+        }
+      }
+
+      if (request.rejection_reason) {
+        const rejectionRow = memoStartRow + (request.notes ? 1 : 0);
+        worksheet.getCell(`A${rejectionRow}`).value = '거절사유';
+        worksheet.getCell(`B${rejectionRow}`).value = request.rejection_reason;
+        worksheet.mergeCells(`B${rejectionRow}:F${rejectionRow}`);
+        
+        // 거절사유 스타일
+        worksheet.getCell(`A${rejectionRow}`).font = { name: '맑은 고딕', size: 10, bold: true };
+        worksheet.getCell(`A${rejectionRow}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF0F0' } };
+        worksheet.getCell(`B${rejectionRow}`).font = { name: '맑은 고딕', size: 10 };
+        
+        for (let col = 1; col <= 6; col++) {
+          const cell = worksheet.getCell(rejectionRow, col);
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FF000000' } },
+            left: { style: 'thin', color: { argb: 'FF000000' } },
+            right: { style: 'thin', color: { argb: 'FF000000' } }
+          };
+          if (col === 6) {
+            cell.border.right = { style: 'thin', color: { argb: 'FF000000' } };
+          }
+          cell.alignment = { vertical: 'middle', horizontal: col === 1 ? 'center' : 'left' };
+        }
+      }
+
+      // 열 너비 조정
+      worksheet.getColumn('A').width = 15;
+      worksheet.getColumn('B').width = 20;
+      worksheet.getColumn('C').width = 10;
+      worksheet.getColumn('D').width = 15;
+      worksheet.getColumn('E').width = 15;
+      worksheet.getColumn('F').width = 25;
+
+      // 파일 저장
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const fileName = `물류요청서_${request.request_number}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      saveAs(blob, fileName);
+
+      console.log('✅ 엑셀 다운로드 완료:', fileName);
+    } catch (error) {
+      console.error('❌ 엑셀 다운로드 실패:', error);
+      alert('엑셀 다운로드 중 오류가 발생했습니다.');
+    }
+  };
 
   // 실시간 구독 설정
   useEffect(() => {
@@ -517,12 +748,21 @@ const StoreSupply: React.FC = () => {
                     {request.created_at ? new Date(request.created_at).toLocaleDateString() : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => handleViewDetail(request)}
-                      className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-                    >
-                      상세
-                    </button>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleViewDetail(request)}
+                        className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                      >
+                        상세
+                      </button>
+                      <button
+                        onClick={() => downloadExcel(request)}
+                        className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
+                        title="엑셀로 다운로드"
+                      >
+                        📊 엑셀
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -709,7 +949,13 @@ const StoreSupply: React.FC = () => {
                   </div>
                 )}
               </div>
-              <div className="flex justify-end mt-6">
+              <div className="flex justify-end mt-6 space-x-3">
+                <button
+                  onClick={() => downloadExcel(selectedRequest)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700"
+                >
+                  📊 엑셀로 다운로드
+                </button>
                 <button
                   onClick={() => setShowDetailModal(false)}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
