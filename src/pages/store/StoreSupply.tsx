@@ -231,12 +231,20 @@ const StoreSupply: React.FC = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('물류요청서');
 
-      // 제목 행 - 더 깔끔하게
+      // 제목 행 - 깔끔하고 전문적인 디자인
       worksheet.getCell('A1').value = '물류 요청서';
-      worksheet.getCell('A1').font = { name: '맑은 고딕', size: 18, bold: true };
+      worksheet.getCell('A1').font = { name: '맑은 고딕', size: 20, bold: true, color: { argb: 'FF1F4E79' } };
       worksheet.mergeCells('A1:F1');
-      worksheet.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6F3FF' } };
+      worksheet.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F8FF' } };
       worksheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
+      
+      // 제목 행 테두리 추가
+      worksheet.getCell('A1').border = {
+        top: { style: 'thick', color: { argb: 'FF1F4E79' } },
+        left: { style: 'thick', color: { argb: 'FF1F4E79' } },
+        bottom: { style: 'thick', color: { argb: 'FF1F4E79' } },
+        right: { style: 'thick', color: { argb: 'FF1F4E79' } }
+      };
 
       // 기본 정보 섹션
       const basicInfoStartRow = 3;
@@ -259,23 +267,23 @@ const StoreSupply: React.FC = () => {
       worksheet.getCell(`D${basicInfoStartRow + 2}`).value = '연락처';
       worksheet.getCell(`E${basicInfoStartRow + 2}`).value = storeData.phone || '-';
 
-      // 기본 정보 스타일 적용 - 더 깔끔하게
+      // 기본 정보 스타일 적용 - 깔끔하고 전문적인 디자인
       for (let row = basicInfoStartRow; row <= basicInfoStartRow + 4; row++) {
         for (let col = 1; col <= 6; col++) {
           const cell = worksheet.getCell(row, col);
           if (col === 1 || col === 4) {
-            cell.font = { name: '맑은 고딕', size: 10, bold: true };
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F8F8' } };
+            cell.font = { name: '맑은 고딕', size: 11, bold: true, color: { argb: 'FF1F4E79' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
             cell.alignment = { vertical: 'middle', horizontal: 'center' };
           } else {
-            cell.font = { name: '맑은 고딕', size: 10 };
+            cell.font = { name: '맑은 고딕', size: 10, color: { argb: 'FF2F2F2F' } };
             cell.alignment = { vertical: 'middle', horizontal: 'left' };
           }
           cell.border = {
-            top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-            left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-            bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-            right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
+            top: { style: 'thin', color: { argb: 'FF1F4E79' } },
+            left: { style: 'thin', color: { argb: 'FF1F4E79' } },
+            bottom: { style: 'thin', color: { argb: 'FF1F4E79' } },
+            right: { style: 'thin', color: { argb: 'FF1F4E79' } }
           };
         }
       }
@@ -289,6 +297,43 @@ const StoreSupply: React.FC = () => {
       worksheet.mergeCells(`E${basicInfoStartRow}:F${basicInfoStartRow}`);
       worksheet.mergeCells(`E${basicInfoStartRow + 1}:F${basicInfoStartRow + 1}`);
       worksheet.mergeCells(`E${basicInfoStartRow + 2}:F${basicInfoStartRow + 2}`);
+      
+      // 기본 정보 섹션 외곽 테두리 추가 (깔끔한 디자인)
+      // 왼쪽 외곽 테두리 (A열)
+      for (let row = basicInfoStartRow; row <= basicInfoStartRow + 4; row++) {
+        const cell = worksheet.getCell(row, 1);
+        cell.border = {
+          ...cell.border,
+          left: { style: 'thick', color: { argb: 'FF1F4E79' } }
+        };
+      }
+      
+      // 오른쪽 외곽 테두리 (F열)
+      for (let row = basicInfoStartRow; row <= basicInfoStartRow + 4; row++) {
+        const cell = worksheet.getCell(row, 6);
+        cell.border = {
+          ...cell.border,
+          right: { style: 'thick', color: { argb: 'FF1F4E79' } }
+        };
+      }
+      
+      // 상단 외곽 테두리 (첫 번째 행)
+      for (let col = 1; col <= 6; col++) {
+        const cell = worksheet.getCell(basicInfoStartRow, col);
+        cell.border = {
+          ...cell.border,
+          top: { style: 'thick', color: { argb: 'FF1F4E79' } }
+        };
+      }
+      
+      // 하단 외곽 테두리 (마지막 행)
+      for (let col = 1; col <= 6; col++) {
+        const cell = worksheet.getCell(basicInfoStartRow + 4, col);
+        cell.border = {
+          ...cell.border,
+          bottom: { style: 'thick', color: { argb: 'FF1F4E79' } }
+        };
+      }
 
       // 요청 상품 테이블 헤더
       const itemsStartRow = basicInfoStartRow + 6;
@@ -299,16 +344,16 @@ const StoreSupply: React.FC = () => {
       worksheet.getCell(`E${itemsStartRow}`).value = '현재재고';
       worksheet.getCell(`F${itemsStartRow}`).value = '요청사유';
 
-      // 요청 상품 테이블 헤더 스타일 - 더 깔끔하게
+      // 요청 상품 테이블 헤더 스타일 - 강한 테두리로 깔끔하게
       for (let col = 1; col <= 6; col++) {
         const cell = worksheet.getCell(itemsStartRow, col);
-        cell.font = { name: '맑은 고딕', size: 10, bold: true };
+        cell.font = { name: '맑은 고딕', size: 11, bold: true };
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6F3FF' } };
         cell.border = {
-          top: { style: 'thin', color: { argb: 'FF0066CC' } },
-          left: { style: 'thin', color: { argb: 'FF0066CC' } },
-          bottom: { style: 'thin', color: { argb: 'FF0066CC' } },
-          right: { style: 'thin', color: { argb: 'FF0066CC' } }
+          top: { style: 'medium', color: { argb: 'FF0066CC' } },
+          left: { style: 'medium', color: { argb: 'FF0066CC' } },
+          bottom: { style: 'medium', color: { argb: 'FF0066CC' } },
+          right: { style: 'medium', color: { argb: 'FF0066CC' } }
         };
         cell.alignment = { vertical: 'middle', horizontal: 'center' };
       }
@@ -342,15 +387,15 @@ const StoreSupply: React.FC = () => {
             wrapText: true // 텍스트 줄바꿈 활성화
           };
 
-          // 데이터 행 스타일 - 더 깔끔하게
+          // 데이터 행 스타일 - 강한 테두리로 깔끔하게
           for (let col = 1; col <= 6; col++) {
             const cell = worksheet.getCell(row, col);
             cell.font = { name: '맑은 고딕', size: 10 };
             cell.border = {
-              top: { style: 'thin', color: { argb: 'FFE0E0E0' } },
-              left: { style: 'thin', color: { argb: 'FFE0E0E0' } },
-              bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } },
-              right: { style: 'thin', color: { argb: 'FFE0E0E0' } }
+              top: { style: 'thin', color: { argb: 'FF0066CC' } },
+              left: { style: 'thin', color: { argb: 'FF0066CC' } },
+              bottom: { style: 'thin', color: { argb: 'FF0066CC' } },
+              right: { style: 'thin', color: { argb: 'FF0066CC' } }
             };
             
             // 숫자 데이터는 중앙 정렬, 텍스트는 좌측 정렬
@@ -361,6 +406,45 @@ const StoreSupply: React.FC = () => {
             }
           }
         });
+        
+        // 상품 목록 테이블 외곽 테두리 추가 (깔끔한 디자인)
+        const lastItemRow = itemsStartRow + request.items.length;
+        
+        // 왼쪽 외곽 테두리 (A열)
+        for (let row = itemsStartRow; row <= lastItemRow; row++) {
+          const cell = worksheet.getCell(row, 1);
+          cell.border = {
+            ...cell.border,
+            left: { style: 'thick', color: { argb: 'FF0066CC' } }
+          };
+        }
+        
+        // 오른쪽 외곽 테두리 (F열)
+        for (let row = itemsStartRow; row <= lastItemRow; row++) {
+          const cell = worksheet.getCell(row, 6);
+          cell.border = {
+            ...cell.border,
+            right: { style: 'thick', color: { argb: 'FF0066CC' } }
+          };
+        }
+        
+        // 상단 외곽 테두리 (헤더 행)
+        for (let col = 1; col <= 6; col++) {
+          const cell = worksheet.getCell(itemsStartRow, col);
+          cell.border = {
+            ...cell.border,
+            top: { style: 'thick', color: { argb: 'FF0066CC' } }
+          };
+        }
+        
+        // 하단 외곽 테두리 (마지막 데이터 행)
+        for (let col = 1; col <= 6; col++) {
+          const cell = worksheet.getCell(lastItemRow, col);
+          cell.border = {
+            ...cell.border,
+            bottom: { style: 'thick', color: { argb: 'FF0066CC' } }
+          };
+        }
       }
 
       // 요약 정보
@@ -372,21 +456,21 @@ const StoreSupply: React.FC = () => {
       worksheet.getCell(`B${summaryStartRow + 1}`).value = request.approved_amount || 0;
       worksheet.getCell(`B${summaryStartRow + 1}`).numFmt = '#,##0'; // 승인 금액 숫자 형식
 
-      // 요약 정보 스타일 - 더 깔끔하게
+      // 요약 정보 스타일 - 강한 테두리로 깔끔하게
       for (let row = summaryStartRow; row <= summaryStartRow + 1; row++) {
         for (let col = 1; col <= 2; col++) {
           const cell = worksheet.getCell(row, col);
           if (col === 1) {
-            cell.font = { name: '맑은 고딕', size: 10, bold: true };
+            cell.font = { name: '맑은 고딕', size: 11, bold: true };
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2F2' } };
           } else {
-            cell.font = { name: '맑은 고딕', size: 10, bold: true };
+            cell.font = { name: '맑은 고딕', size: 11, bold: true };
           }
           cell.border = {
-            top: { style: 'thin', color: { argb: 'FFCC6666' } },
-            left: { style: 'thin', color: { argb: 'FFCC6666' } },
-            bottom: { style: 'thin', color: { argb: 'FFCC6666' } },
-            right: { style: 'thin', color: { argb: 'FFCC6666' } }
+            top: { style: 'medium', color: { argb: 'FFCC6666' } },
+            left: { style: 'medium', color: { argb: 'FFCC6666' } },
+            bottom: { style: 'medium', color: { argb: 'FFCC6666' } },
+            right: { style: 'medium', color: { argb: 'FFCC6666' } }
           };
           cell.alignment = { vertical: 'middle', horizontal: col === 1 ? 'center' : 'right' };
         }
@@ -469,10 +553,10 @@ const StoreSupply: React.FC = () => {
           cell.font = { name: '맑은 고딕', size: 10 };
           cell.alignment = { vertical: 'middle', horizontal: 'left' };
         } else if (col === 6) {
-          // 서명 영역 셀 - F열 너비 30에 맞춤
+          // 서명 영역 셀 - 배경색 제거하고 깔끔하게
           cell.font = { name: '맑은 고딕', size: 10 };
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF8DC' } }; // 연한 크림색으로 F열 크기에 맞춤
+          // 배경색 제거하여 서명만 깔끔하게 표시
           // 서명 영역 테두리를 더 굵게 하여 경계 명확화
           cell.border = {
             top: { style: 'medium', color: { argb: 'FFDAA520' } },     // 위쪽 테두리 굵게
