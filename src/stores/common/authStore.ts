@@ -21,6 +21,7 @@ interface AuthState {
   setLoading: (loading: boolean) => void;
   initializeSession: () => Promise<void>;
   checkEmailExists: (email: string) => Promise<{ exists: boolean; error?: string }>;
+  forceSignOut: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -37,6 +38,31 @@ export const useAuthStore = create<AuthState>()(
 
     clearAuth: () => {
       console.log('🧹 인증 상태 초기화');
+      
+      // 로컬 스토리지 정리
+      try {
+        localStorage.removeItem('supabase.auth.token');
+        localStorage.removeItem('sb-esbjgvnlqzseomhbsimz-auth-token');
+        // 다른 가능한 키들도 정리
+        Object.keys(localStorage).forEach(key => {
+          if (key.includes('supabase') || key.includes('auth') || key.includes('sb-')) {
+            localStorage.removeItem(key);
+          }
+        });
+        console.log('✅ 로컬 스토리지 정리 완료');
+      } catch (error) {
+        console.warn('⚠️ 로컬 스토리지 정리 실패:', error);
+      }
+
+      // 세션 스토리지 정리
+      try {
+        sessionStorage.clear();
+        console.log('✅ 세션 스토리지 정리 완료');
+      } catch (error) {
+        console.warn('⚠️ 세션 스토리지 정리 실패:', error);
+      }
+
+      // Zustand 상태 정리
       set({ 
         user: null, 
         profile: null, 
@@ -44,6 +70,8 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: false,
         isLoading: false,
       });
+      
+      console.log('✅ 모든 인증 상태 정리 완료');
     },
 
     initializeSession: async () => {
@@ -434,24 +462,73 @@ export const useAuthStore = create<AuthState>()(
         console.log('🔓 로그아웃 시작');
         set({ isLoading: true });
         
-        const { error } = await supabase.auth.signOut();
-        
-        if (error) {
-          console.error('❌ 로그아웃 오류:', error);
-          return { success: false, error: error.message };
+        // 강제 로그아웃 (모든 방법 시도)
+        try {
+          // 1. 일반 로그아웃 시도
+          console.log('🔄 일반 로그아웃 시도');
+          await supabase.auth.signOut();
+          console.log('✅ 일반 로그아웃 성공');
+        } catch (error) {
+          console.warn('⚠️ 일반 로그아웃 실패:', error);
+          
+          // 2. 전역 로그아웃 시도
+          try {
+            console.log('🔄 전역 로그아웃 시도');
+            await supabase.auth.signOut({ scope: 'global' });
+            console.log('✅ 전역 로그아웃 성공');
+          } catch (globalError) {
+            console.warn('⚠️ 전역 로그아웃도 실패:', globalError);
+          }
         }
 
-        console.log('✅ 로그아웃 성공');
+        // 3. 항상 로컬 상태 정리
+        console.log('🧹 로컬 상태 강제 정리');
         get().clearAuth();
+
+        console.log('✅ 로그아웃 완료');
         return { success: true };
       } catch (error) {
-        console.error('❌ 로그아웃 예외:', error);
-        return { 
-          success: false, 
-          error: error instanceof Error ? error.message : '로그아웃 중 오류가 발생했습니다.' 
-        };
+        console.warn('⚠️ 로그아웃 중 예외, 강제 로컬 정리:', error);
+        // 모든 에러 상황에서도 로컬 상태는 정리
+        get().clearAuth();
+        return { success: true }; // 로컬 정리는 성공으로 처리
       } finally {
         set({ isLoading: false });
+      }
+    },
+
+    // 강제 로그아웃 (모든 상황에서 작동)
+    forceSignOut: () => {
+      console.log('💥 강제 로그아웃 실행');
+      
+      try {
+        // 1. 로컬 상태 강제 정리
+        get().clearAuth();
+        
+        // 2. 추가 브라우저 상태 정리
+        if (typeof window !== 'undefined') {
+          // 쿠키 정리
+          document.cookie.split(";").forEach(cookie => {
+            const eqPos = cookie.indexOf("=");
+            const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+            if (name.includes('supabase') || name.includes('auth') || name.includes('sb-')) {
+              document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+            }
+          });
+          
+          // 3. 페이지 강제 이동 (캐시 무시)
+          setTimeout(() => {
+            window.location.replace('/');
+          }, 100);
+        }
+        
+        console.log('✅ 강제 로그아웃 완료');
+      } catch (error) {
+        console.error('❌ 강제 로그아웃 중 오류:', error);
+        // 그래도 페이지 이동은 시도
+        if (typeof window !== 'undefined') {
+          window.location.replace('/');
+        }
       }
     },
 

@@ -1890,4 +1890,19 @@ CREATE POLICY "Users can view own profile" ON profiles
 
 DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
 CREATE POLICY "Users can update own profile" ON profiles
-  FOR UPDATE USING (auth.uid() = id); 
+  FOR UPDATE USING (auth.uid() = id);
+
+-- 15_product_images_storage.sql 실행 (상품 이미지 스토리지)
+\i 15_product_images_storage.sql
+
+-- 완료 메시지
+DO $$
+BEGIN
+  RAISE NOTICE '✅ 모든 고급 설정이 완료되었습니다!';
+  RAISE NOTICE '📊 총 23개 테이블 생성됨 (product_images 추가)';
+  RAISE NOTICE '🔧 고급 함수 및 트리거 설정됨';
+  RAISE NOTICE '🔐 RLS 정책 적용됨';
+  RAISE NOTICE '🎯 테스트 데이터 및 계정 생성됨';
+  RAISE NOTICE '🖼️ 상품 이미지 스토리지 설정됨';
+  RAISE NOTICE '🚀 시스템 사용 준비 완료!';
+END $$; 
