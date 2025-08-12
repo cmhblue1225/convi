@@ -172,7 +172,6 @@ const HQProducts: React.FC = () => {
     }
   };
 
-<<<<<<< HEAD
   // 상품 관리 함수들
   const handleProductSave = async (productData: Partial<Product>) => {
     try {
