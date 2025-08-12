@@ -11,6 +11,7 @@ interface LazyImageProps {
   placeholder?: string;
   onLoad?: () => void;
   onError?: () => void;
+  onClick?: () => void;
 }
 
 export const LazyImage: React.FC<LazyImageProps> = ({
@@ -22,7 +23,8 @@ export const LazyImage: React.FC<LazyImageProps> = ({
   fallback,
   placeholder,
   onLoad,
-  onError
+  onError,
+  onClick
 }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isError, setIsError] = useState(false);
@@ -86,7 +88,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
   };
 
   return (
-    <div className={`relative overflow-hidden ${className}`} ref={imgRef}>
+    <div className={`relative overflow-hidden ${className}`} ref={imgRef} onClick={onClick}>
       {/* 플레이스홀더 */}
       {!isInView && (
         <img

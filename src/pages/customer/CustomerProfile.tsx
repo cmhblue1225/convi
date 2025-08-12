@@ -535,7 +535,7 @@ const CustomerProfile: React.FC = () => {
                           : 'text-red-600'
                       }`}>
                         {point.type === 'earned' || point.type === 'bonus' ? '+' : '-'}
-                        {point.amount.toLocaleString()}P
+                        {Math.abs(point.amount).toLocaleString()}P
                       </span>
                     </div>
                   ))}
