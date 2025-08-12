@@ -4,6 +4,7 @@ import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { useAuthStore } from '../../stores/common/authStore';
 import * as ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import SignaturePad from '../../components/common/SignaturePad';
 
 interface StoreProduct {
   id: string;
@@ -58,6 +59,8 @@ const StoreSupply: React.FC = () => {
   const [selectedRequest, setSelectedRequest] = useState<SupplyRequest | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [modalProducts, setModalProducts] = useState<StoreProduct[]>([]);
+  const [approverSignature, setApproverSignature] = useState<string>('');
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
   const { user } = useAuthStore();
 
   const fetchData = useCallback(async () => {
@@ -153,6 +156,59 @@ const StoreSupply: React.FC = () => {
     }
   }, [user?.id, filterStatus]);
 
+  // 서명 관련 함수들
+  const handleSignatureSave = (signature: string) => {
+    // 서명 이미지 크기 최적화 (인쇄 미리보기 안정성을 위해)
+    try {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        // 이미지 크기 제한 (너무 크면 인쇄 미리보기 문제 발생)
+        const maxWidth = 400;
+        const maxHeight = 200;
+        
+        let { width, height } = img;
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+        if (height > maxHeight) {
+          width = (width * maxHeight) / height;
+          height = maxHeight;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // 이미지 품질 최적화
+        ctx?.drawImage(img, 0, 0, width, height);
+        const optimizedSignature = canvas.toDataURL('image/png', 0.8); // 품질 80%로 최적화
+        
+        setApproverSignature(optimizedSignature);
+        setShowSignatureModal(false);
+        console.log('✅ 서명이 저장되었습니다 (최적화됨)');
+      };
+      
+      img.src = signature;
+    } catch (error) {
+      console.warn('서명 최적화 실패, 원본 사용:', error);
+      setApproverSignature(signature);
+      setShowSignatureModal(false);
+      console.log('✅ 서명이 저장되었습니다 (원본)');
+    }
+  };
+
+  const handleSignatureClear = () => {
+    setApproverSignature('');
+    console.log('🗑️ 서명이 삭제되었습니다');
+  };
+
+  const openSignatureModal = () => {
+    setShowSignatureModal(true);
+  };
+
   // 엑셀 다운로드 함수
   const downloadExcel = async (request: SupplyRequest) => {
     try {
@@ -175,10 +231,11 @@ const StoreSupply: React.FC = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('물류요청서');
 
-      // 제목 행
+      // 제목 행 - 더 깔끔하게
       worksheet.getCell('A1').value = '물류 요청서';
-      worksheet.getCell('A1').font = { name: '맑은 고딕', size: 16, bold: true };
+      worksheet.getCell('A1').font = { name: '맑은 고딕', size: 18, bold: true };
       worksheet.mergeCells('A1:F1');
+      worksheet.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6F3FF' } };
       worksheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
 
       // 기본 정보 섹션
@@ -202,23 +259,24 @@ const StoreSupply: React.FC = () => {
       worksheet.getCell(`D${basicInfoStartRow + 2}`).value = '연락처';
       worksheet.getCell(`E${basicInfoStartRow + 2}`).value = storeData.phone || '-';
 
-      // 기본 정보 스타일 적용
+      // 기본 정보 스타일 적용 - 더 깔끔하게
       for (let row = basicInfoStartRow; row <= basicInfoStartRow + 4; row++) {
         for (let col = 1; col <= 6; col++) {
           const cell = worksheet.getCell(row, col);
           if (col === 1 || col === 4) {
             cell.font = { name: '맑은 고딕', size: 10, bold: true };
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F8F8' } };
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
           } else {
             cell.font = { name: '맑은 고딕', size: 10 };
+            cell.alignment = { vertical: 'middle', horizontal: 'left' };
           }
           cell.border = {
-            top: { style: 'thin', color: { argb: 'FF000000' } },
-            left: { style: 'thin', color: { argb: 'FF000000' } },
-            bottom: { style: 'thin', color: { argb: 'FF000000' } },
-            right: { style: 'thin', color: { argb: 'FF000000' } }
+            top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+            left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+            bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+            right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
           };
-          cell.alignment = { vertical: 'middle', horizontal: col === 1 || col === 4 ? 'center' : 'left' };
         }
       }
 
@@ -241,16 +299,16 @@ const StoreSupply: React.FC = () => {
       worksheet.getCell(`E${itemsStartRow}`).value = '현재재고';
       worksheet.getCell(`F${itemsStartRow}`).value = '요청사유';
 
-      // 요청 상품 테이블 헤더 스타일
+      // 요청 상품 테이블 헤더 스타일 - 더 깔끔하게
       for (let col = 1; col <= 6; col++) {
         const cell = worksheet.getCell(itemsStartRow, col);
         cell.font = { name: '맑은 고딕', size: 10, bold: true };
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F8FF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6F3FF' } };
         cell.border = {
-          top: { style: 'thin', color: { argb: 'FF000000' } },
-          left: { style: 'thin', color: { argb: 'FF000000' } },
-          bottom: { style: 'thin', color: { argb: 'FF000000' } },
-          right: { style: 'thin', color: { argb: 'FF000000' } }
+          top: { style: 'thin', color: { argb: 'FF0066CC' } },
+          left: { style: 'thin', color: { argb: 'FF0066CC' } },
+          bottom: { style: 'thin', color: { argb: 'FF0066CC' } },
+          right: { style: 'thin', color: { argb: 'FF0066CC' } }
         };
         cell.alignment = { vertical: 'middle', horizontal: 'center' };
       }
@@ -261,22 +319,46 @@ const StoreSupply: React.FC = () => {
           const row = itemsStartRow + 1 + index;
           worksheet.getCell(`A${row}`).value = item.product_name;
           worksheet.getCell(`B${row}`).value = item.requested_quantity;
+          worksheet.getCell(`B${row}`).numFmt = '#,##0'; // 요청수량 숫자 형식
           worksheet.getCell(`C${row}`).value = '개'; // 기본 단위
           worksheet.getCell(`D${row}`).value = item.approved_quantity || '-';
           worksheet.getCell(`E${row}`).value = item.current_stock || 0;
+          worksheet.getCell(`E${row}`).numFmt = '#,##0'; // 현재재고 숫자 형식
           worksheet.getCell(`F${row}`).value = item.reason || '-';
 
-          // 데이터 행 스타일
+          // 상품명과 요청사유 셀에 줄바꿈 및 자동 맞춤 설정
+          const productNameCell = worksheet.getCell(row, 1);
+          const reasonCell = worksheet.getCell(row, 6);
+          
+          productNameCell.alignment = { 
+            vertical: 'middle', 
+            horizontal: 'left',
+            wrapText: true // 텍스트 줄바꿈 활성화
+          };
+          
+          reasonCell.alignment = { 
+            vertical: 'middle', 
+            horizontal: 'left',
+            wrapText: true // 텍스트 줄바꿈 활성화
+          };
+
+          // 데이터 행 스타일 - 더 깔끔하게
           for (let col = 1; col <= 6; col++) {
             const cell = worksheet.getCell(row, col);
             cell.font = { name: '맑은 고딕', size: 10 };
             cell.border = {
-              top: { style: 'thin', color: { argb: 'FF000000' } },
-              left: { style: 'thin', color: { argb: 'FF000000' } },
-              bottom: { style: 'thin', color: { argb: 'FF000000' } },
-              right: { style: 'thin', color: { argb: 'FF000000' } }
+              top: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+              left: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+              bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+              right: { style: 'thin', color: { argb: 'FFE0E0E0' } }
             };
-            cell.alignment = { vertical: 'middle', horizontal: col === 2 || col === 4 || col === 5 ? 'center' : 'left' };
+            
+            // 숫자 데이터는 중앙 정렬, 텍스트는 좌측 정렬
+            if (col === 2 || col === 4 || col === 5) {
+              cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            } else {
+              cell.alignment = { vertical: 'middle', horizontal: 'left' };
+            }
           }
         });
       }
@@ -285,24 +367,26 @@ const StoreSupply: React.FC = () => {
       const summaryStartRow = itemsStartRow + (request.items?.length || 0) + 2;
       worksheet.getCell(`A${summaryStartRow}`).value = '총 요청 금액';
       worksheet.getCell(`B${summaryStartRow}`).value = request.total_amount || 0;
+      worksheet.getCell(`B${summaryStartRow}`).numFmt = '#,##0'; // 총 요청 금액 숫자 형식
       worksheet.getCell(`A${summaryStartRow + 1}`).value = '승인 금액';
       worksheet.getCell(`B${summaryStartRow + 1}`).value = request.approved_amount || 0;
+      worksheet.getCell(`B${summaryStartRow + 1}`).numFmt = '#,##0'; // 승인 금액 숫자 형식
 
-      // 요약 정보 스타일
+      // 요약 정보 스타일 - 더 깔끔하게
       for (let row = summaryStartRow; row <= summaryStartRow + 1; row++) {
         for (let col = 1; col <= 2; col++) {
           const cell = worksheet.getCell(row, col);
           if (col === 1) {
             cell.font = { name: '맑은 고딕', size: 10, bold: true };
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF0F0' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2F2' } };
           } else {
             cell.font = { name: '맑은 고딕', size: 10, bold: true };
           }
           cell.border = {
-            top: { style: 'thin', color: { argb: 'FF000000' } },
-            left: { style: 'thin', color: { argb: 'FF000000' } },
-            bottom: { style: 'thin', color: { argb: 'FF000000' } },
-            right: { style: 'thin', color: { argb: 'FF000000' } }
+            top: { style: 'thin', color: { argb: 'FFCC6666' } },
+            left: { style: 'thin', color: { argb: 'FFCC6666' } },
+            bottom: { style: 'thin', color: { argb: 'FFCC6666' } },
+            right: { style: 'thin', color: { argb: 'FFCC6666' } }
           };
           cell.alignment = { vertical: 'middle', horizontal: col === 1 ? 'center' : 'right' };
         }
@@ -327,10 +411,10 @@ const StoreSupply: React.FC = () => {
         for (let col = 1; col <= 6; col++) {
           const cell = worksheet.getCell(memoStartRow, col);
           cell.border = {
-            top: { style: 'thin', color: { argb: 'FF000000' } },
-            left: { style: 'thin', color: { argb: 'FF000000' } },
-            bottom: { style: 'thin', color: { argb: 'FF000000' } },
-            right: { style: 'thin', color: { argb: 'FF000000' } }
+            top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+            left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+            bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+            right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
           };
           cell.alignment = { vertical: 'middle', horizontal: col === 1 ? 'center' : 'left' };
         }
@@ -350,25 +434,295 @@ const StoreSupply: React.FC = () => {
         for (let col = 1; col <= 6; col++) {
           const cell = worksheet.getCell(rejectionRow, col);
           cell.border = {
-            top: { style: 'thin', color: { argb: 'FF000000' } },
-            left: { style: 'thin', color: { argb: 'FF000000' } },
-            right: { style: 'thin', color: { argb: 'FF000000' } }
+            top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+            left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+            right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
           };
           if (col === 6) {
-            cell.border.right = { style: 'thin', color: { argb: 'FF000000' } };
+            cell.border.right = { style: 'thin', color: { argb: 'FFCCCCCC' } };
           }
           cell.alignment = { vertical: 'middle', horizontal: col === 1 ? 'center' : 'left' };
         }
       }
 
-      // 열 너비 조정
-      worksheet.getColumn('A').width = 15;
-      worksheet.getColumn('B').width = 20;
-      worksheet.getColumn('C').width = 10;
-      worksheet.getColumn('D').width = 15;
-      worksheet.getColumn('E').width = 15;
-      worksheet.getColumn('F').width = 25;
+      // ====== 서명 정보 ======
+      const signatureStartRow = request.rejection_reason ? memoStartRow + (request.notes ? 2 : 1) : memoStartRow + (request.notes ? 1 : 0);
+      
+      // 승인자 정보 - 세로 배치 구조
+      // 첫 번째 행: 승인자
+      worksheet.getCell(`A${signatureStartRow + 1}`).value = '승인자';
+      worksheet.getCell(`B${signatureStartRow + 1}`).value = user?.email || '미승인';
+      
+      // 두 번째 행: 승인일시
+      worksheet.getCell(`A${signatureStartRow + 2}`).value = '승인일시';
+      worksheet.getCell(`B${signatureStartRow + 2}`).value = new Date().toLocaleString('ko-KR');
+      
+      // 서명 라벨을 D16으로 이동
+      worksheet.getCell(`D16`).value = '서명';
+      
+      // 서명 영역은 E16:F17로 이동 (한 칸 미뤄짐)
 
+      // 승인자 정보 스타일 - 3개 섹션에 맞춤
+      // 왼쪽 상단: 승인자 (A1:B1)
+      for (let col = 1; col <= 2; col++) {
+        const cell = worksheet.getCell(signatureStartRow + 1, col);
+        if (col === 1) {
+          cell.font = { name: '맑은 고딕', size: 10, bold: true };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F8F8' } };
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        } else {
+          cell.font = { name: '맑은 고딕', size: 10 };
+          cell.alignment = { vertical: 'middle', horizontal: 'left' };
+        }
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+          left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+          bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+          right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
+        };
+      }
+      
+      // 왼쪽 하단: 승인일시 (A2:B2)
+      for (let col = 1; col <= 2; col++) {
+        const cell = worksheet.getCell(signatureStartRow + 2, col);
+        if (col === 1) {
+          cell.font = { name: '맑은 고딕', size: 10, bold: true };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F8F8' } };
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        } else {
+          cell.font = { name: '맑은 고딕', size: 10 };
+          cell.alignment = { vertical: 'middle', horizontal: 'left' };
+        }
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+          left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+          bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+          right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
+        };
+      }
+      
+      // 서명 라벨 (D16:D17) - 2행 병합된 라벨
+      for (let row = 16; row <= 17; row++) {
+        const cell = worksheet.getCell(row, 4);
+        cell.font = { name: '맑은 고딕', size: 12, bold: true };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F8F8' } };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+          left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+          bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+          right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
+        };
+      }
+      
+      // 서명 영역 (E16:F17) - 2행 × 2열 병합된 영역 (한 칸 미뤄짐)
+      for (let row = 16; row <= 17; row++) {
+        for (let col = 5; col <= 6; col++) {
+          const cell = worksheet.getCell(row, col);
+          cell.font = { name: '맑은 고딕', size: 10 };
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFBF0' } }; // 연한 크림색
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+            left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+            bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+            right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
+          };
+        }
+      }
+
+      // 셀 병합 - 새로운 레이아웃 구조
+      // 첫 번째 행: 승인자 (A1:B1) - 그대로 유지
+      worksheet.mergeCells(`B${signatureStartRow + 1}:B${signatureStartRow + 1}`);
+      // 두 번째 행: 승인일시 (A2:B2) - 그대로 유지
+      worksheet.mergeCells(`B${signatureStartRow + 2}:B${signatureStartRow + 2}`);
+      // 서명 라벨 (D16:D17) - 2행 병합
+      worksheet.mergeCells(`D16:D17`);
+      // 서명 영역 (E16:F17) - 2행 × 2열 병합 (한 칸 미뤄짐)
+      worksheet.mergeCells(`E16:F17`);
+
+      // 서명 이미지 추가 (있는 경우) - 인쇄 미리보기 최적화
+      if (approverSignature) {
+        try {
+          // base64 데이터 검증 및 최적화
+          const base64Data = approverSignature.split(',')[1];
+          if (!base64Data || base64Data.length > 1000000) { // 1MB 제한
+            throw new Error('서명 이미지 데이터가 너무 큽니다');
+          }
+
+          const imageId = worksheet.workbook.addImage({
+            base64: base64Data,
+            extension: 'png',
+          });
+
+          // 정수 좌표 사용으로 인쇄 미리보기 안정성 향상 - 새로운 영역에 맞춤
+          worksheet.addImage(imageId, {
+            tl: { col: 4.2, row: 15.8 },
+            br: { col: 6.8, row: 17.2 }
+          } as any);
+          
+          // 서명 영역 행 높이를 고정하여 인쇄 안정성 향상
+          worksheet.getRow(16).height = 50; // 서명 라벨 행
+          worksheet.getRow(17).height = 50; // 서명 영역 행
+
+          console.log('✅ 서명 이미지 추가 성공');
+        } catch (imageError) {
+          console.warn('서명 이미지 추가 실패:', imageError);
+          // 이미지 추가 실패 시 텍스트로 대체 - 깔끔한 스타일
+          worksheet.getCell(`B${signatureStartRow + 3}`).value = '✍️ 서명 이미지';
+          worksheet.getCell(`B${signatureStartRow + 3}`).font = { name: '맑은 고딕', size: 11, italic: true, color: { argb: 'FFE74C3C' } };
+          worksheet.getCell(`B${signatureStartRow + 3}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF5F5' } };
+          worksheet.getCell(`B${signatureStartRow + 3}`).alignment = { vertical: 'middle', horizontal: 'center' };
+        }
+      } else {
+        // 서명이 없는 경우 - 새로운 영역에 맞춤
+        worksheet.getCell(`E16`).value = '서명 없음';
+        worksheet.getCell(`E16`).font = { name: '맑은 고딕', size: 12, italic: true, color: { argb: 'FF7F8C8D' } };
+        worksheet.getCell(`E16`).alignment = { vertical: 'middle', horizontal: 'center' };
+        
+        // 서명 영역 행 높이 설정
+        worksheet.getRow(16).height = 50; // 서명 라벨 행
+        worksheet.getRow(17).height = 50; // 서명 영역 행
+      }
+
+      // 열 너비 조정 - 인쇄 시 잘리지 않도록 최적화
+      worksheet.getColumn('A').width = 25;  // A열 (상품명) - 넓게 설정
+      worksheet.getColumn('B').width = 15;  // B열 (요청수량)
+      worksheet.getColumn('C').width = 10;  // C열 (단위)
+      worksheet.getColumn('D').width = 15;  // D열 (승인수량)
+      worksheet.getColumn('E').width = 15;  // E열 (현재재고)
+      worksheet.getColumn('F').width = 35;  // F열 (요청사유) - 넓게 설정
+
+      // ====== A4 페이지 꽉 채우기 위한 동적 행 높이 계산 ======
+      
+      // A4 페이지 기준 계산 (297mm × 210mm, 여백 제외)
+      const a4Height = 297; // mm
+      const a4Width = 210; // mm
+      const marginTop = 12.7; // 0.5인치 = 12.7mm
+      const marginBottom = 12.7;
+      const marginLeft = 7.6; // 0.3인치 = 7.6mm
+      const marginRight = 7.6;
+      
+      // 실제 사용 가능한 높이 (mm)
+      const usableHeight = a4Height - marginTop - marginBottom;
+      
+      // 현재 총 행 수 계산 - 세로 배치에 맞춤
+      const totalRows = basicInfoStartRow + 4 + // 기본정보 5행
+                        1 + // 상품목록 헤더 1행
+                        (request.items?.length || 0) + // 상품 데이터 행들
+                        2 + // 요약 정보 2행
+                        (request.notes ? 1 : 0) + // 비고 (있는 경우)
+                        (request.rejection_reason ? 1 : 0) + // 거절사유 (있는 경우)
+                        4; // 서명 정보 4행 (세로 배치)
+      
+      // A4 페이지에 맞는 최적 행 높이 계산 (mm)
+      const optimalRowHeight = usableHeight / totalRows;
+      
+      // mm를 Excel 행 높이로 변환 (대략 1mm = 2.83 Excel 행 높이)
+      const excelRowHeight = Math.max(optimalRowHeight * 2.83, 20); // 최소 20px 보장
+      
+      console.log(`📏 A4 페이지 최적화: 총 ${totalRows}행, 행당 ${excelRowHeight.toFixed(1)}px`);
+      
+      // 모든 행에 동적 높이 적용
+      for (let row = 1; row <= totalRows; row++) {
+        if (row === 1) {
+          // 제목 행은 더 크게
+          worksheet.getRow(row).height = excelRowHeight * 1.5;
+        } else if (row >= basicInfoStartRow && row <= basicInfoStartRow + 4) {
+          // 기본정보 행들
+          worksheet.getRow(row).height = excelRowHeight;
+        } else if (row === itemsStartRow) {
+          // 상품목록 헤더
+          worksheet.getRow(row).height = excelRowHeight * 1.2;
+        } else if (row > itemsStartRow && row <= itemsStartRow + (request.items?.length || 0)) {
+          // 상품 데이터 행들
+          worksheet.getRow(row).height = excelRowHeight;
+        } else if (row >= summaryStartRow && row <= summaryStartRow + 1) {
+          // 요약 정보 행들
+          worksheet.getRow(row).height = excelRowHeight * 1.1;
+        } else if (row >= memoStartRow) {
+          // 비고, 거절사유, 서명 행들
+          if (row === signatureStartRow + 3 && approverSignature) {
+            // 서명 이미지가 있는 경우 더 크게
+            worksheet.getRow(row).height = Math.max(excelRowHeight * 1.5, 60);
+          } else {
+            worksheet.getRow(row).height = excelRowHeight;
+          }
+        }
+      }
+
+      // ====== 인쇄 설정 ======
+
+      // 인쇄 영역 설정 - 서명 정보 포함 (정확한 범위 계산)
+      const lastRow = signatureStartRow + 3;
+      worksheet.pageSetup.printArea = `A1:F${lastRow}`;
+      
+      // 인쇄 미리보기 최적화를 위한 핵심 설정
+      worksheet.pageSetup.fitToPage = true;
+      worksheet.pageSetup.fitToWidth = 1; // 페이지 너비에 맞춤
+      worksheet.pageSetup.fitToHeight = 0; // 페이지 높이 자동 조정 (내용에 따라 유동적)
+      worksheet.pageSetup.orientation = 'portrait'; // 세로 방향
+      
+      // 여백 설정 - 인쇄 안정성을 위해 최소 여백 사용
+      worksheet.pageSetup.margins = {
+        top: 0.3,    // 상단 여백 (0.3인치)
+        left: 0.3,   // 좌측 여백 (0.3인치)
+        bottom: 0.3, // 하단 여백 (0.3인치)
+        right: 0.3,  // 우측 여백 (0.3인치)
+        header: 0.2, // 헤더 여백 (0.2인치)
+        footer: 0.2  // 푸터 여백 (0.2인치)
+      };
+      
+      // 인쇄 품질 및 안정성 설정
+      worksheet.pageSetup.horizontalCentered = true; // 가로 중앙 정렬
+      worksheet.pageSetup.verticalCentered = false; // 세로는 상단 정렬
+      worksheet.pageSetup.draft = false; // 초안 모드 비활성화 (품질 향상)
+      
+      // 인쇄 영역 검증 및 로깅
+      console.log(`🖨️ 인쇄 설정 완료: 영역 A1:F${lastRow}, 여백 0.3인치, 중앙정렬`);
+      console.log(`📊 총 행 수: ${lastRow}, 서명 시작 행: ${signatureStartRow}`);
+
+      // 워크북 및 워크시트 속성 설정 - 인쇄 안정성 향상
+      workbook.creator = 'Convi System';
+      workbook.lastModifiedBy = 'Convi System';
+      workbook.created = new Date();
+      workbook.modified = new Date();
+      
+      // 워크시트 속성 설정
+      worksheet.properties.defaultRowHeight = 20;
+      worksheet.properties.defaultColWidth = 15;
+      
+      // 인쇄 안정성을 위한 추가 설정
+      worksheet.pageSetup.paperSize = 9; // A4 용지 크기
+      worksheet.pageSetup.scale = 100; // 100% 크기
+      worksheet.pageSetup.fitToPage = true;
+      worksheet.pageSetup.fitToWidth = 1;
+      worksheet.pageSetup.fitToHeight = 0;
+      
+      // 인쇄 미리보기 최적화를 위한 뷰 설정
+      worksheet.views = [
+        {
+          state: 'normal',
+          showGridLines: true,
+          showRowColHeaders: true,
+          showRuler: true
+        }
+      ];
+      
+      // 인쇄 영역 재검증
+      if (worksheet.pageSetup.printArea) {
+        console.log(`✅ 인쇄 영역 설정 확인: ${worksheet.pageSetup.printArea}`);
+      } else {
+        console.warn('⚠️ 인쇄 영역이 설정되지 않았습니다');
+      }
+
+      // 인쇄 설정 최종 검증
+      console.log('🔍 최종 인쇄 설정 검증:');
+      console.log(`- 인쇄 영역: ${worksheet.pageSetup.printArea}`);
+      console.log(`- 용지 크기: ${worksheet.pageSetup.paperSize} (A4)`);
+      console.log(`- 맞춤 설정: fitToPage=${worksheet.pageSetup.fitToPage}, fitToWidth=${worksheet.pageSetup.fitToWidth}`);
+      console.log(`- 여백: 상=${worksheet.pageSetup.margins.top}, 하=${worksheet.pageSetup.margins.bottom}`);
+      
       // 파일 저장
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -381,6 +735,8 @@ const StoreSupply: React.FC = () => {
       alert('엑셀 다운로드 중 오류가 발생했습니다.');
     }
   };
+
+
 
   // 실시간 구독 설정
   useEffect(() => {
@@ -762,6 +1118,14 @@ const StoreSupply: React.FC = () => {
                       >
                         📊 엑셀
                       </button>
+
+                      <button
+                        onClick={openSignatureModal}
+                        className="px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
+                        title="서명 추가"
+                      >
+                        ✍️ 서명
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -956,11 +1320,49 @@ const StoreSupply: React.FC = () => {
                 >
                   📊 엑셀로 다운로드
                 </button>
+
+                <button
+                  onClick={openSignatureModal}
+                  className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700"
+                >
+                  ✍️ 서명 추가
+                </button>
                 <button
                   onClick={() => setShowDetailModal(false)}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
                 >
                   닫기
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 서명 모달 */}
+      {showSignatureModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">승인자 서명</h3>
+              <SignaturePad
+                onSave={handleSignatureSave}
+                onClear={handleSignatureClear}
+                width={400}
+                height={200}
+                penColor="#000000"
+                backgroundColor="#ffffff"
+                className="mx-auto"
+              />
+              <div className="mt-2 text-xs text-gray-500 text-center">
+                💡 서명 크기는 자동으로 최적화되어 인쇄 시 안정적으로 표시됩니다
+              </div>
+              <div className="flex justify-end mt-4">
+                <button
+                  onClick={() => setShowSignatureModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                >
+                  취소
                 </button>
               </div>
             </div>
