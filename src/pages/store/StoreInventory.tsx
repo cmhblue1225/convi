@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase/client';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { useAuthStore } from '../../stores/common/authStore';
-
+import * as ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 
 interface ExpiryInfo {
@@ -303,7 +304,8 @@ const StoreInventory: React.FC = () => {
         return a.product.name.localeCompare(b.product.name);
       });
 
-      // 행사 정보 가져오기
+      // 행사 정보 가져오기 - 임시로 주석 처리
+      /*
       const { data: promotionData, error: promotionError } = await supabase
         .from('promotion_products')
         .select(`
@@ -331,6 +333,7 @@ const StoreInventory: React.FC = () => {
           });
         });
       }
+      */
 
       setInventoryWithExpiry(validInventory);
     } catch (error) {
@@ -423,7 +426,8 @@ const StoreInventory: React.FC = () => {
       const validItems = allInventoryItems.filter(item => item !== null) as AllInventoryItem[];
       validItems.sort((a, b) => a.product.name.localeCompare(b.product.name));
 
-      // 행사 정보 가져오기
+      // 행사 정보 가져오기 - 임시로 주석 처리
+      /*
       const { data: promotionData, error: promotionError } = await supabase
         .from('promotion_products')
         .select(`
@@ -451,6 +455,7 @@ const StoreInventory: React.FC = () => {
           });
         });
       }
+      */
 
       setAllInventoryItems(validItems);
     } catch (error) {
@@ -544,6 +549,330 @@ const StoreInventory: React.FC = () => {
 
   const finalDisplayData = viewMode === 'current' ? filteredProducts : filteredAllProducts;
 
+  // 엑셀 다운로드 함수
+  const downloadExcel = async () => {
+    try {
+      console.log('📊 재고 엑셀 다운로드 시작');
+      
+      // 현재 사용자의 지점 정보 조회
+      const { data: storeData, error: storeError } = await supabase
+        .from('stores')
+        .select('name, address, phone')
+        .eq('owner_id', user?.id || '')
+        .single();
+
+      if (storeError || !storeData) {
+        console.error('❌ 지점 정보 조회 실패:', storeError);
+        alert('지점 정보를 찾을 수 없습니다.');
+        return;
+      }
+
+      // 워크북 생성
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('재고현황');
+
+      // 제목 행 - 깔끔하고 전문적인 디자인
+      worksheet.getCell('A1').value = '지점 재고 현황';
+      worksheet.getCell('A1').font = { name: '맑은 고딕', size: 18, bold: true, color: { argb: 'FF1F4E79' } };
+      worksheet.mergeCells('A1:J1');
+      worksheet.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F8FF' } };
+      worksheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
+      
+      // 제목 행 테두리
+      worksheet.getCell('A1').border = {
+        top: { style: 'thick', color: { argb: 'FF1F4E79' } },
+        left: { style: 'thick', color: { argb: 'FF1F4E79' } },
+        bottom: { style: 'thick', color: { argb: 'FF1F4E79' } },
+        right: { style: 'thick', color: { argb: 'FF1F4E79' } }
+      };
+
+      // 기본 정보 섹션
+      const basicInfoStartRow = 3;
+      worksheet.getCell(`A${basicInfoStartRow}`).value = '지점명';
+      worksheet.getCell(`B${basicInfoStartRow}`).value = storeData.name;
+      worksheet.getCell(`A${basicInfoStartRow + 1}`).value = '주소';
+      worksheet.getCell(`B${basicInfoStartRow + 1}`).value = storeData.address || '-';
+      worksheet.getCell(`A${basicInfoStartRow + 2}`).value = '연락처';
+      worksheet.getCell(`B${basicInfoStartRow + 2}`).value = storeData.phone || '-';
+      worksheet.getCell(`A${basicInfoStartRow + 3}`).value = '생성일시';
+      worksheet.getCell(`B${basicInfoStartRow + 3}`).value = new Date().toLocaleString('ko-KR');
+
+      // 기본 정보 스타일 적용
+      for (let row = basicInfoStartRow; row <= basicInfoStartRow + 3; row++) {
+        for (let col = 1; col <= 2; col++) {
+          const cell = worksheet.getCell(row, col);
+          if (col === 1) {
+            cell.font = { name: '맑은 고딕', size: 11, bold: true, color: { argb: 'FF1F4E79' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+          } else {
+            cell.font = { name: '맑은 고딕', size: 10, color: { argb: 'FF2F2F2F' } };
+            cell.alignment = { vertical: 'middle', horizontal: 'left' };
+          }
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FF1F4E79' } },
+            left: { style: 'thin', color: { argb: 'FF1F4E79' } },
+            bottom: { style: 'thin', color: { argb: 'FF1F4E79' } },
+            right: { style: 'thin', color: { argb: 'FF1F4E79' } }
+          };
+        }
+      }
+
+      // 셀 병합
+      worksheet.mergeCells(`B${basicInfoStartRow}:J${basicInfoStartRow}`);
+      worksheet.mergeCells(`B${basicInfoStartRow + 1}:J${basicInfoStartRow + 1}`);
+      worksheet.mergeCells(`B${basicInfoStartRow + 2}:J${basicInfoStartRow + 2}`);
+      worksheet.mergeCells(`B${basicInfoStartRow + 3}:J${basicInfoStartRow + 3}`);
+
+      // 재고 현황 테이블 헤더
+      const inventoryStartRow = basicInfoStartRow + 6;
+      if (viewMode === 'current') {
+        // 현재 재고 모드
+        worksheet.getCell(`A${inventoryStartRow}`).value = '카테고리';
+        worksheet.getCell(`B${inventoryStartRow}`).value = '상품명';
+        worksheet.getCell(`C${inventoryStartRow}`).value = '재고수량';
+        worksheet.getCell(`D${inventoryStartRow}`).value = '안전재고';
+        worksheet.getCell(`E${inventoryStartRow}`).value = '최대재고';
+        worksheet.getCell(`F${inventoryStartRow}`).value = '유통기한';
+        worksheet.getCell(`G${inventoryStartRow}`).value = '재고상태';
+        worksheet.getCell(`H${inventoryStartRow}`).value = '프로모션';
+        worksheet.getCell(`I${inventoryStartRow}`).value = '가격';
+        worksheet.getCell(`J${inventoryStartRow}`).value = '단위';
+      } else {
+        // 모든 재고 모드
+        worksheet.getCell(`A${inventoryStartRow}`).value = '카테고리';
+        worksheet.getCell(`B${inventoryStartRow}`).value = '상품명';
+        worksheet.getCell(`C${inventoryStartRow}`).value = '총재고수량';
+        worksheet.getCell(`D${inventoryStartRow}`).value = '안전재고';
+        worksheet.getCell(`E${inventoryStartRow}`).value = '최대재고';
+        worksheet.getCell(`F${inventoryStartRow}`).value = '유통기한';
+        worksheet.getCell(`G${inventoryStartRow}`).value = '재고상태';
+        worksheet.getCell(`H${inventoryStartRow}`).value = '프로모션';
+        worksheet.getCell(`I${inventoryStartRow}`).value = '가격';
+        worksheet.getCell(`J${inventoryStartRow}`).value = '단위';
+      }
+
+      // 재고 현황 테이블 헤더 스타일
+      for (let col = 1; col <= 10; col++) {
+        const cell = worksheet.getCell(inventoryStartRow, col);
+        cell.font = { name: '맑은 고딕', size: 11, bold: true };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6F3FF' } };
+        cell.border = {
+          top: { style: 'medium', color: { argb: 'FF0066CC' } },
+          left: { style: 'medium', color: { argb: 'FF0066CC' } },
+          bottom: { style: 'medium', color: { argb: 'FF0066CC' } },
+          right: { style: 'medium', color: { argb: 'FF0066CC' } }
+        };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      }
+
+      // 자동 필터 기능 추가
+      worksheet.autoFilter = {
+        from: {
+          row: inventoryStartRow,
+          column: 1
+        },
+        to: {
+          row: inventoryStartRow + (finalDisplayData?.length || 0),
+          column: 10
+        }
+      };
+
+      // 단순한 오름차순/내림차순 정렬을 위한 데이터 준비
+      let sortedData = [...finalDisplayData];
+      
+      // 기본 정렬: 상품명 오름차순
+      sortedData.sort((a, b) => {
+        const aName = (a as any).product?.name || '';
+        const bName = (b as any).product?.name || '';
+        return aName.localeCompare(bName);
+      });
+
+      // 재고 데이터 추가
+      if (sortedData && sortedData.length > 0) {
+        sortedData.forEach((item, index) => {
+          const row = inventoryStartRow + 1 + index;
+          
+          if (viewMode === 'current') {
+            const currentItem = item as any;
+            worksheet.getCell(row, 1).value = currentItem.product?.category?.name || '기타';
+            worksheet.getCell(row, 2).value = currentItem.product?.name || '';
+            worksheet.getCell(row, 3).value = currentItem.batchQuantity || 0;
+            worksheet.getCell(row, 3).numFmt = '#,##0';
+            worksheet.getCell(row, 4).value = currentItem.safety_stock || 0;
+            worksheet.getCell(row, 4).numFmt = '#,##0';
+            worksheet.getCell(row, 5).value = currentItem.max_stock || 0;
+            worksheet.getCell(row, 5).numFmt = '#,##0';
+            worksheet.getCell(row, 6).value = currentItem.expiryInfo?.formattedRemaining || '유통기한 없음';
+            worksheet.getCell(row, 7).value = currentItem.expiryInfo?.status === 'expired' ? '만료' : 
+              currentItem.expiryInfo?.status === 'danger' ? '위험' : 
+              currentItem.expiryInfo?.status === 'warning' ? '임박' : '정상';
+            worksheet.getCell(row, 8).value = currentItem.promotionInfo?.promotion_type || '-';
+            worksheet.getCell(row, 9).value = currentItem.price || 0;
+            worksheet.getCell(row, 9).numFmt = '#,##0';
+            worksheet.getCell(row, 10).value = currentItem.product?.unit || '';
+          } else {
+            const allItem = item as any;
+            worksheet.getCell(row, 1).value = allItem.product?.category?.name || '기타';
+            worksheet.getCell(row, 2).value = allItem.product?.name || '';
+            worksheet.getCell(row, 3).value = allItem.total_stock_quantity || 0;
+            worksheet.getCell(row, 3).numFmt = '#,##0';
+            worksheet.getCell(row, 4).value = allItem.safety_stock || 0;
+            worksheet.getCell(row, 4).numFmt = '#,##0';
+            worksheet.getCell(row, 5).value = allItem.max_stock || 0;
+            worksheet.getCell(row, 5).numFmt = '#,##0';
+            worksheet.getCell(row, 6).value = allItem.product?.shelf_life_days ? `${allItem.product.shelf_life_days}일` : '유통기한 없음';
+            worksheet.getCell(row, 7).value = '정상';
+            worksheet.getCell(row, 8).value = allItem.promotionInfo?.promotion_type || '-';
+            worksheet.getCell(row, 9).value = allItem.price || 0;
+            worksheet.getCell(row, 9).numFmt = '#,##0';
+            worksheet.getCell(row, 10).value = allItem.product?.unit || '';
+          }
+
+          // 데이터 행 스타일
+          for (let col = 1; col <= 10; col++) {
+            const cell = worksheet.getCell(row, col);
+            cell.font = { name: '맑은 고딕', size: 10 };
+            cell.border = {
+              top: { style: 'thin', color: { argb: 'FF1F4E79' } },
+              left: { style: 'thin', color: { argb: 'FF1F4E79' } },
+              bottom: { style: 'thin', color: { argb: 'FF1F4E79' } },
+              right: { style: 'thin', color: { argb: 'FF1F4E79' } }
+            };
+            
+            // 카테고리 열은 중앙 정렬, 숫자 데이터는 중앙 정렬, 텍스트는 좌측 정렬
+            if (col === 1 || col === 3 || col === 4 || col === 5 || col === 9) {
+              cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            } else {
+              cell.alignment = { vertical: 'middle', horizontal: 'left' };
+            }
+          }
+        });
+
+        // 재고 현황 테이블 외곽 테두리 추가
+        const lastDataRow = inventoryStartRow + sortedData.length;
+        
+        // 왼쪽 외곽 테두리 (A열)
+        for (let row = inventoryStartRow; row <= lastDataRow; row++) {
+          const cell = worksheet.getCell(row, 1);
+          cell.border = {
+            ...cell.border,
+            left: { style: 'thick', color: { argb: 'FF1F4E79' } }
+          };
+        }
+        
+        // 오른쪽 외곽 테두리 (J열)
+        for (let row = inventoryStartRow; row <= lastDataRow; row++) {
+          const cell = worksheet.getCell(row, 10);
+          cell.border = {
+            ...cell.border,
+            right: { style: 'thick', color: { argb: 'FF1F4E79' } }
+          };
+        }
+        
+        // 상단 외곽 테두리 (헤더 행)
+        for (let col = 1; col <= 10; col++) {
+          const cell = worksheet.getCell(inventoryStartRow, col);
+          cell.border = {
+            ...cell.border,
+            top: { style: 'thick', color: { argb: 'FF1F4E79' } }
+          };
+        }
+        
+        // 하단 외곽 테두리 (마지막 데이터 행)
+        for (let col = 1; col <= 10; col++) {
+          const cell = worksheet.getCell(lastDataRow, col);
+          cell.border = {
+            ...cell.border,
+            bottom: { style: 'thick', color: { argb: 'FF1F4E79' } }
+          };
+        }
+      }
+
+      // 요약 정보
+      const summaryStartRow = inventoryStartRow + (sortedData?.length || 0) + 2;
+      worksheet.getCell(`A${summaryStartRow}`).value = '총 상품 수';
+      worksheet.getCell(`B${summaryStartRow}`).value = sortedData?.length || 0;
+      worksheet.getCell(`B${summaryStartRow}`).numFmt = '#,##0';
+      worksheet.getCell(`A${summaryStartRow + 1}`).value = '총 재고 수량';
+      worksheet.getCell(`B${summaryStartRow + 1}`).value = sortedData?.reduce((sum, item) => {
+        if (viewMode === 'current') {
+          return sum + ((item as any).batchQuantity || 0);
+        } else {
+          return sum + ((item as any).total_stock_quantity || 0);
+        }
+      }, 0) || 0;
+      worksheet.getCell(`B${summaryStartRow + 1}`).numFmt = '#,##0';
+
+      // 요약 정보 스타일
+      for (let row = summaryStartRow; row <= summaryStartRow + 1; row++) {
+        for (let col = 1; col <= 2; col++) {
+          const cell = worksheet.getCell(row, col);
+          if (col === 1) {
+            cell.font = { name: '맑은 고딕', size: 11, bold: true };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2F2' } };
+          } else {
+            cell.font = { name: '맑은 고딕', size: 11, bold: true };
+          }
+          cell.border = {
+            top: { style: 'medium', color: { argb: 'FFCC6666' } },
+            left: { style: 'medium', color: { argb: 'FFCC6666' } },
+            bottom: { style: 'medium', color: { argb: 'FFCC6666' } },
+            right: { style: 'medium', color: { argb: 'FFCC6666' } }
+          };
+          cell.alignment = { vertical: 'middle', horizontal: col === 1 ? 'center' : 'right' };
+        }
+      }
+
+      // 셀 병합
+      worksheet.mergeCells(`B${summaryStartRow}:J${summaryStartRow}`);
+      worksheet.mergeCells(`B${summaryStartRow + 1}:J${summaryStartRow + 1}`);
+
+      // 열 너비 설정 - 카테고리 열 추가로 인한 조정
+      worksheet.getColumn('A').width = 20;  // 카테고리
+      worksheet.getColumn('B').width = 30;  // 상품명
+      worksheet.getColumn('C').width = 15;  // 재고수량
+      worksheet.getColumn('D').width = 15;  // 안전재고
+      worksheet.getColumn('E').width = 15;  // 최대재고
+      worksheet.getColumn('F').width = 25;  // 유통기한
+      worksheet.getColumn('G').width = 15;  // 재고상태
+      worksheet.getColumn('H').width = 15;  // 프로모션
+      worksheet.getColumn('I').width = 18;  // 가격
+      worksheet.getColumn('J').width = 12;  // 단위
+
+      // 인쇄 설정
+      const lastRow = summaryStartRow + 1;
+      worksheet.pageSetup.printArea = `A1:J${lastRow}`;
+      worksheet.pageSetup.fitToPage = true;
+      worksheet.pageSetup.fitToWidth = 1;
+      worksheet.pageSetup.fitToHeight = 0;
+      worksheet.pageSetup.orientation = 'portrait';
+      worksheet.pageSetup.margins = {
+        top: 0.3,
+        left: 0.3,
+        bottom: 0.3,
+        right: 0.3,
+        header: 0.3,
+        footer: 0.3
+      };
+
+      // 파일 저장
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+      
+      const fileName = `재고현황_${storeData.name}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      saveAs(blob, fileName);
+      
+      console.log('✅ 재고 엑셀 다운로드 완료');
+      
+    } catch (error) {
+      console.error('❌ 엑셀 다운로드 중 오류:', error);
+      alert('엑셀 파일 생성 중 오류가 발생했습니다.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -557,6 +886,16 @@ const StoreInventory: React.FC = () => {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">재고 관리</h1>
         <p className="text-gray-600">현재 재고 현황을 확인하고 관리합니다.</p>
+      </div>
+
+      {/* 엑셀 다운로드 버튼 */}
+      <div className="mb-6">
+        <button
+          onClick={downloadExcel}
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+        >
+          📊 엑셀 다운로드
+        </button>
       </div>
 
       {/* 통계 카드 */}
