@@ -117,7 +117,7 @@ const CustomerOrders: React.FC = () => {
         return { text: '환불 승인됨', color: 'bg-green-100 text-green-800' };
       case 'rejected':
         return { text: '환불 거절됨', color: 'bg-red-100 text-red-800' };
-      case 'under_review':
+      case 'pending':
         return { text: '환불 검토 중', color: 'bg-blue-100 text-blue-800' };
       default:
         return { text: refund.status, color: 'bg-gray-100 text-gray-800' };
