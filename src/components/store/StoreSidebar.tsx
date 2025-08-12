@@ -98,6 +98,8 @@ const StoreSidebar: React.FC = () => {
             </svg>
             재고 분석
           </NavLink>
+
+
         </div>
       </nav>
     </aside>

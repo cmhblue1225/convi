@@ -150,7 +150,7 @@ const CreateRefund: React.FC = () => {
       const refundData = {
         order_id: data.order_id,
         customer_id: user.id,
-        store_id: selectedOrder.store_id,
+        store_id: selectedOrder.storeId, // storeId 필드 사용 (올바른 필드명)
         request_type: data.request_type,
         reason: data.reason,
         description: data.description,
@@ -164,9 +164,22 @@ const CreateRefund: React.FC = () => {
         estimated_processing_time: 24
       };
 
-      const { error } = await supabase
-        .from('refund_requests')
-        .insert([refundData]);
+      // Supabase RPC 함수 호출로 환불 요청 생성
+      const { data: refundResult, error } = await supabase.rpc('create_refund_request', {
+        p_order_id: data.order_id,
+        p_customer_id: user.id,
+        p_store_id: selectedOrder.storeId, // storeId 필드 사용
+        p_request_type: data.request_type,
+        p_reason: data.reason,
+        p_refund_items: data.refund_items,
+        p_requested_refund_amount: data.requested_refund_amount,
+        p_description: data.description,
+        p_customer_phone: data.customer_phone || '',
+        p_priority: 'normal',
+        p_refund_method: 'payment_refund',
+        p_is_urgent: false,
+        p_estimated_processing_time: 24
+      });
 
       if (error) throw error;
 

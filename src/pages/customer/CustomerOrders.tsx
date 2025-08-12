@@ -30,31 +30,36 @@ const CustomerOrders: React.FC = () => {
   const [refundReason, setRefundReason] = useState('');
   const [refundDescription, setRefundDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // 환불 유형 변경 처리
-  const handleRefundTypeChange = (type: 'full' | 'partial') => {
-    setRefundType(type);
-    
-    if (type === 'full') {
-      // 전체 환불 시 모든 상품을 최대 수량으로 선택
-      setRefundItems((prevItems: RefundItem[]) => 
-        prevItems.map((item: RefundItem) => ({
-          ...item,
-          quantity: item.max_quantity
-        }))
-      );
-    } else {
-      // 부분 환불 시 모든 상품을 선택 해제 (0으로 설정)
-      setRefundItems((prevItems: RefundItem[]) => 
-        prevItems.map((item: RefundItem) => ({
-          ...item,
-          quantity: 0
-        }))
-      );
-    }
-  };
+  
+  // 환불 상태 조회
+  const [refundStatuses, setRefundStatuses] = useState<{[key: string]: any}>({});
 
   console.log('📋 주문 내역 페이지 - 총 주문 수:', orders.length);
+
+  // 환불 상태 조회 함수
+  const fetchRefundStatuses = async () => {
+    if (!user?.id || orders.length === 0) return;
+    
+    try {
+      const orderIds = orders.map(order => order.id);
+      const { data, error } = await supabase
+        .from('refund_requests' as any)
+        .select('order_id, status, created_at, processed_at, admin_notes')
+        .in('order_id', orderIds)
+        .eq('customer_id', user.id);
+
+      if (error) throw error;
+      
+      const statusMap: {[key: string]: any} = {};
+      data?.forEach(refund => {
+        statusMap[refund.order_id] = refund;
+      });
+      
+      setRefundStatuses(statusMap);
+    } catch (error) {
+      console.error('환불 상태 조회 실패:', error);
+    }
+  };
 
   useEffect(() => {
     // 컴포넌트 마운트 시 주문 목록 조회 및 실시간 구독
@@ -66,6 +71,13 @@ const CustomerOrders: React.FC = () => {
       unsubscribeFromOrders();
     };
   }, [fetchOrders, subscribeToOrders, unsubscribeFromOrders]);
+
+  // 주문 목록이 변경될 때 환불 상태도 조회
+  useEffect(() => {
+    if (orders.length > 0) {
+      fetchRefundStatuses();
+    }
+  }, [orders]);
 
   const getStatusText = (status: string) => {
     switch (status) {
@@ -90,6 +102,25 @@ const CustomerOrders: React.FC = () => {
       case 'completed': return 'bg-green-100 text-green-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // 환불 상태 텍스트 및 색상 반환
+  const getRefundStatusInfo = (orderId: string) => {
+    const refund = refundStatuses[orderId];
+    if (!refund) return null;
+
+    switch (refund.status) {
+      case 'pending':
+        return { text: '환불 검토 중', color: 'bg-yellow-100 text-yellow-800' };
+      case 'approved':
+        return { text: '환불 승인됨', color: 'bg-green-100 text-green-800' };
+      case 'rejected':
+        return { text: '환불 거절됨', color: 'bg-red-100 text-red-800' };
+      case 'under_review':
+        return { text: '환불 검토 중', color: 'bg-blue-100 text-blue-800' };
+      default:
+        return { text: refund.status, color: 'bg-gray-100 text-gray-800' };
     }
   };
 
@@ -132,6 +163,29 @@ const CustomerOrders: React.FC = () => {
     } catch (error) {
       console.error('❌ 재주문 처리 중 오류:', error);
       alert('재주문 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+    }
+  };
+
+  // 환불 유형 변경 처리
+  const handleRefundTypeChange = (type: 'full' | 'partial') => {
+    setRefundType(type);
+    
+    if (type === 'full') {
+      // 전체 환불 시 모든 상품을 최대 수량으로 선택
+      setRefundItems((prevItems: RefundItem[]) => 
+        prevItems.map((item: RefundItem) => ({
+          ...item,
+          quantity: item.max_quantity
+        }))
+      );
+    } else {
+      // 부분 환불 시 모든 상품을 선택 해제 (0으로 설정)
+      setRefundItems((prevItems: RefundItem[]) => 
+        prevItems.map((item: RefundItem) => ({
+          ...item,
+          quantity: 0
+        }))
+      );
     }
   };
 
@@ -233,7 +287,7 @@ const CustomerOrders: React.FC = () => {
       const refundRequestData = {
         p_order_id: selectedOrder.id,
         p_customer_id: user.id,
-        p_store_id: selectedOrder.store_id,
+        p_store_id: selectedOrder.storeId, // storeId 필드 사용 (올바른 필드명)
         p_request_type: refundType === 'full' ? 'full_refund' : 'partial_refund',
         p_reason: refundReason,
         p_refund_items: selectedItems.map((item: RefundItem) => ({
@@ -253,6 +307,19 @@ const CustomerOrders: React.FC = () => {
       };
 
       console.log('환불 요청 데이터:', refundRequestData);
+      console.log('주문 데이터 구조:', selectedOrder); // 디버깅용
+      console.log('storeId 값:', selectedOrder.storeId); // storeId 값 확인
+      console.log('주문 데이터의 모든 키:', Object.keys(selectedOrder)); // 모든 키 확인
+
+      // store_id가 없는 경우 에러 처리
+      if (!refundRequestData.p_store_id) {
+        console.error('매장 정보 누락:', {
+          selectedOrder,
+          storeId: selectedOrder.storeId,
+          allKeys: Object.keys(selectedOrder)
+        });
+        throw new Error('매장 정보를 찾을 수 없습니다. 주문 데이터를 확인해주세요.');
+      }
 
       // Supabase 함수 호출로 환불 요청 생성
       const { data, error } = await supabase.rpc('create_refund_request', refundRequestData);
@@ -322,12 +389,36 @@ const CustomerOrders: React.FC = () => {
                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
                         {getStatusText(order.status)}
                       </span>
+                      {/* 환불 상태 표시 */}
+                      {getRefundStatusInfo(order.id) && (
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getRefundStatusInfo(order.id)?.color}`}>
+                          {getRefundStatusInfo(order.id)?.text}
+                        </span>
+                      )}
                     </div>
                     <div className="text-gray-600 text-sm">
                       <div>{order.storeName} • {order.orderType === 'pickup' ? '픽업' : '배송'}</div>
                       <div>주문일시: {new Date(order.createdAt).toLocaleString()}</div>
                       {order.completedAt && (
                         <div>완료일시: {new Date(order.completedAt).toLocaleString()}</div>
+                      )}
+                      {/* 환불 정보 표시 */}
+                      {getRefundStatusInfo(order.id) && (
+                        <div className="mt-2 p-2 bg-gray-50 rounded border-l-4 border-orange-400">
+                          <div className="text-sm font-medium text-gray-700">
+                            환불 정보: {getRefundStatusInfo(order.id)?.text}
+                          </div>
+                          {refundStatuses[order.id]?.admin_notes && (
+                            <div className="text-xs text-gray-600 mt-1">
+                              처리 사유: {refundStatuses[order.id].admin_notes}
+                            </div>
+                          )}
+                          {refundStatuses[order.id]?.processed_at && (
+                            <div className="text-xs text-gray-600">
+                              처리일시: {new Date(refundStatuses[order.id].processed_at).toLocaleString()}
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -370,8 +461,8 @@ const CustomerOrders: React.FC = () => {
                     주문 추적
                   </button>
                   
-                  {/* 환불 요청 버튼 - 완료된 주문만 */}
-                  {order.status === 'completed' && (
+                  {/* 환불 요청 버튼 - 완료된 주문만, 환불 상태에 따라 비활성화 */}
+                  {order.status === 'completed' && !getRefundStatusInfo(order.id) && (
                     <button 
                       onClick={() => openRefundModal(order)}
                       className="flex-1 bg-orange-500 text-white py-2 px-4 rounded-lg hover:bg-orange-600 transition-colors flex items-center justify-center gap-2"
@@ -383,8 +474,23 @@ const CustomerOrders: React.FC = () => {
                     </button>
                   )}
                   
-                  {/* 재주문 가능한 상태: 완료, 취소된 주문 */}
-                  {(order.status === 'completed' || order.status === 'cancelled') && (
+                  {/* 환불 요청 완료된 경우 - 버튼 비활성화 */}
+                  {order.status === 'completed' && getRefundStatusInfo(order.id) && (
+                    <button 
+                      disabled
+                      className="flex-1 bg-gray-300 text-gray-500 py-2 px-4 rounded-lg cursor-not-allowed flex items-center justify-center gap-2"
+                      title={`환불 ${getRefundStatusInfo(order.id)?.text}`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                      </svg>
+                      {getRefundStatusInfo(order.id)?.text}
+                    </button>
+                  )}
+                  
+                  {/* 재주문 가능한 상태: 완료, 취소된 주문 (환불 승인된 주문은 제외) */}
+                  {(order.status === 'completed' || order.status === 'cancelled') && 
+                   getRefundStatusInfo(order.id)?.status !== 'approved' && (
                     <button 
                       onClick={() => handleReorder(order)}
                       className="flex-1 bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
@@ -393,6 +499,21 @@ const CustomerOrders: React.FC = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                       </svg>
                       재주문
+                    </button>
+                  )}
+                  
+                  {/* 환불 승인된 주문의 경우 재주문 불가 */}
+                  {(order.status === 'completed' || order.status === 'cancelled') && 
+                   getRefundStatusInfo(order.id)?.status === 'approved' && (
+                    <button 
+                      disabled
+                      className="flex-1 bg-gray-300 text-gray-500 py-2 px-4 rounded-lg cursor-not-allowed flex items-center justify-center gap-2"
+                      title="환불이 승인된 주문은 재주문할 수 없습니다"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                      재주문 불가
                     </button>
                   )}
                   
@@ -468,58 +589,23 @@ const CustomerOrders: React.FC = () => {
                     부분 환불
                   </label>
                 </div>
-                
-                {/* 환불 유형별 안내 메시지 */}
-                <div className="mt-3 p-3 rounded-lg text-sm">
-                  {refundType === 'full' ? (
-                    <div className="bg-blue-50 text-blue-700 p-3 rounded-lg">
-                      <div className="font-medium mb-1">📋 전체 환불 안내</div>
-                      <div>• 주문의 모든 상품이 자동으로 선택됩니다</div>
-                      <div>• 각 상품의 최대 주문 수량만큼 환불됩니다</div>
-                      <div>• 개별 상품 선택/수량 변경이 불가능합니다</div>
-                    </div>
-                  ) : (
-                    <div className="bg-orange-50 text-orange-700 p-3 rounded-lg">
-                      <div className="font-medium mb-1">🔍 부분 환불 안내</div>
-                      <div>• 환불할 상품을 개별적으로 선택할 수 있습니다</div>
-                      <div>• 각 상품별로 환불 수량을 조정할 수 있습니다</div>
-                      <div>• 최소 1개 이상의 상품을 선택해야 합니다</div>
-                    </div>
-                  )}
-                </div>
               </div>
 
               {/* 환불할 상품 선택 */}
               <div className="mb-6">
-                <h3 className="font-medium text-gray-900 mb-3">
-                  환불할 상품 선택
-                  {refundType === 'full' && (
-                    <span className="ml-2 text-sm text-blue-600 font-normal">
-                      (전체 환불로 모든 상품이 자동 선택됨)
-                    </span>
-                  )}
-                </h3>
+                <h3 className="font-medium text-gray-900 mb-3">환불할 상품 선택</h3>
                 <div className="space-y-3">
                   {refundItems.map((item, index) => (
-                    <div key={index} className={`border rounded-lg p-4 ${
-                      refundType === 'full' ? 'bg-blue-50 border-blue-200' : 'bg-white'
-                    }`}>
+                    <div key={index} className="border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <label className={`flex items-center ${
-                          refundType === 'full' ? 'cursor-not-allowed' : 'cursor-pointer'
-                        }`}>
+                        <label className="flex items-center">
                           <input
                             type="checkbox"
                             checked={item.quantity > 0}
                             onChange={() => toggleRefundItem(index)}
-                            disabled={refundType === 'full'}
-                            className={`mr-2 ${refundType === 'full' ? 'opacity-50' : ''}`}
+                            className="mr-2"
                           />
-                          <span className={`font-medium ${
-                            refundType === 'full' ? 'text-blue-700' : 'text-gray-900'
-                          }`}>
-                            {item.product_name}
-                          </span>
+                          <span className="font-medium">{item.product_name}</span>
                         </label>
                         <span className="text-sm text-gray-500">
                           단가: {item.price.toLocaleString()}원
@@ -536,10 +622,7 @@ const CustomerOrders: React.FC = () => {
                               max={item.max_quantity}
                               value={item.quantity}
                               onChange={(e) => updateRefundItemQuantity(index, parseInt(e.target.value))}
-                              disabled={refundType === 'full'}
-                              className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
-                                refundType === 'full' ? 'bg-blue-100 cursor-not-allowed' : ''
-                              }`}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
                             />
                           </div>
                           <div>
@@ -549,10 +632,7 @@ const CustomerOrders: React.FC = () => {
                               value={item.reason}
                               onChange={(e) => updateRefundItemReason(index, e.target.value)}
                               placeholder="상품별 사유 (선택사항)"
-                              disabled={refundType === 'full'}
-                              className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
-                                refundType === 'full' ? 'bg-blue-100 cursor-not-allowed' : ''
-                              }`}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
                             />
                           </div>
                         </div>
@@ -595,25 +675,11 @@ const CustomerOrders: React.FC = () => {
 
               {/* 환불 금액 요약 */}
               <div className="bg-blue-50 rounded-lg p-4 mb-6">
-                <h3 className="font-medium text-blue-900 mb-3">
-                  환불 금액 요약
-                  {refundType === 'full' && (
-                    <span className="ml-2 text-sm text-blue-600 font-normal">
-                      (전체 환불)
-                    </span>
-                  )}
-                </h3>
+                <h3 className="font-medium text-blue-900 mb-3">환불 금액 요약</h3>
                 <div className="space-y-2 text-sm">
                   {refundItems.filter((item: RefundItem) => item.quantity > 0).map((item, index) => (
                     <div key={index} className="flex justify-between">
-                      <span className="flex items-center">
-                        {item.product_name} × {item.quantity}개
-                        {refundType === 'full' && (
-                          <span className="ml-2 text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
-                            전체
-                          </span>
-                        )}
-                      </span>
+                      <span>{item.product_name} × {item.quantity}개</span>
                       <span>{(item.price * item.quantity).toLocaleString()}원</span>
                     </div>
                   ))}
@@ -622,18 +688,6 @@ const CustomerOrders: React.FC = () => {
                     <span>총 환불 금액</span>
                     <span className="text-blue-600">{totalRefundAmount.toLocaleString()}원</span>
                   </div>
-                  
-                  {/* 환불 유형별 추가 정보 */}
-                  {refundType === 'full' && (
-                    <div className="mt-3 p-2 bg-blue-100 rounded text-xs text-blue-700">
-                      💡 전체 환불 시 주문 금액의 100%가 환불됩니다
-                    </div>
-                  )}
-                  {refundType === 'partial' && (
-                    <div className="mt-3 p-2 bg-orange-100 rounded text-xs text-orange-700">
-                      💡 부분 환불 시 선택한 상품의 금액만 환불됩니다
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -649,30 +703,10 @@ const CustomerOrders: React.FC = () => {
                   onClick={submitRefundRequest}
                   disabled={isSubmitting || totalRefundAmount === 0 || !refundReason}
                   className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={
-                    totalRefundAmount === 0 
-                      ? '환불할 상품을 선택해주세요' 
-                      : !refundReason 
-                        ? '환불 사유를 선택해주세요' 
-                        : '환불 요청을 제출합니다'
-                  }
                 >
-                  {isSubmitting ? '제출 중...' : `환불 요청 제출 (${refundType === 'full' ? '전체' : '부분'})`}
+                  {isSubmitting ? '제출 중...' : '환불 요청 제출'}
                 </button>
               </div>
-              
-              {/* 제출 전 최종 확인 메시지 */}
-              {!isSubmitting && totalRefundAmount > 0 && refundReason && (
-                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <div className="text-sm text-green-700">
-                    <div className="font-medium mb-1">✅ 제출 준비 완료</div>
-                    <div>• 환불 유형: {refundType === 'full' ? '전체 환불' : '부분 환불'}</div>
-                    <div>• 환불 상품: {refundItems.filter((item: RefundItem) => item.quantity > 0).length}개</div>
-                    <div>• 환불 금액: {totalRefundAmount.toLocaleString()}원</div>
-                    <div>• 환불 사유: {refundReason}</div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
