@@ -19,7 +19,7 @@ interface ReturnRequest {
   updated_at: string;
   items?: ReturnRequestItem[];
   approver?: {
-    name: string;
+    full_name: string;
   };
 }
 
@@ -98,7 +98,7 @@ const ReturnRequestList: React.FC<ReturnRequestListProps> = ({ refreshTrigger })
         .from('return_requests')
         .select(`
           *,
-          approver:profiles!return_requests_approved_by_fkey(name),
+          approver:profiles!return_requests_approved_by_fkey(full_name),
           items:return_request_items(*)
         `)
         .eq('store_id', storeData.id)
@@ -342,7 +342,7 @@ const ReturnRequestList: React.FC<ReturnRequestListProps> = ({ refreshTrigger })
                       {selectedRequest.approver && (
                         <div className="flex justify-between">
                           <span className="font-medium text-gray-600">처리자:</span>
-                          <span>{selectedRequest.approver.name}</span>
+                          <span>{selectedRequest.approver.full_name}</span>
                         </div>
                       )}
                     </div>
