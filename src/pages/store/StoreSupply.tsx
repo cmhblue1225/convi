@@ -469,10 +469,17 @@ const StoreSupply: React.FC = () => {
           cell.font = { name: '맑은 고딕', size: 10 };
           cell.alignment = { vertical: 'middle', horizontal: 'left' };
         } else if (col === 6) {
-          // 서명 영역 셀
+          // 서명 영역 셀 - F열 너비 30에 맞춤
           cell.font = { name: '맑은 고딕', size: 10 };
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFBF0' } }; // 연한 크림색
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF8DC' } }; // 연한 크림색으로 F열 크기에 맞춤
+          // 서명 영역 테두리를 더 굵게 하여 경계 명확화
+          cell.border = {
+            top: { style: 'medium', color: { argb: 'FFDAA520' } },     // 위쪽 테두리 굵게
+            left: { style: 'medium', color: { argb: 'FFDAA520' } },    // 왼쪽 테두리 굵게
+            bottom: { style: 'medium', color: { argb: 'FFDAA520' } },  // 아래쪽 테두리 굵게
+            right: { style: 'medium', color: { argb: 'FFDAA520' } }    // 오른쪽 테두리 굵게
+          };
         }
         cell.border = {
           top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
@@ -499,14 +506,14 @@ const StoreSupply: React.FC = () => {
             extension: 'png',
           });
 
-          // 정수 좌표 사용으로 인쇄 미리보기 안정성 향상 - 한 행에 맞춤
+          // 정수 좌표 사용으로 인쇄 미리보기 안정성 향상 - F열 너비 30에 맞춤
           worksheet.addImage(imageId, {
-            tl: { col: 5.1, row: signatureStartRow + 0.9 }, // E열 시작점
-            br: { col: 6.9, row: signatureStartRow + 1.1 }  // F열 끝점
+            tl: { col: 5.2, row: signatureStartRow + 0.95 }, // F열 시작점 (F열 너비 30에 맞춤)
+            br: { col: 6.8, row: signatureStartRow + 1.05 }  // F열 끝점 (F열 너비 30에 맞춤)
           } as any);
           
           // 서명 이미지가 있는 행의 높이를 고정하여 인쇄 안정성 향상
-          worksheet.getRow(signatureStartRow + 1).height = 60;
+          worksheet.getRow(signatureStartRow + 1).height = 100; // 서명 이미지가 셀 내부에 완벽하게 맞도록 높이 증가
 
           console.log('✅ 서명 이미지 추가 성공');
         } catch (imageError) {
@@ -519,8 +526,9 @@ const StoreSupply: React.FC = () => {
         }
               } else {
           worksheet.getCell(`F${signatureStartRow + 1}`).value = '서명 없음';
-          worksheet.getCell(`F${signatureStartRow + 1}`).font = { name: '맑은 고딕', size: 10, italic: true };
+          worksheet.getCell(`F${signatureStartRow + 1}`).font = { name: '맑은 고딕', size: 12, italic: true, color: { argb: 'FF7F8C8D' } };
           worksheet.getCell(`F${signatureStartRow + 1}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0F0' } };
+          worksheet.getCell(`F${signatureStartRow + 1}`).alignment = { vertical: 'middle', horizontal: 'center' }; // 가운데 정렬
         }
 
       // 열 너비 조정 - 새로운 레이아웃에 맞춤
@@ -591,8 +599,8 @@ const StoreSupply: React.FC = () => {
 
       // ====== 인쇄 설정 ======
 
-      // 인쇄 영역 설정 - 서명 정보 포함 (정확한 범위 계산)
-      const lastRow = signatureStartRow + 3;
+      // 인쇄 영역 설정 - 서명 정보 포함 (한 행에 맞춤)
+      const lastRow = signatureStartRow + 1; // 서명 정보가 한 행에 배치됨
       worksheet.pageSetup.printArea = `A1:F${lastRow}`;
       
       // 인쇄 미리보기 최적화를 위한 핵심 설정
@@ -1279,17 +1287,21 @@ const StoreSupply: React.FC = () => {
           <div className="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4">승인자 서명</h3>
-              <SignaturePad
-                onSave={handleSignatureSave}
-                onClear={handleSignatureClear}
-                width={400}
-                height={200}
-                penColor="#000000"
-                backgroundColor="#ffffff"
-                className="mx-auto"
-              />
-              <div className="mt-2 text-xs text-gray-500 text-center">
-                💡 서명 크기는 자동으로 최적화되어 인쇄 시 안정적으로 표시됩니다
+              <div className="flex justify-start">
+                <SignaturePad
+                  onSave={handleSignatureSave}
+                  onClear={handleSignatureClear}
+                  width={200}
+                  height={60}
+                  maxWidth={250}
+                  maxHeight={80}
+                  penColor="#000000"
+                  backgroundColor="#ffffff"
+                  className=""
+                />
+              </div>
+              <div className="mt-2 text-xs text-gray-500 text-left ml-0">
+                💡 서명 크기가 셀에 맞게 최적화되어 Excel에서 깔끔하게 표시됩니다
               </div>
               <div className="flex justify-end mt-4">
                 <button
