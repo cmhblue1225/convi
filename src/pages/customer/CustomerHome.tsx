@@ -304,15 +304,26 @@ const CustomerHome: React.FC = () => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
-    if (diffDays === 1) {
-      return '어제';
-    } else if (diffDays === 0) {
+    // 같은 날인지 확인 (년, 월, 일로 비교)
+    const dateYMD = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const nowYMD = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    const diffTime = nowYMD.getTime() - dateYMD.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
       return '오늘';
-    } else {
+    } else if (diffDays === 1) {
+      return '어제';
+    } else if (diffDays < 7) {
       return `${diffDays}일 전`;
+    } else {
+      // 7일 이상 차이나면 날짜 형식으로 표시
+      return date.toLocaleDateString('ko-KR', { 
+        month: 'short', 
+        day: 'numeric' 
+      });
     }
   };
 
