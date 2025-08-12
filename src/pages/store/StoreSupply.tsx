@@ -448,98 +448,42 @@ const StoreSupply: React.FC = () => {
       // ====== 서명 정보 ======
       const signatureStartRow = request.rejection_reason ? memoStartRow + (request.notes ? 2 : 1) : memoStartRow + (request.notes ? 1 : 0);
       
-      // 승인자 정보 - 세로 배치 구조
-      // 첫 번째 행: 승인자
+      // 승인자 정보 - 같은 행에 가로 배치
       worksheet.getCell(`A${signatureStartRow + 1}`).value = '승인자';
       worksheet.getCell(`B${signatureStartRow + 1}`).value = user?.email || '미승인';
-      
-      // 두 번째 행: 승인일시
-      worksheet.getCell(`A${signatureStartRow + 2}`).value = '승인일시';
-      worksheet.getCell(`B${signatureStartRow + 2}`).value = new Date().toLocaleString('ko-KR');
-      
-      // 서명 라벨을 D16으로 이동
-      worksheet.getCell(`D16`).value = '서명';
-      
-      // 서명 영역은 E16:F17로 이동 (한 칸 미뤄짐)
+      worksheet.getCell(`C${signatureStartRow + 1}`).value = '승인시간';
+      worksheet.getCell(`D${signatureStartRow + 1}`).value = new Date().toLocaleString('ko-KR');
+      worksheet.getCell(`E${signatureStartRow + 1}`).value = '서명';
+      worksheet.getCell(`F${signatureStartRow + 1}`).value = ''; // 서명 영역
 
-      // 승인자 정보 스타일 - 3개 섹션에 맞춤
-      // 왼쪽 상단: 승인자 (A1:B1)
-      for (let col = 1; col <= 2; col++) {
+      // 승인자 정보 스타일 - 한 행에 맞춤
+      for (let col = 1; col <= 6; col++) {
         const cell = worksheet.getCell(signatureStartRow + 1, col);
-        if (col === 1) {
+        if (col === 1 || col === 3 || col === 5) {
+          // 라벨 셀 (승인자, 승인시간, 서명)
           cell.font = { name: '맑은 고딕', size: 10, bold: true };
           cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F8F8' } };
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
-        } else {
+        } else if (col === 2 || col === 4) {
+          // 데이터 셀 (이메일, 시간)
           cell.font = { name: '맑은 고딕', size: 10 };
           cell.alignment = { vertical: 'middle', horizontal: 'left' };
-        }
-        cell.border = {
-          top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-          left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-          bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-          right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
-        };
-      }
-      
-      // 왼쪽 하단: 승인일시 (A2:B2)
-      for (let col = 1; col <= 2; col++) {
-        const cell = worksheet.getCell(signatureStartRow + 2, col);
-        if (col === 1) {
-          cell.font = { name: '맑은 고딕', size: 10, bold: true };
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F8F8' } };
-          cell.alignment = { vertical: 'middle', horizontal: 'center' };
-        } else {
-          cell.font = { name: '맑은 고딕', size: 10 };
-          cell.alignment = { vertical: 'middle', horizontal: 'left' };
-        }
-        cell.border = {
-          top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-          left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-          bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-          right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
-        };
-      }
-      
-      // 서명 라벨 (D16:D17) - 2행 병합된 라벨
-      for (let row = 16; row <= 17; row++) {
-        const cell = worksheet.getCell(row, 4);
-        cell.font = { name: '맑은 고딕', size: 12, bold: true };
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F8F8' } };
-        cell.alignment = { vertical: 'middle', horizontal: 'center' };
-        cell.border = {
-          top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-          left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-          bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-          right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
-        };
-      }
-      
-      // 서명 영역 (E16:F17) - 2행 × 2열 병합된 영역 (한 칸 미뤄짐)
-      for (let row = 16; row <= 17; row++) {
-        for (let col = 5; col <= 6; col++) {
-          const cell = worksheet.getCell(row, col);
+        } else if (col === 6) {
+          // 서명 영역 셀
           cell.font = { name: '맑은 고딕', size: 10 };
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
           cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFBF0' } }; // 연한 크림색
-          cell.border = {
-            top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-            left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-            bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-            right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
-          };
         }
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+          left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+          bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+          right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
+        };
       }
 
-      // 셀 병합 - 새로운 레이아웃 구조
-      // 첫 번째 행: 승인자 (A1:B1) - 그대로 유지
-      worksheet.mergeCells(`B${signatureStartRow + 1}:B${signatureStartRow + 1}`);
-      // 두 번째 행: 승인일시 (A2:B2) - 그대로 유지
-      worksheet.mergeCells(`B${signatureStartRow + 2}:B${signatureStartRow + 2}`);
-      // 서명 라벨 (D16:D17) - 2행 병합
-      worksheet.mergeCells(`D16:D17`);
-      // 서명 영역 (E16:F17) - 2행 × 2열 병합 (한 칸 미뤄짐)
-      worksheet.mergeCells(`E16:F17`);
+      // 셀 병합 - 한 행에 맞춤
+      // 각 셀은 개별적으로 유지하여 깔끔한 레이아웃 구성
 
       // 서명 이미지 추가 (있는 경우) - 인쇄 미리보기 최적화
       if (approverSignature) {
@@ -555,15 +499,14 @@ const StoreSupply: React.FC = () => {
             extension: 'png',
           });
 
-          // 정수 좌표 사용으로 인쇄 미리보기 안정성 향상 - 새로운 영역에 맞춤
+          // 정수 좌표 사용으로 인쇄 미리보기 안정성 향상 - 한 행에 맞춤
           worksheet.addImage(imageId, {
-            tl: { col: 4.2, row: 15.8 },
-            br: { col: 6.8, row: 17.2 }
+            tl: { col: 5.1, row: signatureStartRow + 0.9 }, // E열 시작점
+            br: { col: 6.9, row: signatureStartRow + 1.1 }  // F열 끝점
           } as any);
           
-          // 서명 영역 행 높이를 고정하여 인쇄 안정성 향상
-          worksheet.getRow(16).height = 50; // 서명 라벨 행
-          worksheet.getRow(17).height = 50; // 서명 영역 행
+          // 서명 이미지가 있는 행의 높이를 고정하여 인쇄 안정성 향상
+          worksheet.getRow(signatureStartRow + 1).height = 60;
 
           console.log('✅ 서명 이미지 추가 성공');
         } catch (imageError) {
@@ -574,24 +517,19 @@ const StoreSupply: React.FC = () => {
           worksheet.getCell(`B${signatureStartRow + 3}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF5F5' } };
           worksheet.getCell(`B${signatureStartRow + 3}`).alignment = { vertical: 'middle', horizontal: 'center' };
         }
-      } else {
-        // 서명이 없는 경우 - 새로운 영역에 맞춤
-        worksheet.getCell(`E16`).value = '서명 없음';
-        worksheet.getCell(`E16`).font = { name: '맑은 고딕', size: 12, italic: true, color: { argb: 'FF7F8C8D' } };
-        worksheet.getCell(`E16`).alignment = { vertical: 'middle', horizontal: 'center' };
-        
-        // 서명 영역 행 높이 설정
-        worksheet.getRow(16).height = 50; // 서명 라벨 행
-        worksheet.getRow(17).height = 50; // 서명 영역 행
-      }
+              } else {
+          worksheet.getCell(`F${signatureStartRow + 1}`).value = '서명 없음';
+          worksheet.getCell(`F${signatureStartRow + 1}`).font = { name: '맑은 고딕', size: 10, italic: true };
+          worksheet.getCell(`F${signatureStartRow + 1}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0F0' } };
+        }
 
-      // 열 너비 조정 - 인쇄 시 잘리지 않도록 최적화
-      worksheet.getColumn('A').width = 25;  // A열 (상품명) - 넓게 설정
-      worksheet.getColumn('B').width = 15;  // B열 (요청수량)
-      worksheet.getColumn('C').width = 10;  // C열 (단위)
-      worksheet.getColumn('D').width = 15;  // D열 (승인수량)
-      worksheet.getColumn('E').width = 15;  // E열 (현재재고)
-      worksheet.getColumn('F').width = 35;  // F열 (요청사유) - 넓게 설정
+      // 열 너비 조정 - 새로운 레이아웃에 맞춤
+      worksheet.getColumn('A').width = 20;  // A열 (승인자 라벨)
+      worksheet.getColumn('B').width = 30;  // B열 (승인자 이메일)
+      worksheet.getColumn('C').width = 20;  // C열 (승인시간 라벨)
+      worksheet.getColumn('D').width = 30;  // D열 (승인시간 데이터)
+      worksheet.getColumn('E').width = 20;  // E열 (서명 라벨)
+      worksheet.getColumn('F').width = 30;  // F열 (서명 영역)
 
       // ====== A4 페이지 꽉 채우기 위한 동적 행 높이 계산 ======
       
@@ -606,14 +544,14 @@ const StoreSupply: React.FC = () => {
       // 실제 사용 가능한 높이 (mm)
       const usableHeight = a4Height - marginTop - marginBottom;
       
-      // 현재 총 행 수 계산 - 세로 배치에 맞춤
+      // 현재 총 행 수 계산 - 한 행에 맞춤
       const totalRows = basicInfoStartRow + 4 + // 기본정보 5행
                         1 + // 상품목록 헤더 1행
                         (request.items?.length || 0) + // 상품 데이터 행들
                         2 + // 요약 정보 2행
                         (request.notes ? 1 : 0) + // 비고 (있는 경우)
                         (request.rejection_reason ? 1 : 0) + // 거절사유 (있는 경우)
-                        4; // 서명 정보 4행 (세로 배치)
+                        1; // 서명 정보 1행 (한 행에 배치)
       
       // A4 페이지에 맞는 최적 행 높이 계산 (mm)
       const optimalRowHeight = usableHeight / totalRows;
@@ -735,8 +673,6 @@ const StoreSupply: React.FC = () => {
       alert('엑셀 다운로드 중 오류가 발생했습니다.');
     }
   };
-
-
 
   // 실시간 구독 설정
   useEffect(() => {
@@ -1118,7 +1054,6 @@ const StoreSupply: React.FC = () => {
                       >
                         📊 엑셀
                       </button>
-
                       <button
                         onClick={openSignatureModal}
                         className="px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
@@ -1320,7 +1255,6 @@ const StoreSupply: React.FC = () => {
                 >
                   📊 엑셀로 다운로드
                 </button>
-
                 <button
                   onClick={openSignatureModal}
                   className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700"

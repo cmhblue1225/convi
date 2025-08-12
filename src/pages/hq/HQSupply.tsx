@@ -422,19 +422,17 @@ const HQSupply: React.FC = () => {
 
       // ====== 헤더 정보 ======
       
-      // 제목 - 더 깔끔하게
-      worksheet.mergeCells('B2:J2');
+      // 제목
+      worksheet.mergeCells('B2:H2');
       worksheet.getCell('B2').value = '본사 물류 요청 관리';
-      worksheet.getCell('B2').font = { name: '맑은 고딕', size: 18, bold: true };
-      worksheet.getCell('B2').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6F3FF' } };
+      worksheet.getCell('B2').font = { name: '맑은 고딕', size: 16, bold: true };
       worksheet.getCell('B2').alignment = { vertical: 'middle', horizontal: 'center' };
-      worksheet.getRow(2).height = 30; // 제목 행 높이 증가
 
-      // 기본 정보 - 더 깔끔한 레이아웃
+      // 기본 정보
       worksheet.getCell('B4').value = '요청번호';
       worksheet.getCell('C4').value = request.request_number;
       worksheet.getCell('E4').value = '요청일자';
-      worksheet.getCell('F4').value = request.created_at ? new Date(request.created_at).toLocaleDateString('ko-KR') : '-';
+      worksheet.getCell('F4').value = request.created_at ? new Date(request.created_at).toLocaleDateString() : '-';
 
       worksheet.getCell('B5').value = '지점명';
       worksheet.getCell('C5').value = storeName;
@@ -444,7 +442,7 @@ const HQSupply: React.FC = () => {
       worksheet.getCell('B6').value = '지점주소';
       worksheet.getCell('C6').value = storeAddress;
       worksheet.getCell('E6').value = '희망배송일';
-      worksheet.getCell('F6').value = request.expected_delivery_date ? new Date(request.expected_delivery_date).toLocaleDateString('ko-KR') : '-';
+      worksheet.getCell('F6').value = request.expected_delivery_date ? new Date(request.expected_delivery_date).toLocaleDateString() : '-';
 
       worksheet.getCell('B7').value = '상태';
       worksheet.getCell('C7').value = getStatusText(request.status);
@@ -453,10 +451,8 @@ const HQSupply: React.FC = () => {
 
       worksheet.getCell('B8').value = '총 요청금액';
       worksheet.getCell('C8').value = request.total_amount || 0;
-      worksheet.getCell('C8').numFmt = '#,##0'; // 숫자 형식 적용
       worksheet.getCell('E8').value = '승인금액';
       worksheet.getCell('F8').value = request.approved_amount || 0;
-      worksheet.getCell('F8').numFmt = '#,##0'; // 숫자 형식 적용
 
       // 셀 병합
       worksheet.mergeCells('C4:D4');
@@ -483,16 +479,16 @@ const HQSupply: React.FC = () => {
       worksheet.getCell('I10').value = '현재재고';
       worksheet.getCell('J10').value = '요청사유';
 
-      // 헤더 스타일 - 더 깔끔하게
+      // 헤더 스타일
       for (let col = 2; col <= 10; col++) {
         const cell = worksheet.getCell(10, col);
         cell.font = { name: '맑은 고딕', size: 10, bold: true };
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6F3FF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F8FF' } };
         cell.border = {
-          top: { style: 'thin', color: { argb: 'FF0066CC' } },
-          left: { style: 'thin', color: { argb: 'FF0066CC' } },
-          bottom: { style: 'thin', color: { argb: 'FF0066CC' } },
-          right: { style: 'thin', color: { argb: 'FF0066CC' } }
+          top: { style: 'thin', color: { argb: 'FF000000' } },
+          left: { style: 'thin', color: { argb: 'FF000000' } },
+          bottom: { style: 'thin', color: { argb: 'FF000000' } },
+          right: { style: 'thin', color: { argb: 'FF000000' } }
         };
         cell.alignment = { vertical: 'middle', horizontal: 'center' };
       }
@@ -506,50 +502,23 @@ const HQSupply: React.FC = () => {
           worksheet.getCell(row, 3).value = item.product_name;
           worksheet.getCell(row, 4).value = item.product?.unit || '-';
           worksheet.getCell(row, 5).value = item.requested_quantity;
-          worksheet.getCell(row, 5).numFmt = '#,##0'; // 요청수량 숫자 형식
           worksheet.getCell(row, 6).value = item.approved_quantity || 0;
-          worksheet.getCell(row, 6).numFmt = '#,##0'; // 승인수량 숫자 형식
           worksheet.getCell(row, 7).value = item.unit_cost || 0;
-          worksheet.getCell(row, 7).numFmt = '#,##0'; // 단가 숫자 형식
           worksheet.getCell(row, 8).value = item.total_cost || 0;
-          worksheet.getCell(row, 8).numFmt = '#,##0'; // 총액 숫자 형식
           worksheet.getCell(row, 9).value = item.current_stock;
-          worksheet.getCell(row, 9).numFmt = '#,##0'; // 현재재고 숫자 형식
-          worksheet.getCell(row, 10).value = item.reason || '-';
+          worksheet.getCell(row, 10).value = item.reason;
 
-          // 상품명과 요청사유 셀에 줄바꿈 및 자동 맞춤 설정
-          const productNameCell = worksheet.getCell(row, 3);
-          const reasonCell = worksheet.getCell(row, 10);
-          
-          productNameCell.alignment = { 
-            vertical: 'middle', 
-            horizontal: 'left',
-            wrapText: true // 텍스트 줄바꿈 활성화
-          };
-          
-          reasonCell.alignment = { 
-            vertical: 'middle', 
-            horizontal: 'left',
-            wrapText: true // 텍스트 줄바꿈 활성화
-          };
-
-          // 데이터 행 스타일 - 더 깔끔하게
+          // 데이터 행 스타일
           for (let col = 2; col <= 10; col++) {
             const cell = worksheet.getCell(row, col);
             cell.font = { name: '맑은 고딕', size: 9 };
             cell.border = {
-              top: { style: 'thin', color: { argb: 'FFE0E0E0' } },
-              left: { style: 'thin', color: { argb: 'FFE0E0E0' } },
-              bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } },
-              right: { style: 'thin', color: { argb: 'FFE0E0E0' } }
+              top: { style: 'thin', color: { argb: 'FF000000' } },
+              left: { style: 'thin', color: { argb: 'FF000000' } },
+              bottom: { style: 'thin', color: { argb: 'FF000000' } },
+              right: { style: 'thin', color: { argb: 'FF000000' } }
             };
-            
-            // 숫자 데이터는 우측 정렬, 텍스트는 좌측 정렬
-            if (col === 2 || col === 5 || col === 6 || col === 7 || col === 8 || col === 9) {
-              cell.alignment = { vertical: 'middle', horizontal: 'center' };
-            } else {
-              cell.alignment = { vertical: 'middle', horizontal: 'left' };
-            }
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
           }
         });
       }
@@ -563,24 +532,21 @@ const HQSupply: React.FC = () => {
       worksheet.getCell(`B${summaryRow}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF0F0' } };
       
       worksheet.getCell(`E${summaryRow}`).value = request.items?.reduce((sum, item) => sum + item.requested_quantity, 0) || 0;
-      worksheet.getCell(`E${summaryRow}`).numFmt = '#,##0'; // 요청수량 합계 숫자 형식
       worksheet.getCell(`F${summaryRow}`).value = request.items?.reduce((sum, item) => sum + (item.approved_quantity || 0), 0) || 0;
-      worksheet.getCell(`F${summaryRow}`).numFmt = '#,##0'; // 승인수량 합계 숫자 형식
       worksheet.getCell(`H${summaryRow}`).value = request.total_amount || 0;
-      worksheet.getCell(`H${summaryRow}`).numFmt = '#,##0'; // 총액 합계 숫자 형식
 
-      // 합계 행 스타일 - 더 깔끔하게
+      // 합계 행 스타일
       for (let col = 2; col <= 10; col++) {
         const cell = worksheet.getCell(summaryRow, col);
         cell.font = { name: '맑은 고딕', size: 10, bold: true };
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2F2' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF0F0' } };
         cell.border = {
-          top: { style: 'thin', color: { argb: 'FFCC6666' } },
-          left: { style: 'thin', color: { argb: 'FFCC6666' } },
-          bottom: { style: 'thin', color: { argb: 'FFCC6666' } },
-          right: { style: 'thin', color: { argb: 'FFCC6666' } }
+          top: { style: 'thin', color: { argb: 'FF000000' } },
+          left: { style: 'thin', color: { argb: 'FF000000' } },
+          bottom: { style: 'thin', color: { argb: 'FF000000' } },
+          right: { style: 'thin', color: { argb: 'FF000000' } }
         };
-        cell.alignment = { vertical: 'middle', horizontal: col === 2 ? 'center' : 'center' };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
       }
 
       // ====== 메모 및 승인 정보 ======
@@ -615,89 +581,58 @@ const HQSupply: React.FC = () => {
 
       // ====== 스타일 적용 ======
       
-      // 기본 정보 스타일 - 더 깔끔하게
+      // 기본 정보 스타일
       for (let row = 4; row <= 8; row++) {
         for (let col = 2; col <= 7; col++) {
           const cell = worksheet.getCell(row, col);
           if (col === 2 || col === 5) {
             cell.font = { name: '맑은 고딕', size: 10, bold: true };
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F8F8' } };
-            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
           } else {
             cell.font = { name: '맑은 고딕', size: 10 };
-            cell.alignment = { vertical: 'middle', horizontal: 'left' };
           }
           cell.border = {
-            top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-            left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-            bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-            right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
+            top: { style: 'thin', color: { argb: 'FF000000' } },
+            left: { style: 'thin', color: { argb: 'FF000000' } },
+            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+            right: { style: 'thin', color: { argb: 'FF000000' } }
           };
+          cell.alignment = { vertical: 'middle', horizontal: col === 2 || col === 5 ? 'center' : 'left' };
         }
       }
 
-      // 메모 및 승인 정보 스타일 - 더 깔끔하게
+      // 메모 및 승인 정보 스타일 (서명이 있는 경우 행 수가 늘어남)
       const maxRow = approverSignature && request.approved_by ? memoRow + 3 : memoRow + 2;
       for (let row = memoRow; row <= maxRow; row++) {
         for (let col = 2; col <= 7; col++) {
           const cell = worksheet.getCell(row, col);
-          if (col === 2) {
+          if (col === 2 || col === 5) {
             cell.font = { name: '맑은 고딕', size: 10, bold: true };
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F8F8' } };
-            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
           } else {
             cell.font = { name: '맑은 고딕', size: 10 };
-            cell.alignment = { vertical: 'middle', horizontal: 'left' };
           }
           cell.border = {
-            top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-            left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-            bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-            right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
+            top: { style: 'thin', color: { argb: 'FF000000' } },
+            left: { style: 'thin', color: { argb: 'FF000000' } },
+            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+            right: { style: 'thin', color: { argb: 'FF000000' } }
           };
+          cell.alignment = { vertical: 'middle', horizontal: col === 2 || col === 5 ? 'center' : 'left' };
         }
       }
 
-      // 열 너비 설정 - 인쇄 시 잘리지 않도록 최적화
-      worksheet.getColumn(1).width = 2;  // A열 (빈 열)
-      worksheet.getColumn(2).width = 8;  // B열 (라벨)
-      worksheet.getColumn(3).width = 35; // C열 (상품명) - 넓게 설정
-      worksheet.getColumn(4).width = 10; // D열 (단위)
-      worksheet.getColumn(5).width = 12; // E열 (요청수량)
-      worksheet.getColumn(6).width = 12; // F열 (승인수량)
-      worksheet.getColumn(7).width = 15; // G열 (단가)
-      worksheet.getColumn(8).width = 15; // H열 (총액)
-      worksheet.getColumn(9).width = 12; // I열 (현재재고)
-      worksheet.getColumn(10).width = 30; // J열 (요청사유) - 넓게 설정
-
-      // 행 높이 설정 - 상품명과 요청사유가 잘리지 않도록
-      for (let row = 11; row <= 10 + (request.items?.length || 0); row++) {
-        worksheet.getRow(row).height = 25; // 기본 행 높이 증가
-      }
-
-      // ====== 인쇄 설정 ======
-      
-      // 페이지 설정
-      worksheet.pageSetup.fitToPage = true;
-      worksheet.pageSetup.fitToWidth = 1; // 페이지 너비에 맞춤
-      worksheet.pageSetup.fitToHeight = 0; // 높이는 자동 조정
-      worksheet.pageSetup.orientation = 'portrait'; // 세로 방향
-      worksheet.pageSetup.margins = {
-        top: 0.5,
-        left: 0.5,
-        bottom: 0.5,
-        right: 0.5,
-        header: 0.3,
-        footer: 0.3
-      };
-
-      // 인쇄 영역 설정
-      const lastRow = approverSignature && request.approved_by ? memoRow + 3 : memoRow + 2;
-      worksheet.pageSetup.printArea = `A1:J${lastRow}`;
-
-      // 자동 맞춤 설정
-      worksheet.properties.defaultRowHeight = 20;
-      worksheet.properties.defaultColWidth = 12;
+      // 열 너비 설정
+      worksheet.getColumn(1).width = 2;
+      worksheet.getColumn(2).width = 12;
+      worksheet.getColumn(3).width = 25;
+      worksheet.getColumn(4).width = 8;
+      worksheet.getColumn(5).width = 10;
+      worksheet.getColumn(6).width = 10;
+      worksheet.getColumn(7).width = 12;
+      worksheet.getColumn(8).width = 12;
+      worksheet.getColumn(9).width = 10;
+      worksheet.getColumn(10).width = 20;
 
       // ====== 파일 저장 ======
       const buffer = await workbook.xlsx.writeBuffer();
