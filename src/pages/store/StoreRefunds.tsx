@@ -37,15 +37,34 @@ const StoreRefunds: React.FC = () => {
   const fetchRefunds = async () => {
     try {
       setLoading(true);
+      
+      // 점주의 store_id 가져오기
+      if (!user?.id) {
+        console.error('사용자 정보가 없습니다.');
+        return;
+      }
+
+      // 점주의 store_id 조회
+      const { data: storeData, error: storeError } = await supabase
+        .from('stores')
+        .select('id')
+        .eq('owner_id', user.id)
+        .single();
+
+      if (storeError || !storeData) {
+        console.error('점주의 store_id 조회 실패:', storeError);
+        setLoading(false);
+        return;
+      }
+
+      const storeId = storeData.id;
+      console.log('점주 store_id:', storeId);
+
+      // 간단한 쿼리로 테스트
       let query = supabase
         .from('refund_requests')
-        .select(`
-          *,
-          orders!inner(order_number, total_amount, customer_id),
-          profiles!inner(first_name, last_name, phone),
-          customers:profiles!inner(first_name, last_name, phone)
-        `)
-        .eq('store_id', user?.store_id);
+        .select('*')
+        .eq('store_id', storeId);
 
       // 상태 필터 적용
       if (filterStatus.length > 0) {
@@ -163,9 +182,9 @@ const StoreRefunds: React.FC = () => {
 
       if (error) throw error;
 
-      // 환불 이력 추가
+      // 환불 이력 추가 (타입 에러 방지를 위해 any 사용)
       await supabase
-        .from('refund_history')
+        .from('refund_history' as any)
         .insert([{
           refund_request_id: selectedRefund.id,
           status: newStatus,

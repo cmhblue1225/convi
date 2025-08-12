@@ -43,11 +43,25 @@ const StoreOrders: React.FC = () => {
       unsubscribeFromOrders();
     };
   }, [fetchOrders, subscribeToOrders, unsubscribeFromOrders, user]);
-  const [selectedTab, setSelectedTab] = useState<'all' | 'pending' | 'processing' | 'completed'>('pending');
+
+  // 환불 요청 관련 상태
+  const [refunds, setRefunds] = useState<any[]>([]);
+  const [refundsLoading, setRefundsLoading] = useState(false);
+  const [selectedRefund, setSelectedRefund] = useState<any>(null);
+  const [showRefundProcessModal, setShowRefundProcessModal] = useState(false);
+
+  const [selectedTab, setSelectedTab] = useState<'all' | 'pending' | 'processing' | 'completed' | 'refunds'>('pending');
   const [filteredOrders, setFilteredOrders] = useState(orders);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [receiptModalOpen, setReceiptModalOpen] = useState(false);
   const [selectedOrderForReceipt, setSelectedOrderForReceipt] = useState<Order | null>(null);
+
+  // 탭 변경 시 환불 요청 조회
+  useEffect(() => {
+    if (selectedTab === 'refunds') {
+      fetchRefunds();
+    }
+  }, [selectedTab]);
 
   useEffect(() => {
     let filtered = orders;
@@ -61,6 +75,10 @@ const StoreOrders: React.FC = () => {
         break;
       case 'completed':
         filtered = orders.filter(order => ['completed', 'cancelled'].includes(order.status));
+        break;
+      case 'refunds':
+        // 환불 요청은 별도로 처리 (주문과는 다른 데이터)
+        filtered = [];
         break;
       default:
         filtered = orders;
@@ -124,6 +142,46 @@ const StoreOrders: React.FC = () => {
     }
   };
 
+  // getTabCount 함수는 refunds 상태 정의 이후로 이동
+
+  // 환불 요청 조회
+  const fetchRefunds = async () => {
+    if (!user?.id) return;
+    
+    try {
+      setRefundsLoading(true);
+      
+      // 점주의 store_id 조회
+      const { data: storeData, error: storeError } = await supabase
+        .from('stores')
+        .select('id')
+        .eq('owner_id', user.id)
+        .single();
+
+      if (storeError || !storeData) {
+        console.error('점주의 store_id 조회 실패:', storeError);
+        return;
+      }
+
+      const storeId = storeData.id;
+      console.log('점주 store_id:', storeId);
+
+      // 환불 요청 조회
+      const { data, error } = await supabase
+        .from('refund_requests' as any)
+        .select('*')
+        .eq('store_id', storeId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setRefunds(data || []);
+    } catch (error) {
+      console.error('환불 요청 조회 실패:', error);
+    } finally {
+      setRefundsLoading(false);
+    }
+  };
+
   const getTabCount = (tab: string) => {
     switch (tab) {
       case 'pending':
@@ -132,6 +190,8 @@ const StoreOrders: React.FC = () => {
         return orders.filter(order => ['confirmed', 'preparing', 'ready'].includes(order.status)).length;
       case 'completed':
         return orders.filter(order => ['completed', 'cancelled'].includes(order.status)).length;
+      case 'refunds':
+        return refunds.length;
       default:
         return orders.length;
     }
@@ -140,6 +200,55 @@ const StoreOrders: React.FC = () => {
   const handleViewReceipt = (order: Order) => {
     setSelectedOrderForReceipt(order);
     setReceiptModalOpen(true);
+  };
+
+  // 환불 요청 처리 모달 열기
+  const handleProcessRefund = (refund: any) => {
+    setSelectedRefund(refund);
+    setShowRefundProcessModal(true);
+  };
+
+  // 환불 상태 업데이트
+  const handleRefundStatusUpdate = async (newStatus: string, defaultNotes: string) => {
+    if (!selectedRefund || !user?.id) return;
+
+    try {
+      // 사유 입력 가져오기
+      const notesElement = document.getElementById('refund-process-notes') as HTMLTextAreaElement;
+      const notes = notesElement?.value || defaultNotes;
+
+      // 환불 요청 상태 업데이트
+      const { error } = await supabase
+        .from('refund_requests' as any)
+        .update({
+          status: newStatus,
+          processed_at: new Date().toISOString(),
+          processed_by: user.id,
+          admin_notes: notes
+        })
+        .eq('id', selectedRefund.id);
+
+      if (error) throw error;
+
+      // 환불 이력 추가
+      await supabase
+        .from('refund_history' as any)
+        .insert([{
+          refund_request_id: selectedRefund.id,
+          status: newStatus,
+          notes: notes,
+          processed_by: user.id,
+          action_type: 'status_change',
+          metadata: { previous_status: selectedRefund.status }
+        }]);
+
+      setShowRefundProcessModal(false);
+      fetchRefunds(); // 목록 새로고침
+      alert(`환불 요청이 ${newStatus === 'approved' ? '승인' : newStatus === 'rejected' ? '거절' : '검토중'}되었습니다.`);
+    } catch (error) {
+      console.error('환불 상태 업데이트 실패:', error);
+      alert('상태 업데이트에 실패했습니다.');
+    }
   };
 
   const closeReceiptModal = () => {
@@ -168,6 +277,7 @@ const StoreOrders: React.FC = () => {
               { key: 'pending', label: '신규 주문', count: getTabCount('pending') },
               { key: 'processing', label: '처리 중', count: getTabCount('processing') },
               { key: 'completed', label: '완료/취소', count: getTabCount('completed') },
+              { key: 'refunds', label: '환불 요청', count: getTabCount('refunds') },
               { key: 'all', label: '전체', count: getTabCount('all') }
             ].map((tab) => (
               <button
@@ -194,9 +304,66 @@ const StoreOrders: React.FC = () => {
           </nav>
         </div>
 
-        {/* 주문 목록 */}
+        {/* 주문 목록 또는 환불 요청 목록 */}
         <div className="p-6">
-          {filteredOrders.length === 0 ? (
+          {selectedTab === 'refunds' ? (
+            // 환불 요청 목록
+            refundsLoading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="text-gray-500 mt-4">환불 요청을 불러오는 중...</p>
+              </div>
+            ) : refunds.length === 0 ? (
+              <div className="text-center py-12">
+                <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-gray-500 text-lg">환불 요청이 없습니다</p>
+                <p className="text-gray-400 text-sm mt-2">고객이 환불을 요청하면 여기에 표시됩니다</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {refunds.map((refund) => (
+                  <div key={refund.id} className="border border-gray-200 rounded-lg p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            환불 요청 #{refund.id.slice(0, 8)}...
+                          </h3>
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            refund.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            refund.status === 'approved' ? 'bg-green-100 text-green-800' :
+                            refund.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {refund.status === 'pending' ? '검토 대기중' :
+                             refund.status === 'approved' ? '승인됨' :
+                             refund.status === 'rejected' ? '거절됨' : refund.status}
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          <div>요청일: {new Date(refund.created_at).toLocaleString('ko-KR')}</div>
+                          <div>요청 금액: {refund.requested_refund_amount?.toLocaleString()}원</div>
+                          <div>사유: {refund.reason}</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        {refund.status === 'pending' && (
+                          <button
+                            onClick={() => handleProcessRefund(refund)}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                          >
+                            처리하기
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : filteredOrders.length === 0 ? (
             <div className="text-center py-12">
               <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -345,6 +512,72 @@ const StoreOrders: React.FC = () => {
         storeAddress={storeInfo?.address}
         storePhone={storeInfo?.phone}
       />
+
+      {/* 환불 요청 처리 모달 */}
+      {showRefundProcessModal && selectedRefund && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">환불 요청 처리</h3>
+                <button
+                  onClick={() => setShowRefundProcessModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">처리 결과</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    <button
+                      onClick={() => handleRefundStatusUpdate('approved', '환불 요청이 승인되었습니다.')}
+                      className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                    >
+                      승인
+                    </button>
+                    <button
+                      onClick={() => handleRefundStatusUpdate('rejected', '환불 요청이 거절되었습니다.')}
+                      className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    >
+                      거절
+                    </button>
+                    <button
+                      onClick={() => handleRefundStatusUpdate('under_review', '환불 요청을 검토 중입니다.')}
+                      className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      검토중
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">사유 (선택사항)</label>
+                  <textarea
+                    rows={3}
+                    placeholder="처리 결과에 대한 사유를 입력하세요"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    id="refund-process-notes"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowRefundProcessModal(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
