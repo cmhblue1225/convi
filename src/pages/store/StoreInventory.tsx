@@ -14,6 +14,11 @@ interface ExpiryInfo {
   formattedRemaining: string;
 }
 
+interface PromotionInfo {
+  promotion_type: 'buy_one_get_one' | 'buy_two_get_one' | null;
+  promotion_name: string | null;
+}
+
 // 유통기한별 재고 정보를 포함한 확장된 인터페이스
 interface InventoryWithExpiry {
   id: string;
@@ -34,6 +39,7 @@ interface InventoryWithExpiry {
   batchId: string; // 배치별 식별자
   expiryInfo: ExpiryInfo;
   batchQuantity: number; // 해당 배치의 수량
+  promotionInfo: PromotionInfo;
 }
 
 // 모든 재고 모드를 위한 인터페이스 (상품별로 그룹화)
@@ -58,6 +64,7 @@ interface AllInventoryItem {
     formattedRemaining: string;
     status: 'normal' | 'warning' | 'danger' | 'expired' | null;
   }>;
+  promotionInfo: PromotionInfo;
 }
 
 interface TransactionData {
@@ -92,6 +99,7 @@ const StoreInventory: React.FC = () => {
   const [filterStock, setFilterStock] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'current' | 'all'>('current');
   const [expiryFilter, setExpiryFilter] = useState<'all' | 'normal' | 'warning' | 'danger' | 'expired'>('all');
+  const [promotionFilter, setPromotionFilter] = useState<'all' | 'buy_one_get_one' | 'buy_two_get_one'>('all');
   const { user } = useAuthStore();
 
   // 유통기한 남은 시간을 포맷팅하는 함수
@@ -245,7 +253,8 @@ const StoreInventory: React.FC = () => {
             expiryGroup: key, // 유통기한별 그룹 키
             batchId: transaction.id,
             expiryInfo: calculateExpiryInfo(expiresAt),
-            batchQuantity: 0 // 배치별 수량은 트랜잭션에서 계산
+            batchQuantity: 0, // 배치별 수량은 트랜잭션에서 계산
+            promotionInfo: { promotion_type: null, promotion_name: null }
           });
         }
 
@@ -293,6 +302,35 @@ const StoreInventory: React.FC = () => {
         // 상품명 순서로 정렬
         return a.product.name.localeCompare(b.product.name);
       });
+
+      // 행사 정보 가져오기
+      const { data: promotionData, error: promotionError } = await supabase
+        .from('promotion_products')
+        .select(`
+          product_id,
+          promotions!inner(
+            name,
+            promotion_type
+          )
+        `)
+        .is('store_id', null); // 전체 매장 행사 (NULL)
+
+      if (promotionError) {
+        console.error('행사 정보 조회 오류:', promotionError);
+      } else {
+        // 행사 정보를 재고 데이터에 추가
+        promotionData?.forEach(promotion => {
+          const productId = promotion.product_id;
+          validInventory.forEach(inventory => {
+            if (inventory.product_id === productId) {
+              inventory.promotionInfo = {
+                promotion_type: promotion.promotions.promotion_type,
+                promotion_name: promotion.promotions.name
+              };
+            }
+          });
+        });
+      }
 
       setInventoryWithExpiry(validInventory);
     } catch (error) {
@@ -376,6 +414,7 @@ const StoreInventory: React.FC = () => {
               shelf_life_days: storeProduct.products.shelf_life_days // 실제 데이터베이스 값 사용
             },
             expiryDetails: [], // 모든 재고 모드에서는 유통기한 상세 정보는 표시하지 않음
+            promotionInfo: { promotion_type: null, promotion_name: null }
           };
         })
       );
@@ -383,6 +422,35 @@ const StoreInventory: React.FC = () => {
       // null 값 제거하고 정렬
       const validItems = allInventoryItems.filter(item => item !== null) as AllInventoryItem[];
       validItems.sort((a, b) => a.product.name.localeCompare(b.product.name));
+
+      // 행사 정보 가져오기
+      const { data: promotionData, error: promotionError } = await supabase
+        .from('promotion_products')
+        .select(`
+          product_id,
+          promotions!inner(
+            name,
+            promotion_type
+          )
+        `)
+        .is('store_id', null); // 전체 매장 행사 (NULL)
+
+      if (promotionError) {
+        console.error('행사 정보 조회 오류:', promotionError);
+      } else {
+        // 행사 정보를 재고 데이터에 추가
+        promotionData?.forEach(promotion => {
+          const productId = promotion.product_id;
+          validItems.forEach(inventory => {
+            if (inventory.product_id === productId) {
+              inventory.promotionInfo = {
+                promotion_type: promotion.promotions.promotion_type,
+                promotion_name: promotion.promotions.name
+              };
+            }
+          });
+        });
+      }
 
       setAllInventoryItems(validItems);
     } catch (error) {
@@ -456,6 +524,10 @@ const StoreInventory: React.FC = () => {
       const status = product.expiryInfo?.status || null;
       if (!status) return expiryFilter === 'normal';
       return status === expiryFilter;
+    })
+    .filter((product) => {
+      if (promotionFilter === 'all') return true;
+      return product.promotionInfo.promotion_type === promotionFilter;
     });
 
   // viewMode에 따라 표시할 데이터 결정
@@ -464,6 +536,10 @@ const StoreInventory: React.FC = () => {
     if (filterStock === 'low' && product.total_stock_quantity <= product.safety_stock) return true;
     if (filterStock === 'out' && product.total_stock_quantity <= 0) return true;
     return false;
+  })
+  .filter((product) => {
+    if (promotionFilter === 'all') return true;
+    return product.promotionInfo.promotion_type === promotionFilter;
   });
 
   const finalDisplayData = viewMode === 'current' ? filteredProducts : filteredAllProducts;
@@ -541,6 +617,16 @@ const StoreInventory: React.FC = () => {
               <option value="expired">만료</option>
               <option value="normal">정상</option>
             </select>
+            <select
+              value={promotionFilter}
+              onChange={(e) => setPromotionFilter(e.target.value as 'all' | 'buy_one_get_one' | 'buy_two_get_one')}
+              className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+              title="행사 필터"
+            >
+              <option value="all">행사 전체</option>
+              <option value="buy_one_get_one">1+1 행사</option>
+              <option value="buy_two_get_one">2+1 행사</option>
+            </select>
             <button
               onClick={() => setViewMode('current')}
               className={`px-3 py-1 text-xs rounded ${
@@ -607,6 +693,9 @@ const StoreInventory: React.FC = () => {
                   상태
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  행사
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   판매가
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -668,6 +757,19 @@ const StoreInventory: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
+                        {currentProduct.promotionInfo.promotion_type ? (
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            currentProduct.promotionInfo.promotion_type === 'buy_one_get_one' 
+                              ? 'bg-blue-100 text-blue-800' 
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                            {currentProduct.promotionInfo.promotion_type === 'buy_one_get_one' ? '1+1' : '2+1'}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-500">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{currentProduct.price.toLocaleString()}원</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -703,6 +805,19 @@ const StoreInventory: React.FC = () => {
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${stockStatus.color}`}>
                           {stockStatus.text}
                         </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {allProduct.promotionInfo.promotion_type ? (
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            allProduct.promotionInfo.promotion_type === 'buy_one_get_one' 
+                              ? 'bg-blue-100 text-blue-800' 
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                            {allProduct.promotionInfo.promotion_type === 'buy_one_get_one' ? '1+1' : '2+1'}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-500">-</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{allProduct.price.toLocaleString()}원</div>
