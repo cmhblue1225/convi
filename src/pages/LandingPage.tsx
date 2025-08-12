@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button } from '../components/common/Button';
 import { useAuthStore } from '../stores/common/authStore';
 import SystemDemo from '../components/demo/SystemDemo';
 
 const LandingPage: React.FC = () => {
   const { isAuthenticated, user, profile, signOut } = useAuthStore();
-  const navigate = useNavigate();
   const [showDemo, setShowDemo] = useState(false);
 
   const handleSignOut = async () => {
@@ -16,12 +15,14 @@ const LandingPage: React.FC = () => {
         // 로그아웃 성공 시 페이지 새로고침하여 상태 업데이트
         window.location.reload();
       } else {
-        console.error('로그아웃 실패:', result.error);
-        alert('로그아웃 중 오류가 발생했습니다.');
+        // 에러가 있어도 로컬 상태는 정리되었으므로 페이지 새로고침
+        console.warn('로그아웃 중 일부 오류:', result.error);
+        window.location.reload();
       }
     } catch (error) {
-      console.error('로그아웃 중 오류:', error);
-      alert('로그아웃 중 오류가 발생했습니다.');
+      // 예외가 발생해도 페이지를 새로고침하여 상태 정리
+      console.warn('로그아웃 중 예외 발생, 페이지 새로고침:', error);
+      window.location.reload();
     }
   };
 

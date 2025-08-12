@@ -7,6 +7,7 @@ import Cart from '../../components/customer/Cart';
 import { useCartStore } from '../../stores/cartStore';
 import { WishlistButton } from '../../components/common/WishlistButton';
 import { useAuthStore } from '../../stores/common/authStore';
+import { ProductCard } from '../../components/product/ProductCard';
 
 interface ProductWithStock extends Product {
   store_products: StoreProduct[];
@@ -335,10 +336,6 @@ const ProductCatalog: React.FC = () => {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredProducts.map((product) => {
               const storeProduct = product.store_products[0];
-              const hasDiscount = storeProduct.discount_rate > 0;
-              const discountedPrice = hasDiscount
-                ? storeProduct.price * (1 - storeProduct.discount_rate)
-                : storeProduct.price;
               
               // 장바구니에 담긴 수량 계산
               const cartItem = items.find(item => item.product.id === product.id);
@@ -346,146 +343,32 @@ const ProductCatalog: React.FC = () => {
               
               // 실시간 재고 계산 (원래 재고 - 장바구니 수량)
               const realTimeStock = storeProduct.stock_quantity - cartQuantity;
-              const isLowStock = realTimeStock <= storeProduct.safety_stock;
-              const isOutOfStock = realTimeStock <= 0;
+
+              // 상품 데이터를 ProductCard에 맞게 변환
+              const productWithStoreData = {
+                ...product,
+                base_price: storeProduct.price,
+                discount_rate: storeProduct.discount_rate,
+                stock_quantity: realTimeStock,
+                safety_stock: storeProduct.safety_stock,
+                price: storeProduct.price // 기본 price 필드도 유지
+              };
 
               return (
-                <div 
-                  key={product.id} 
-                  className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow relative"
-                >
-                  {/* 찜하기 버튼 */}
-                  <div className="absolute top-2 right-2 z-20">
-                    <WishlistButton
-                      productId={product.id}
-                      isWishlisted={wishlistedProducts[product.id] || false}
-                      onToggle={(newState) => {
-                        setWishlistedProducts(prev => ({
-                          ...prev,
-                          [product.id]: newState
-                        }));
-                      }}
-                    />
-                  </div>
-
-                  {/* 프로모션 배지 */}
-                  {hasDiscount && (
-                    <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">
-                      {Math.round(storeProduct.discount_rate * 100)}% OFF
-                    </div>
-                  )}
-                  
-                  {/* 재고 상태 배지 */}
-                  {isOutOfStock && (
-                    <div className="absolute top-2 right-2 bg-gray-500 text-white text-xs px-2 py-1 rounded-full">
-                      품절
-                    </div>
-                  )}
-                  {isLowStock && !isOutOfStock && (
-                    <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
-                      재고부족
-                    </div>
-                  )}
-                  
-                  {/* 상품 이미지 */}
-                  <div className="w-full h-48 bg-gray-100 rounded-lg mb-3 flex items-center justify-center">
-                    {product.image_urls && product.image_urls.length > 0 ? (
-                      <img
-                        src={product.image_urls[0]}
-                        alt={product.name}
-                        className="w-full h-full object-cover rounded-lg"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          target.nextElementSibling?.classList.remove('hidden');
-                        }}
-                      />
-                    ) : null}
-                    <div className="text-gray-400 text-sm">
-                      📦 {product.name}
-                    </div>
-                  </div>
-                  
-                  {/* 상품 정보 */}
-                  <div className="space-y-2">
-                    <h3 className="font-semibold text-lg text-gray-900 line-clamp-2">
-                      {product.name}
-                    </h3>
-                    
-                    {product.description && (
-                      <p className="text-gray-600 text-sm line-clamp-2">
-                        {product.description}
-                      </p>
-                    )}
-                    
-                    {/* 브랜드 정보 */}
-                    {product.brand && (
-                      <p className="text-gray-500 text-xs">
-                        {product.brand}
-                      </p>
-                    )}
-                    
-                    {/* 가격 */}
-                    <div className="flex items-center justify-between">
-                      <div>
-                        {hasDiscount ? (
-                          <div className="space-y-1">
-                            <div className="text-lg font-bold text-red-600">
-                              {discountedPrice.toLocaleString()}원
-                            </div>
-                            <div className="text-sm text-gray-500 line-through">
-                              {storeProduct.price.toLocaleString()}원
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-lg font-bold text-gray-900">
-                            {storeProduct.price.toLocaleString()}원
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="text-right">
-                        <div className={`text-sm font-medium ${
-                          isOutOfStock ? 'text-red-600' : 
-                          isLowStock ? 'text-orange-600' : 
-                          'text-gray-500'
-                        }`}>
-                          {isOutOfStock ? '품절' : 
-                           isLowStock ? '재고 부족' : 
-                           '재고 있음'} {realTimeStock}개
-                          {cartQuantity > 0 && (
-                            <span className="text-xs text-blue-600 block">
-                              (장바구니: {cartQuantity}개)
-                            </span>
-                          )}
-                        </div>
-                        {product.requires_preparation && (
-                          <div className="text-xs text-blue-600">
-                            제조시간 {product.preparation_time}분
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* 단위 정보 */}
-                    <div className="text-xs text-gray-500">
-                      단위: {product.unit}
-                    </div>
-                    
-                    {/* 장바구니 버튼 */}
-                    <button
-                      className={`w-full py-2 rounded-lg font-medium transition-colors ${
-                        isOutOfStock
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-blue-500 text-white hover:bg-blue-600'
-                      }`}
-                      onClick={() => addToCart(product)}
-                      disabled={isOutOfStock}
-                    >
-                      {isOutOfStock ? '품절' : '장바구니 추가'}
-                    </button>
-                  </div>
-                </div>
+                <ProductCard
+                  key={product.id}
+                  product={productWithStoreData}
+                  showWishlist={!!user}
+                  isWishlisted={wishlistedProducts[product.id] || false}
+                  onWishlistToggle={(newState) => {
+                    setWishlistedProducts(prev => ({
+                      ...prev,
+                      [product.id]: newState
+                    }));
+                  }}
+                  showGallery={true}
+                  onAddToCart={() => addToCart(product)}
+                />
               );
             })}
           </div>

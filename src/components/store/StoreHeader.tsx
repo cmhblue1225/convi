@@ -14,7 +14,15 @@ const StoreHeader: React.FC = () => {
               {profile?.first_name} {profile?.last_name}
             </span>
             <button
-              onClick={() => signOut()}
+              onClick={async () => {
+                try {
+                  await signOut();
+                  window.location.reload();
+                } catch (error) {
+                  console.warn('로그아웃 중 오류, 페이지 새로고침:', error);
+                  window.location.reload();
+                }
+              }}
               className="text-sm text-gray-500 hover:text-gray-700"
             >
               로그아웃
