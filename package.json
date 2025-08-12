@@ -22,7 +22,7 @@
     "server": "node server.js",
     "dev:full": "concurrently \"npm run server\" \"npm run dev\"",
     "setup:excel": "node scripts/setup-excel.js",
-    "postinstall": "npm run setup:excel"
+    "postinstall": "npm run setup:excel || true"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.7",
