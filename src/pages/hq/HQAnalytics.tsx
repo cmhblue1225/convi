@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../../lib/supabase/client';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { exportAnalyticsToExcel } from '../../utils/analyticsExport';
+import PrintAnalytics from '../../components/common/PrintAnalytics';
 import {
   BarChart,
   Bar,
@@ -84,6 +86,10 @@ const HQAnalytics: React.FC = () => {
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0]
   });
+  
+  // 프린터 및 Excel 내보내기 관련 상태
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // 메모이제이션된 포매팅 함수들
   const formatCurrency = useCallback((amount: number) => {
@@ -198,6 +204,38 @@ const HQAnalytics: React.FC = () => {
     fetchAnalytics();
   }, [fetchAnalytics]);
 
+  // Excel 내보내기 함수
+  const handleExportToExcel = async () => {
+    if (!salesSummary) {
+      alert('매출 데이터가 로드되지 않았습니다.');
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      const result = await exportAnalyticsToExcel(
+        salesSummary,
+        storeRankings,
+        productRankings,
+        dailySalesItems,
+        hourlySalesItems,
+        paymentMethods,
+        dateRange
+      );
+
+      if (result.success) {
+        alert(`Excel 파일이 성공적으로 다운로드되었습니다: ${result.fileName}`);
+      } else {
+        alert('Excel 내보내기에 실패했습니다: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Excel 내보내기 오류:', error);
+      alert('Excel 내보내기 중 오류가 발생했습니다.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const COLORS = [
     '#3b82f6', // blue-500
     '#10b981', // emerald-500
@@ -231,7 +269,7 @@ const HQAnalytics: React.FC = () => {
       <div className="container mx-auto px-4 py-6">
         {/* 헤더 */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 p-8 mb-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
               <div className="flex items-center space-x-3 mb-2">
                 <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
@@ -243,25 +281,60 @@ const HQAnalytics: React.FC = () => {
               </div>
               <p className="text-gray-600 text-lg">📊 전사 매출 현황 및 인사이트 분석</p>
             </div>
-            <div className="flex gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">📅 시작일</label>
-                <input
-                  type="date"
-                  value={dateRange.startDate}
-                  onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-                  className="border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 bg-white/80 backdrop-blur-sm"
-                />
+            <div className="flex flex-col lg:flex-row gap-4">
+              {/* 날짜 선택 */}
+              <div className="flex gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">📅 시작일</label>
+                  <input
+                    type="date"
+                    value={dateRange.startDate}
+                    onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                    className="border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 bg-white/80 backdrop-blur-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">📅 종료일</label>
+                  <input
+                    type="date"
+                    value={dateRange.endDate}
+                    onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                    className="border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 bg-white/80 backdrop-blur-sm"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">📅 종료일</label>
-                <input
-                  type="date"
-                  value={dateRange.endDate}
-                  onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-                  className="border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 bg-white/80 backdrop-blur-sm"
-                />
-              </div>
+            </div>
+            
+            {/* 프린터 인쇄 및 Excel 저장 버튼 */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowPrintModal(true)}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2 transition-all duration-200"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                프린터 인쇄
+              </button>
+              <button
+                onClick={handleExportToExcel}
+                disabled={isExporting}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed flex items-center gap-2 transition-all duration-200"
+              >
+                {isExporting ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    처리 중...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Excel 저장
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
@@ -758,6 +831,20 @@ const HQAnalytics: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* 프린터 모달 */}
+      {showPrintModal && (
+        <PrintAnalytics
+          salesSummary={salesSummary!}
+          storeRankings={storeRankings}
+          productRankings={productRankings}
+          dailySalesItems={dailySalesItems}
+          hourlySalesItems={hourlySalesItems}
+          paymentMethods={paymentMethods}
+          dateRange={dateRange}
+          onClose={() => setShowPrintModal(false)}
+        />
+      )}
     </div>
   );
 };
