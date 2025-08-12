@@ -1,10 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { 
   CloudArrowUpIcon, 
-  XMarkIcon, 
-  PhotoIcon,
-  EyeIcon,
-  ArrowsUpDownIcon
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 import { supabase } from '../../lib/supabase/client';
 
@@ -160,11 +157,9 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       if (productId) {
         await supabase.from('product_images').insert({
           product_id: productId,
-          url: publicUrl,
-          filename: imageFile.file.name,
-          size: compressedFile.size,
-          mime_type: compressedFile.type,
-          display_order: imageFile.displayOrder
+          image_url: publicUrl,
+          alt_text: imageFile.file.name,
+          is_primary: imageFile.displayOrder === 0
         });
       }
 
@@ -211,7 +206,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         await supabase
           .from('product_images')
           .delete()
-          .eq('url', imageToRemove.url);
+          .eq('image_url', imageToRemove.url);
       }
 
       // 프리뷰 URL 정리
