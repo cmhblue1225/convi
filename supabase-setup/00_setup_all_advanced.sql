@@ -1717,7 +1717,7 @@ $$ LANGUAGE plpgsql;
 -- =====================================================
 
 SELECT 
-    '✅ 고급 편의점 관리 시스템 설정 완료! (v2.0 - 쿠폰/포인트/위시리스트 포함)' as "상태",
+    '✅ 고급 편의점 관리 시스템 설정 완료! (v2.1 - 쿠폰/포인트/위시리스트/행사 포함)' as "상태",
     COUNT(*) as "생성된 테이블 수"
 FROM information_schema.tables 
 WHERE table_schema = 'public' 
@@ -1727,7 +1727,8 @@ WHERE table_schema = 'public'
         'orders', 'order_items', 'daily_sales_summary', 'product_sales_summary',
         'order_status_history', 'inventory_transactions', 'supply_requests',
         'supply_request_items', 'shipments', 'notifications', 'system_settings',
-        'coupons', 'user_coupons', 'points', 'point_settings', 'wishlists', 'product_wishlists'
+        'coupons', 'user_coupons', 'points', 'point_settings', 'wishlists', 'product_wishlists',
+        'promotions', 'promotion_products'
     );
 
 -- 테이블 목록 확인
@@ -1891,3 +1892,260 @@ CREATE POLICY "Users can view own profile" ON profiles
 DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
 CREATE POLICY "Users can update own profile" ON profiles
   FOR UPDATE USING (auth.uid() = id); 
+
+-- =====================================================
+-- 12. 행사 관리 시스템 (Promotion Management System)
+-- =====================================================
+
+-- 행사 테이블 생성
+CREATE TABLE IF NOT EXISTS promotions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    description TEXT,
+    promotion_type TEXT NOT NULL CHECK (promotion_type IN ('buy_one_get_one', 'buy_two_get_one')),
+    start_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    end_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    created_by UUID REFERENCES profiles(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 행사 상품 테이블 생성
+CREATE TABLE IF NOT EXISTS promotion_products (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    promotion_id UUID NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
+    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    store_id UUID REFERENCES stores(id) ON DELETE CASCADE,
+    is_primary BOOLEAN DEFAULT false,
+    free_quantity INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(promotion_id, product_id, store_id)
+);
+
+-- 행사 관련 인덱스 생성
+CREATE INDEX IF NOT EXISTS idx_promotions_type ON promotions(promotion_type);
+CREATE INDEX IF NOT EXISTS idx_promotions_active ON promotions(is_active);
+CREATE INDEX IF NOT EXISTS idx_promotions_dates ON promotions(start_date, end_date);
+CREATE INDEX IF NOT EXISTS idx_promotion_products_promotion_id ON promotion_products(promotion_id);
+CREATE INDEX IF NOT EXISTS idx_promotion_products_product_id ON promotion_products(product_id);
+CREATE INDEX IF NOT EXISTS idx_promotion_products_store_id ON promotion_products(store_id);
+
+-- 행사 테이블 업데이트 트리거
+CREATE TRIGGER update_promotions_updated_at 
+    BEFORE UPDATE ON promotions 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- 행사 상품 테이블 업데이트 트리거
+CREATE TRIGGER update_promotion_products_updated_at 
+    BEFORE UPDATE ON promotion_products 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- 행사 자동 비활성화 함수
+CREATE OR REPLACE FUNCTION auto_deactivate_expired_promotions()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- 만료된 행사들을 자동으로 비활성화
+    UPDATE promotions 
+    SET is_active = false 
+    WHERE end_date < NOW() AND is_active = true;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 행사 자동 비활성화 트리거
+CREATE TRIGGER trigger_auto_deactivate_promotions
+    AFTER INSERT OR UPDATE ON promotions
+    FOR EACH ROW EXECUTE FUNCTION auto_deactivate_expired_promotions();
+
+-- 행사 적용 함수 (주문 시 할인 계산)
+CREATE OR REPLACE FUNCTION apply_promotion_discount(
+    p_product_id UUID,
+    p_store_id UUID,
+    p_quantity INTEGER,
+    p_unit_price NUMERIC
+)
+RETURNS TABLE(
+    original_price NUMERIC,
+    discount_amount NUMERIC,
+    final_price NUMERIC,
+    promotion_type TEXT,
+    promotion_name TEXT
+) AS $$
+DECLARE
+    v_promotion RECORD;
+    v_discount_percentage INTEGER;
+    v_discount_amount NUMERIC;
+    v_final_price NUMERIC;
+BEGIN
+    -- 현재 활성화된 행사 찾기
+    SELECT 
+        p.id,
+        p.name,
+        p.promotion_type,
+        pp.discount_percentage
+    INTO v_promotion
+    FROM promotions p
+    JOIN promotion_products pp ON p.id = pp.promotion_id
+    WHERE pp.product_id = p_product_id 
+        AND pp.store_id = p_store_id
+        AND p.is_active = true
+        AND p.start_date <= NOW()
+        AND p.end_date >= NOW()
+    ORDER BY p.created_at DESC
+    LIMIT 1;
+    
+    IF v_promotion.id IS NULL THEN
+        -- 행사가 없으면 원래 가격 반환
+        RETURN QUERY SELECT 
+            p_unit_price * p_quantity,
+            0::NUMERIC,
+            p_unit_price * p_quantity,
+            NULL::TEXT,
+            NULL::TEXT;
+        RETURN;
+    END IF;
+    
+    -- 할인 계산
+    v_discount_percentage := COALESCE(v_promotion.discount_percentage, 0);
+    v_discount_amount := (p_unit_price * p_quantity * v_discount_percentage) / 100;
+    v_final_price := (p_unit_price * p_quantity) - v_discount_amount;
+    
+    -- 1+1 또는 2+1 행사 적용
+    IF v_promotion.promotion_type = 'buy_one_get_one' AND p_quantity >= 2 THEN
+        -- 1+1: 2개 구매 시 1개 무료
+        v_final_price := p_unit_price * CEIL(p_quantity::NUMERIC / 2);
+        v_discount_amount := (p_unit_price * p_quantity) - v_final_price;
+    ELSIF v_promotion.promotion_type = 'buy_two_get_one' AND p_quantity >= 3 THEN
+        -- 2+1: 3개 구매 시 1개 무료
+        v_final_price := p_unit_price * (p_quantity - FLOOR(p_quantity::NUMERIC / 3));
+        v_discount_amount := (p_unit_price * p_quantity) - v_final_price;
+    END IF;
+    
+    RETURN QUERY SELECT 
+        p_unit_price * p_quantity,
+        v_discount_amount,
+        v_final_price,
+        v_promotion.promotion_type,
+        v_promotion.name;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 행사 통계 함수
+CREATE OR REPLACE FUNCTION get_promotion_stats(
+    p_promotion_id UUID DEFAULT NULL
+)
+RETURNS TABLE(
+    promotion_id UUID,
+    promotion_name TEXT,
+    promotion_type TEXT,
+    total_orders BIGINT,
+    total_revenue NUMERIC,
+    total_discount NUMERIC,
+    avg_discount_percentage NUMERIC
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        p.id,
+        p.name,
+        p.promotion_type,
+        COUNT(DISTINCT o.id)::BIGINT as total_orders,
+        COALESCE(SUM(oi.quantity * oi.unit_price), 0) as total_revenue,
+        COALESCE(SUM(oi.quantity * oi.unit_price - oi.total_price), 0) as total_discount,
+        CASE 
+            WHEN SUM(oi.quantity * oi.unit_price) > 0 
+            THEN (SUM(oi.quantity * oi.unit_price - oi.total_price) / SUM(oi.quantity * oi.unit_price)) * 100
+            ELSE 0 
+        END as avg_discount_percentage
+    FROM promotions p
+    LEFT JOIN promotion_products pp ON p.id = pp.promotion_id
+    LEFT JOIN order_items oi ON pp.product_id = oi.product_id AND pp.store_id = oi.store_id
+    LEFT JOIN orders o ON oi.order_id = o.id
+    WHERE (p_promotion_id IS NULL OR p.id = p_promotion_id)
+        AND o.status = 'completed'
+    GROUP BY p.id, p.name, p.promotion_type;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 행사 RLS 정책
+ALTER TABLE promotions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE promotion_products ENABLE ROW LEVEL SECURITY;
+
+-- 본사만 행사 관리 가능
+CREATE POLICY "HQ can manage promotions" ON promotions
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM profiles 
+            WHERE id = auth.uid() AND role = 'hq'
+        )
+    );
+
+-- 본사만 행사 상품 관리 가능
+CREATE POLICY "HQ can manage promotion products" ON promotion_products
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM profiles 
+            WHERE id = auth.uid() AND role = 'hq'
+        )
+    );
+
+-- 모든 사용자가 활성 행사 조회 가능
+CREATE POLICY "Users can view active promotions" ON promotions
+    FOR SELECT USING (is_active = true);
+
+-- 모든 사용자가 행사 상품 조회 가능
+CREATE POLICY "Users can view promotion products" ON promotion_products
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM promotions p 
+            WHERE p.id = promotion_products.promotion_id 
+            AND p.is_active = true
+        )
+    );
+
+-- 행사 조회 뷰 생성
+CREATE OR REPLACE VIEW active_promotions AS
+SELECT 
+    p.id,
+    p.name,
+    p.description,
+    p.promotion_type,
+    p.start_date,
+    p.end_date,
+    p.is_active,
+    COUNT(pp.id) as product_count,
+    p.created_at,
+    p.updated_at
+FROM promotions p
+LEFT JOIN promotion_products pp ON p.id = pp.promotion_id
+WHERE p.is_active = true
+GROUP BY p.id, p.name, p.description, p.promotion_type, p.start_date, p.end_date, p.is_active, p.created_at, p.updated_at;
+
+-- 행사 상품 상세 조회 뷰
+CREATE OR REPLACE VIEW promotion_product_details AS
+SELECT 
+    pp.id,
+    pp.promotion_id,
+    p.name as promotion_name,
+    p.promotion_type,
+    pp.product_id,
+    pr.name as product_name,
+    pp.store_id,
+    s.name as store_name,
+    pp.discount_percentage,
+    pr.price as original_price,
+    CASE 
+        WHEN p.promotion_type = 'buy_one_get_one' THEN '1+1 행사'
+        WHEN p.promotion_type = 'buy_two_get_one' THEN '2+1 행사'
+        ELSE pp.discount_percentage || '% 할인'
+    END as discount_description,
+    pp.created_at,
+    pp.updated_at
+FROM promotion_products pp
+JOIN promotions p ON pp.promotion_id = p.id
+JOIN products pr ON pp.product_id = pr.id
+JOIN stores s ON pp.store_id = s.id
+WHERE p.is_active = true;

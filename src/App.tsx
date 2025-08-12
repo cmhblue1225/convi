@@ -21,6 +21,7 @@ import CustomerCategories from './pages/customer/CustomerCategories';
 import CustomerOrders from './pages/customer/CustomerOrders';
 import CustomerProfile from './pages/customer/CustomerProfile';
 import CartPage from './pages/customer/CartPage';
+import PromotionProducts from './pages/customer/PromotionProducts';
 
 // Payment Pages
 import PaymentSuccess from './pages/payment/PaymentSuccess';
@@ -40,6 +41,7 @@ import HQLayout from './pages/hq/HQLayout';
 import HQDashboard from './pages/hq/HQDashboard';
 import HQStores from './pages/hq/HQStores';
 import HQProducts from './pages/hq/HQProducts';
+
 import HQSupply from './pages/hq/HQSupply';
 import HQAnalytics from './pages/hq/HQAnalytics';
 
@@ -116,6 +118,7 @@ function App() {
               <Route path="orders/:orderId/tracking" element={<OrderTracking />} />
               <Route path="categories" element={<CustomerCategories />} />
               <Route path="profile" element={<CustomerProfile />} />
+              <Route path="promotions" element={<PromotionProducts />} />
             </Route>
 
             {/* Payment Routes */}
@@ -156,6 +159,7 @@ function App() {
               <Route path="dashboard" element={<HQDashboard />} />
               <Route path="stores" element={<HQStores />} />
               <Route path="products" element={<HQProducts />} />
+              
               <Route path="supply" element={<HQSupply />} />
               <Route path="analytics" element={<HQAnalytics />} />
             </Route>
