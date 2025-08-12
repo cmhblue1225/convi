@@ -30,6 +30,7 @@ const CustomerHome: React.FC = () => {
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [quickCategories, setQuickCategories] = useState<QuickCategory[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+  const [promotionProducts, setPromotionProducts] = useState<any[]>([]);
 
   const getCategoryIcon = (slug?: string, name?: string) => {
     const key = (slug || name || '').toLowerCase();
@@ -115,6 +116,78 @@ const CustomerHome: React.FC = () => {
     }
   };
 
+  const fetchPromotionProducts = async (storeId?: string) => {
+    try {
+      // 먼저 행사 상품 정보를 가져옵니다
+      const { data: promotionData, error: promotionError } = await supabase
+        .from('promotion_products')
+        .select(`
+          product_id,
+          promotions!inner(
+            name,
+            promotion_type
+          ),
+          products!inner(
+            id,
+            name,
+            base_price,
+            image_urls
+          )
+        `)
+        .is('store_id', null) // 전체 매장 행사 (NULL)
+        .eq('promotions.is_active', true);
+
+      if (promotionError) throw promotionError;
+
+      // 행사 상품들의 product_id 목록을 추출
+      const productIds = promotionData?.map(item => item.product_id) || [];
+
+      if (productIds.length === 0) {
+        setPromotionProducts([]);
+        return;
+      }
+
+      // 해당 상품들의 store_products 정보를 가져옵니다
+      const { data: storeProductsData, error: storeProductsError } = await supabase
+        .from('store_products')
+        .select(`
+          product_id,
+          price,
+          is_available
+        `)
+        .in('product_id', productIds)
+        .eq('is_available', true);
+
+      if (storeProductsError) throw storeProductsError;
+
+      // store_products 데이터를 product_id로 매핑
+      const storeProductsMap = new Map();
+      storeProductsData?.forEach(item => {
+        storeProductsMap.set(item.product_id, item);
+      });
+
+      // 행사 상품과 store_products 정보를 결합
+      const products = (promotionData || [])
+        .filter(item => storeProductsMap.has(item.product_id))
+        .map((item: any) => {
+          const storeProduct = storeProductsMap.get(item.product_id);
+          return {
+            id: item.product_id,
+            name: item.products.name,
+            price: storeProduct.price,
+            basePrice: item.products.base_price,
+            imageUrl: item.products.image_urls?.[0] || null,
+            promotionType: item.promotions.promotion_type,
+            promotionName: item.promotions.name
+          };
+        });
+
+      setPromotionProducts(products.slice(0, 4)); // 최대 4개만 표시
+    } catch (error) {
+      console.error('행사 상품 조회 오류:', error);
+    }
+  };
+
   const fetchRecentOrders = async () => {
     if (!user) return;
     
@@ -179,8 +252,10 @@ const CustomerHome: React.FC = () => {
       const store = localStorage.getItem('selectedStore');
       const parsed = store ? JSON.parse(store) : null;
       fetchQuickCategories(parsed?.id);
+      fetchPromotionProducts(parsed?.id);
     } catch {
       fetchQuickCategories();
+      fetchPromotionProducts();
     }
   }, [user]);
 
@@ -280,12 +355,48 @@ const CustomerHome: React.FC = () => {
           </div>
         </div>
 
+        {/* 행사 상품 섹션 */}
+        {promotionProducts.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">🎉 행사 상품</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {promotionProducts.map((product) => (
+                <div key={product.id} className="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      product.promotionType === 'buy_one_get_one' 
+                        ? 'bg-blue-100 text-blue-800' 
+                        : 'bg-green-100 text-green-800'
+                    }`}>
+                      {product.promotionType === 'buy_one_get_one' ? '1+1' : '2+1'}
+                    </span>
+                  </div>
+                  <div className="text-sm font-medium text-gray-900 mb-1">{product.name}</div>
+                  <div className="text-lg font-bold text-red-600">{product.price.toLocaleString()}원</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* 프로모션 배너 */}
         <div className="mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">🎉 특가 혜택</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-gray-900">🎉 특가 혜택</h2>
+            <button
+              onClick={() => navigate('/customer/promotions')}
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              전체보기
+            </button>
+          </div>
           <div className="flex gap-3 overflow-x-auto pb-2">
             {promoItems.map((item) => (
-              <div key={item.id} className="flex-shrink-0 w-64 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-4 text-white">
+              <button
+                key={item.id}
+                onClick={() => navigate('/customer/promotions')}
+                className="flex-shrink-0 w-64 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-4 text-white hover:from-blue-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105"
+              >
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <h3 className="font-semibold text-sm">{item.title}</h3>
@@ -295,7 +406,7 @@ const CustomerHome: React.FC = () => {
                     {item.discount}
                   </span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>

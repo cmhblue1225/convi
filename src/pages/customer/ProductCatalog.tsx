@@ -11,6 +11,10 @@ import { ProductCard } from '../../components/product/ProductCard';
 
 interface ProductWithStock extends Product {
   store_products: StoreProduct[];
+  promotionInfo?: {
+    promotion_type: 'buy_one_get_one' | 'buy_two_get_one' | null;
+    promotion_name: string | null;
+  };
 }
 
 const ProductCatalog: React.FC = () => {
@@ -136,9 +140,41 @@ const ProductCatalog: React.FC = () => {
       const { data, error } = await query;
       
       if (error) throw error;
+
+      // 행사 정보 가져오기
+      const { data: promotionData, error: promotionError } = await supabase
+        .from('promotion_products')
+        .select(`
+          product_id,
+          promotions!inner(
+            name,
+            promotion_type
+          )
+        `)
+        .is('store_id', null) // 전체 매장 행사 (NULL)
+        .eq('promotions.is_active', true);
+
+      if (promotionError) {
+        console.error('행사 정보 조회 오류:', promotionError);
+      }
+
+      // 행사 정보를 상품 데이터에 추가
+      const productsWithPromotion = (data || []).map((product: any) => {
+        const promotion = promotionData?.find(p => p.product_id === product.id);
+        return {
+          ...product,
+          promotionInfo: promotion ? {
+            promotion_type: promotion.promotions.promotion_type,
+            promotion_name: promotion.promotions.name
+          } : {
+            promotion_type: null,
+            promotion_name: null
+          }
+        };
+      });
       
-      setProducts(data || []);
-      console.log('🛍️ 상품 데이터 로드 완료:', data?.length || 0, '개');
+      setProducts(productsWithPromotion);
+      console.log('🛍️ 상품 데이터 로드 완료:', productsWithPromotion?.length || 0, '개');
       
     } catch (err) {
       console.error('Error fetching products:', err);

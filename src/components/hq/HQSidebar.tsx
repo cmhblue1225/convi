@@ -51,6 +51,7 @@ const HQSidebar: React.FC = () => {
             </svg>
             상품 관리
           </NavLink>
+
           <NavLink
             to="/hq/supply"
             className={({ isActive }) =>
