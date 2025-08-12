@@ -1,22 +1,53 @@
 import React, { useState, useEffect } from 'react';
 import { useOrderStore } from '../../stores/orderStore';
+import { useAuthStore } from '../../stores/common/authStore';
+import { supabase } from '../../lib/supabase/client';
+import ReceiptModal from '../../components/store/ReceiptModal';
+import type { Order } from '../../stores/orderStore';
 
 const StoreOrders: React.FC = () => {
   const { orders, isLoading, fetchOrders, subscribeToOrders, unsubscribeFromOrders, updateOrderStatus } = useOrderStore();
+  const { user } = useAuthStore();
+  const [storeInfo, setStoreInfo] = useState<any>(null);
+
+  // 지점 정보 가져오기
+  const fetchStoreInfo = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('stores')
+        .select('name, address, phone')
+        .eq('owner_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('지점 정보 조회 실패:', error);
+        return;
+      }
+
+      setStoreInfo(data);
+    } catch (error) {
+      console.error('지점 정보 조회 중 오류:', error);
+    }
+  };
 
   useEffect(() => {
     // 컴포넌트 마운트 시 주문 목록 조회 및 실시간 구독
     fetchOrders();
     subscribeToOrders();
+    fetchStoreInfo();
 
     // 컴포넌트 언마운트 시 구독 해제
     return () => {
       unsubscribeFromOrders();
     };
-  }, [fetchOrders, subscribeToOrders, unsubscribeFromOrders]);
+  }, [fetchOrders, subscribeToOrders, unsubscribeFromOrders, user]);
   const [selectedTab, setSelectedTab] = useState<'all' | 'pending' | 'processing' | 'completed'>('pending');
   const [filteredOrders, setFilteredOrders] = useState(orders);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
+  const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+  const [selectedOrderForReceipt, setSelectedOrderForReceipt] = useState<Order | null>(null);
 
   useEffect(() => {
     let filtered = orders;
@@ -104,6 +135,16 @@ const StoreOrders: React.FC = () => {
       default:
         return orders.length;
     }
+  };
+
+  const handleViewReceipt = (order: Order) => {
+    setSelectedOrderForReceipt(order);
+    setReceiptModalOpen(true);
+  };
+
+  const closeReceiptModal = () => {
+    setReceiptModalOpen(false);
+    setSelectedOrderForReceipt(null);
   };
 
   return (
@@ -247,6 +288,18 @@ const StoreOrders: React.FC = () => {
                             주문 취소
                           </button>
                         )}
+                        {/* 완료/취소된 주문에 영수증 보기 버튼 추가 */}
+                        {(order.status === 'completed' || order.status === 'cancelled') && (
+                          <button
+                            onClick={() => handleViewReceipt(order)}
+                            className="flex items-center px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50"
+                          >
+                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            영수증 보기
+                          </button>
+                        )}
                       </div>
                       
                       <div className="flex space-x-2">
@@ -282,6 +335,16 @@ const StoreOrders: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* 영수증 모달 */}
+      <ReceiptModal
+        isOpen={receiptModalOpen}
+        onClose={closeReceiptModal}
+        order={selectedOrderForReceipt}
+        storeName={storeInfo?.name}
+        storeAddress={storeInfo?.address}
+        storePhone={storeInfo?.phone}
+      />
     </div>
   );
 };
