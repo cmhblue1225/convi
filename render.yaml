@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: convenience-store-v2
+    env: static
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
