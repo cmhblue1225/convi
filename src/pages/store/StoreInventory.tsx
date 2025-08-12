@@ -259,8 +259,8 @@ const StoreInventory: React.FC = () => {
         const productName = transaction.store_products.products.name;
         const expiresAt = transaction.expires_at;
         
-        // 유통기한별로 고유 키 생성 (상품ID + 유통기한)
-        const key = `${productId}_${expiresAt || 'no_expiry'}`;
+        // 유통기한별로 고유 키 생성 (상품명 + 유통기한)
+        const key = `${productName}_${expiresAt || 'no_expiry'}`;
         
         if (!inventoryMap.has(key)) {
           inventoryMap.set(key, {
@@ -279,7 +279,7 @@ const StoreInventory: React.FC = () => {
               shelf_life_days: transaction.store_products.products.shelf_life_days
             },
             expiryGroup: key, // 유통기한별 그룹 키
-            batchId: transaction.id,
+            batchId: key, // 같은 상품명과 유통기한을 가진 상품들은 같은 batchId 사용
             expiryInfo: calculateExpiryInfo(expiresAt),
             batchQuantity: 0 // 배치별 수량은 트랜잭션에서 계산
           });
@@ -294,9 +294,17 @@ const StoreInventory: React.FC = () => {
         } else if (transaction.transaction_type === 'out') {
           item.stock_quantity -= transaction.quantity;
           item.batchQuantity -= transaction.quantity;
+        } else if (transaction.transaction_type === 'returned') {
+          // 반품의 경우 재고 증가
+          item.stock_quantity += transaction.quantity;
+          item.batchQuantity += transaction.quantity;
         } else if (transaction.transaction_type === 'adjustment') {
-          item.stock_quantity = transaction.new_quantity || 0;
-          item.batchQuantity = transaction.new_quantity || 0;
+          // adjustment의 경우 기존 재고에 차이만큼 반영
+          const newQuantity = transaction.new_quantity || 0;
+          const currentQuantity = item.stock_quantity;
+          const difference = newQuantity - currentQuantity;
+          item.stock_quantity = newQuantity;
+          item.batchQuantity += difference;
         } else if (transaction.transaction_type === 'expired') {
           item.stock_quantity -= transaction.quantity;
           item.batchQuantity -= transaction.quantity;
@@ -388,6 +396,9 @@ const StoreInventory: React.FC = () => {
                 totalStock += transaction.quantity;
               } else if (transaction.transaction_type === 'out') {
                 totalStock -= transaction.quantity;
+              } else if (transaction.transaction_type === 'returned') {
+                // 반품의 경우 재고 증가
+                totalStock += transaction.quantity;
               } else if (transaction.transaction_type === 'adjustment') {
                 totalStock = transaction.new_quantity || 0;
               } else if (transaction.transaction_type === 'expired') {
@@ -524,14 +535,32 @@ const StoreInventory: React.FC = () => {
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-sm font-medium text-gray-500">전체 상품</div>
           <div className="text-2xl font-bold text-gray-900">
-            {viewMode === 'current' ? inventoryWithExpiry.length : allInventoryItems.length}
+            {viewMode === 'current' 
+              ? new Set(inventoryWithExpiry.map(item => item.product.name)).size
+              : allInventoryItems.length
+            }
           </div>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-sm font-medium text-gray-500">재고 부족</div>
           <div className="text-2xl font-bold text-orange-600">
             {viewMode === 'current' 
-              ? inventoryWithExpiry.filter(p => p.stock_quantity <= p.safety_stock).length
+              ? (() => {
+                  // 상품별로 그룹화하여 총 재고량 계산
+                  const productStocks = new Map<string, { totalStock: number, safetyStock: number }>();
+                  inventoryWithExpiry.forEach(item => {
+                    const existing = productStocks.get(item.product.name);
+                    if (existing) {
+                      existing.totalStock += item.stock_quantity;
+                    } else {
+                      productStocks.set(item.product.name, {
+                        totalStock: item.stock_quantity,
+                        safetyStock: item.safety_stock
+                      });
+                    }
+                  });
+                  return Array.from(productStocks.values()).filter(p => p.totalStock <= p.safetyStock).length;
+                })()
               : allInventoryItems.filter(p => p.total_stock_quantity <= p.safety_stock).length
             }
           </div>
@@ -540,7 +569,15 @@ const StoreInventory: React.FC = () => {
           <div className="text-sm font-medium text-gray-500">품절</div>
           <div className="text-2xl font-bold text-red-600">
             {viewMode === 'current' 
-              ? inventoryWithExpiry.filter(p => p.stock_quantity <= 0).length
+              ? (() => {
+                  // 상품별로 그룹화하여 총 재고량 계산
+                  const productStocks = new Map<string, number>();
+                  inventoryWithExpiry.forEach(item => {
+                    const existing = productStocks.get(item.product.name) || 0;
+                    productStocks.set(item.product.name, existing + item.stock_quantity);
+                  });
+                  return Array.from(productStocks.values()).filter(stock => stock <= 0).length;
+                })()
               : allInventoryItems.filter(p => p.total_stock_quantity <= 0).length
             }
           </div>
@@ -551,9 +588,17 @@ const StoreInventory: React.FC = () => {
           </div>
           <div className="text-2xl font-bold text-yellow-600">
             {viewMode === 'current' 
-              ? inventoryWithExpiry.filter(info => 
-                  info.expiryInfo.status === 'warning' || info.expiryInfo.status === 'danger'
-                ).length
+              ? (() => {
+                  // 상품별로 그룹화하여 유통기한 임박 상품 계산
+                  const productExpiryStatus = new Map<string, boolean>();
+                  inventoryWithExpiry.forEach(item => {
+                    const hasWarning = item.expiryInfo.status === 'warning' || item.expiryInfo.status === 'danger';
+                    if (hasWarning || !productExpiryStatus.has(item.product.name)) {
+                      productExpiryStatus.set(item.product.name, hasWarning);
+                    }
+                  });
+                  return Array.from(productExpiryStatus.values()).filter(hasWarning => hasWarning).length;
+                })()
               : allInventoryItems.filter(p => p.total_stock_quantity > 0).length
             }
           </div>
@@ -616,7 +661,7 @@ const StoreInventory: React.FC = () => {
                   상품명
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  {viewMode === 'current' ? '현재 재고' : '배치별 재고'}
+                  {viewMode === 'current' ? '통합 재고' : '배치별 재고'}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   안전재고
@@ -674,7 +719,12 @@ const StoreInventory: React.FC = () => {
                     <tr key={`${currentProduct.id}_${currentProduct.expiryGroup}_${currentProduct.batchId}`} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{currentProduct.product.name}</div>
-                        <div className="text-xs text-gray-500">배치: {currentProduct.batchId}</div>
+                        <div className="text-xs text-gray-500">
+                          {currentProduct.expiryInfo?.expiresAt 
+                            ? `유통기한: ${new Date(currentProduct.expiryInfo.expiresAt).toLocaleDateString()}`
+                            : '유통기한 없음'
+                          }
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{currentProduct.batchQuantity}</div>
