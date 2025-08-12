@@ -685,11 +685,11 @@ const StoreInventory: React.FC = () => {
       <div className="bg-white rounded-lg shadow">
         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
           <h2 className="text-lg font-semibold text-gray-900">재고 현황</h2>
-          <div className="flex space-x-2">
+          <div className="flex flex-wrap gap-2">
             <select
               value={expiryFilter}
               onChange={(e) => setExpiryFilter(e.target.value as 'all' | 'normal' | 'warning' | 'danger' | 'expired')}
-              className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+              className="min-w-[120px] px-3 py-2 border border-gray-300 rounded-md text-sm bg-white"
               title="유통기한 상태 필터"
             >
               <option value="all">유통기한 전체</option>
@@ -701,7 +701,7 @@ const StoreInventory: React.FC = () => {
             <select
               value={promotionFilter}
               onChange={(e) => setPromotionFilter(e.target.value as 'all' | 'buy_one_get_one' | 'buy_two_get_one')}
-              className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+              className="min-w-[100px] px-3 py-2 border border-gray-300 rounded-md text-sm bg-white"
               title="행사 필터"
             >
               <option value="all">행사 전체</option>
@@ -710,7 +710,7 @@ const StoreInventory: React.FC = () => {
             </select>
             <button
               onClick={() => setViewMode('current')}
-              className={`px-3 py-1 text-xs rounded ${
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                 viewMode === 'current'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -720,7 +720,7 @@ const StoreInventory: React.FC = () => {
             </button>
             <button
               onClick={() => setViewMode('all')}
-              className={`px-3 py-1 text-xs rounded ${
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                 viewMode === 'all'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -731,7 +731,7 @@ const StoreInventory: React.FC = () => {
             <select
               value={filterStock}
               onChange={(e) => setFilterStock(e.target.value)}
-              className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+              className="min-w-[90px] px-3 py-2 border border-gray-300 rounded-md text-sm bg-white"
             >
               <option value="all">전체</option>
               <option value="low">재고 부족</option>
