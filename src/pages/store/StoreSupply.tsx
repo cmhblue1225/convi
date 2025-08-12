@@ -398,8 +398,8 @@ const StoreSupply: React.FC = () => {
               right: { style: 'thin', color: { argb: 'FF0066CC' } }
             };
             
-            // 숫자 데이터는 중앙 정렬, 텍스트는 좌측 정렬
-            if (col === 2 || col === 4 || col === 5) {
+            // 숫자 데이터와 단위, 요청사유는 중앙 정렬, 상품명은 좌측 정렬
+            if (col === 2 || col === 3 || col === 4 || col === 5 || col === 6) {
               cell.alignment = { vertical: 'middle', horizontal: 'center' };
             } else {
               cell.alignment = { vertical: 'middle', horizontal: 'left' };
