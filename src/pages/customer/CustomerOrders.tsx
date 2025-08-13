@@ -6,6 +6,7 @@ import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import ReorderHistory from '../../components/customer/ReorderHistory';
 import { supabase } from '../../lib/supabase/client';
 import { useAuthStore } from '../../stores/common/authStore';
+import RefundReceiptModal from '../../components/store/RefundReceiptModal';
 
 interface RefundItem {
   product_id: string;
@@ -33,6 +34,8 @@ const CustomerOrders: React.FC = () => {
   
   // 환불 상태 조회
   const [refundStatuses, setRefundStatuses] = useState<{[key: string]: any}>({});
+  const [showRefundReceiptModal, setShowRefundReceiptModal] = useState(false);
+  const [selectedRefundForReceipt, setSelectedRefundForReceipt] = useState<any>(null);
 
   console.log('📋 주문 내역 페이지 - 총 주문 수:', orders.length);
 
@@ -51,11 +54,12 @@ const CustomerOrders: React.FC = () => {
       if (error) throw error;
       
       const statusMap: {[key: string]: any} = {};
-      data?.forEach(refund => {
+      data?.forEach((refund: any) => {
         statusMap[refund.order_id] = refund;
       });
       
       setRefundStatuses(statusMap);
+      console.log('🔄 환불 상태 조회 완료:', statusMap);
     } catch (error) {
       console.error('환불 상태 조회 실패:', error);
     }
@@ -110,17 +114,33 @@ const CustomerOrders: React.FC = () => {
     const refund = refundStatuses[orderId];
     if (!refund) return null;
 
+    // 디버깅용 로그 추가
+    console.log(`🔍 getRefundStatusInfo 호출 - orderId: ${orderId}`, {
+      refund,
+      refundStatuses,
+      allOrderIds: Object.keys(refundStatuses)
+    });
+
     switch (refund.status) {
       case 'pending':
-        return { text: '환불 검토 중', color: 'bg-yellow-100 text-yellow-800' };
+        return { status: 'pending', text: '환불 검토 중', color: 'bg-yellow-100 text-yellow-800' };
       case 'approved':
-        return { text: '환불 승인됨', color: 'bg-green-100 text-green-800' };
+        return { status: 'approved', text: '환불 승인됨', color: 'bg-green-100 text-green-800' };
       case 'rejected':
-        return { text: '환불 거절됨', color: 'bg-red-100 text-red-800' };
-      case 'pending':
-        return { text: '환불 검토 중', color: 'bg-blue-100 text-blue-800' };
+        return { status: 'rejected', text: '환불 거절됨', color: 'bg-red-100 text-red-800' };
+      case 'under_review':
+        return { status: 'under_review', text: '환불 검토 중', color: 'bg-blue-100 text-blue-800' };
       default:
-        return { text: refund.status, color: 'bg-gray-100 text-gray-800' };
+        return { status: refund.status, text: refund.status, color: 'bg-gray-100 text-gray-800' };
+    }
+  };
+
+  // 환불 영수증 모달 열기
+  const handleViewRefundReceipt = (orderId: string) => {
+    const refund = refundStatuses[orderId];
+    if (refund) {
+      setSelectedRefundForReceipt(refund);
+      setShowRefundReceiptModal(true);
     }
   };
 
@@ -322,7 +342,7 @@ const CustomerOrders: React.FC = () => {
       }
 
       // Supabase 함수 호출로 환불 요청 생성
-      const { data, error } = await supabase.rpc('create_refund_request', refundRequestData);
+      const { data, error } = await supabase.rpc('create_refund_request' as any, refundRequestData);
 
       if (error) throw error;
 
@@ -414,10 +434,31 @@ const CustomerOrders: React.FC = () => {
                             </div>
                           )}
                           {refundStatuses[order.id]?.processed_at && (
-                            <div className="text-xs text-gray-600">
+                            <div className="text-xs text-gray-600 mb-2">
                               처리일시: {new Date(refundStatuses[order.id].processed_at).toLocaleString()}
                             </div>
                           )}
+                          {/* 환불 영수증 보기 버튼 - 디버깅 로그 추가 */}
+                          {(() => {
+                            const refundInfo = getRefundStatusInfo(order.id);
+                            const shouldShowButton = refundInfo?.status === 'approved' || refundInfo?.status === 'rejected';
+                            
+                            console.log(`🔍 환불 영수증 버튼 렌더링 - orderId: ${order.id}`, {
+                              refundInfo,
+                              shouldShowButton,
+                              refundStatus: refundInfo?.status,
+                              refundStatuses: refundStatuses[order.id]
+                            });
+                            
+                            return shouldShowButton ? (
+                              <button
+                                onClick={() => handleViewRefundReceipt(order.id)}
+                                className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                              >
+                                환불 영수증 보기
+                              </button>
+                            ) : null;
+                          })()}
                         </div>
                       )}
                     </div>
@@ -710,6 +751,17 @@ const CustomerOrders: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 환불 영수증 모달 */}
+      {showRefundReceiptModal && selectedRefundForReceipt && (
+        <RefundReceiptModal
+          isOpen={showRefundReceiptModal}
+          onClose={() => setShowRefundReceiptModal(false)}
+          refund={selectedRefundForReceipt}
+          order={orders.find(o => o.id === selectedRefundForReceipt.order_id)}
+          storeInfo={{ name: '매장명', address: '매장 주소', phone: '전화번호' }}
+        />
       )}
     </div>
   );
