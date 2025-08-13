@@ -6,6 +6,7 @@ interface PaymentFailData {
   message: string;
   orderId?: string;
   amount?: number;
+  paymentKey?: string;
 }
 
 const PaymentFail: React.FC = () => {
@@ -14,20 +15,22 @@ const PaymentFail: React.FC = () => {
   const [failData, setFailData] = useState<PaymentFailData | null>(null);
 
   useEffect(() => {
-    // URL 파라미터에서 실패 정보 추출
+    // URL 파라미터에서 실패 정보 추출 (토스페이먼츠 v2 표준 파라미터)
     const code = searchParams.get('code');
     const message = searchParams.get('message');
     const orderId = searchParams.get('orderId');
     const amount = searchParams.get('amount');
+    const paymentKey = searchParams.get('paymentKey');
 
     setFailData({
       code: code || 'UNKNOWN_ERROR',
       message: message || '알 수 없는 오류가 발생했습니다.',
       orderId: orderId || undefined,
       amount: amount ? parseInt(amount) : undefined,
+      paymentKey: paymentKey || undefined,
     });
 
-    console.log('❌ 결제 실패 정보:', { code, message, orderId, amount });
+    console.log('❌ 결제 실패 정보:', { code, message, orderId, amount, paymentKey });
   }, [searchParams]);
 
   const getErrorMessage = (code: string): string => {
