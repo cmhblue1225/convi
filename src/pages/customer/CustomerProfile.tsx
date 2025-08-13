@@ -237,7 +237,7 @@ const CustomerProfile: React.FC = () => {
           <p className="text-gray-500 mb-4">프로필을 불러올 수 없습니다.</p>
           <button
             onClick={() => navigate('/customer/home')}
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
           >
             홈으로 돌아가기
           </button>
@@ -248,17 +248,17 @@ const CustomerProfile: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-6 max-w-4xl">
-        {/* 헤더 */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
+      {/* 헤더 */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">프로필</h1>
-              <p className="text-gray-600 mt-1">개인 정보 및 설정을 관리하세요</p>
+              <h1 className="text-3xl font-bold text-gray-900">프로필</h1>
+              <p className="text-gray-600 mt-2">개인 정보 및 설정을 관리하세요</p>
             </div>
             <button
               onClick={() => navigate('/customer/home')}
-              className="text-gray-500 hover:text-gray-700"
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -266,241 +266,268 @@ const CustomerProfile: React.FC = () => {
             </button>
           </div>
         </div>
+      </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* 프로필 정보 */}
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="grid gap-8 lg:grid-cols-3">
+          {/* 메인 콘텐츠 */}
           <div className="lg:col-span-2 space-y-6">
             {/* 기본 정보 */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">기본 정보</h2>
-                <button
-                  onClick={() => setIsEditing(!isEditing)}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                >
-                  {isEditing ? '취소' : '수정'}
-                </button>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                    <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    기본 정보
+                  </h2>
+                  <button
+                    onClick={() => setIsEditing(!isEditing)}
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium px-3 py-1 rounded-lg hover:bg-blue-50 transition-colors"
+                  >
+                    {isEditing ? '취소' : '수정'}
+                  </button>
+                </div>
               </div>
 
-              {isEditing ? (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+              <div className="p-6">
+                {isEditing ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          이름 *
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.first_name}
+                          onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          성
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.last_name}
+                          onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                        />
+                      </div>
+                    </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        이름 *
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        이메일
                       </label>
                       <input
-                        type="text"
-                        value={formData.first_name}
-                        onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                       />
                     </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        성
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        전화번호
                       </label>
                       <input
-                        type="text"
-                        value={formData.last_name}
-                        onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                        placeholder="010-1234-5678"
                       />
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      이메일
-                    </label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      전화번호
-                    </label>
-                    <input
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="010-1234-5678"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        생년월일
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.birth_date}
-                        onChange={(e) => setFormData(prev => ({ ...prev, birth_date: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          생년월일
+                        </label>
+                        <input
+                          type="date"
+                          value={formData.birth_date}
+                          onChange={(e) => setFormData(prev => ({ ...prev, birth_date: e.target.value }))}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          성별
+                        </label>
+                        <select
+                          value={formData.gender}
+                          onChange={(e) => setFormData(prev => ({ ...prev, gender: e.target.value as any }))}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                        >
+                          <option value="prefer_not_to_say">선택하지 않음</option>
+                          <option value="male">남성</option>
+                          <option value="female">여성</option>
+                          <option value="other">기타</option>
+                        </select>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        성별
-                      </label>
-                      <select
-                        value={formData.gender}
-                        onChange={(e) => setFormData(prev => ({ ...prev, gender: e.target.value as any }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+
+                    <div className="flex gap-3 pt-4">
+                      <button
+                        onClick={handleSaveProfile}
+                        disabled={isSaving}
+                        className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium"
                       >
-                        <option value="prefer_not_to_say">선택하지 않음</option>
-                        <option value="male">남성</option>
-                        <option value="female">여성</option>
-                        <option value="other">기타</option>
-                      </select>
+                        {isSaving ? '저장 중...' : '저장'}
+                      </button>
+                      <button
+                        onClick={() => setIsEditing(false)}
+                        className="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                      >
+                        취소
+                      </button>
                     </div>
                   </div>
-
-                  <div className="flex gap-3 pt-4">
-                    <button
-                      onClick={handleSaveProfile}
-                      disabled={isSaving}
-                      className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 disabled:opacity-50"
-                    >
-                      {isSaving ? '저장 중...' : '저장'}
-                    </button>
-                    <button
-                      onClick={() => setIsEditing(false)}
-                      className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400"
-                    >
-                      취소
-                    </button>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <span className="text-sm text-gray-500">이름</span>
+                        <p className="font-medium text-gray-900 mt-1">
+                          {profile.first_name} {profile.last_name || ''}
+                        </p>
+                      </div>
+                      {profile.email && (
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <span className="text-sm text-gray-500">이메일</span>
+                          <p className="font-medium text-gray-900 mt-1">{profile.email}</p>
+                        </div>
+                      )}
+                    </div>
+                    {profile.phone && (
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <span className="text-sm text-gray-500">전화번호</span>
+                        <p className="font-medium text-gray-900 mt-1">{profile.phone}</p>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {profile.birth_date && (
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <span className="text-sm text-gray-500">생년월일</span>
+                          <p className="font-medium text-gray-900 mt-1">
+                            {new Date(profile.birth_date).toLocaleDateString()}
+                          </p>
+                        </div>
+                      )}
+                      {profile.gender && profile.gender !== 'prefer_not_to_say' && (
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <span className="text-sm text-gray-500">성별</span>
+                          <p className="font-medium text-gray-900 mt-1">
+                            {profile.gender === 'male' ? '남성' : 
+                             profile.gender === 'female' ? '여성' : '기타'}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">이름</span>
-                    <span className="font-medium">
-                      {profile.first_name} {profile.last_name || ''}
-                    </span>
-                  </div>
-                  {profile.email && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">이메일</span>
-                      <span className="font-medium">{profile.email}</span>
-                    </div>
-                  )}
-                  {profile.phone && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">전화번호</span>
-                      <span className="font-medium">{profile.phone}</span>
-                    </div>
-                  )}
-                  {profile.birth_date && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">생년월일</span>
-                      <span className="font-medium">{new Date(profile.birth_date).toLocaleDateString()}</span>
-                    </div>
-                  )}
-                  {profile.gender && profile.gender !== 'prefer_not_to_say' && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">성별</span>
-                      <span className="font-medium">
-                        {profile.gender === 'male' ? '남성' : 
-                         profile.gender === 'female' ? '여성' : '기타'}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             {/* 알림 설정 */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">알림 설정</h2>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">이메일 알림</p>
-                    <p className="text-sm text-gray-500">주문 상태 및 프로모션 정보를 이메일로 받습니다</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={notificationSettings.email_notifications}
-                      onChange={(e) => handleNotificationChange('email_notifications', e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
-                </div>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                  <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM4.19 4.82A9 9 0 0112 3c4.97 0 9 4.03 9 9a9 9 0 01-9 9 9 9 0 01-7.81-7.19z" />
+                  </svg>
+                  알림 설정
+                </h2>
+              </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">푸시 알림</p>
-                    <p className="text-sm text-gray-500">주문 상태 업데이트를 푸시로 받습니다</p>
+              <div className="p-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900">이메일 알림</p>
+                      <p className="text-sm text-gray-500">주문 상태 및 프로모션 정보를 이메일로 받습니다</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={notificationSettings.email_notifications}
+                        onChange={(e) => handleNotificationChange('email_notifications', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                    </label>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={notificationSettings.push_notifications}
-                      onChange={(e) => handleNotificationChange('push_notifications', e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
-                </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">주문 업데이트</p>
-                    <p className="text-sm text-gray-500">주문 상태 변경 시 알림을 받습니다</p>
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900">푸시 알림</p>
+                      <p className="text-sm text-gray-500">주문 상태 업데이트를 푸시로 받습니다</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={notificationSettings.push_notifications}
+                        onChange={(e) => handleNotificationChange('push_notifications', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                    </label>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={notificationSettings.order_updates}
-                      onChange={(e) => handleNotificationChange('order_updates', e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
-                </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">프로모션 알림</p>
-                    <p className="text-sm text-gray-500">할인 및 이벤트 정보를 받습니다</p>
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900">주문 업데이트</p>
+                      <p className="text-sm text-gray-500">주문 상태 변경 시 알림을 받습니다</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={notificationSettings.order_updates}
+                        onChange={(e) => handleNotificationChange('order_updates', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                    </label>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={notificationSettings.promotions}
-                      onChange={(e) => handleNotificationChange('promotions', e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
-                </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">뉴스레터 구독</p>
-                    <p className="text-sm text-gray-500">주간 뉴스레터를 이메일로 받습니다</p>
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900">프로모션 알림</p>
+                      <p className="text-sm text-gray-500">할인 및 이벤트 정보를 받습니다</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={notificationSettings.promotions}
+                        onChange={(e) => handleNotificationChange('promotions', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                    </label>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={notificationSettings.newsletter}
-                      onChange={(e) => handleNotificationChange('newsletter', e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
+
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900">뉴스레터 구독</p>
+                      <p className="text-sm text-gray-500">주간 뉴스레터를 이메일로 받습니다</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={notificationSettings.newsletter}
+                        onChange={(e) => handleNotificationChange('newsletter', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
@@ -509,167 +536,220 @@ const CustomerProfile: React.FC = () => {
           {/* 사이드바 */}
           <div className="space-y-6">
             {/* 포인트 정보 */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">보유 포인트</h2>
-              <div className="text-center mb-4">
-                <div className="text-3xl font-bold text-blue-600 mb-1">
-                  {totalPoints.toLocaleString()}P
-                </div>
-                <p className="text-sm text-gray-500">1P = 1원</p>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-500 to-blue-600">
+                <h2 className="text-lg font-semibold text-white flex items-center">
+                  <svg className="w-5 h-5 text-white mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                  </svg>
+                  보유 포인트
+                </h2>
               </div>
-              
-              {points.length > 0 && (
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">최근 포인트 내역</h3>
-                  {points.slice(0, 5).map((point) => (
-                    <div key={point.id} className="flex justify-between items-center text-sm py-1">
-                      <div>
-                        <span className="text-gray-600">{point.description || '포인트'}</span>
-                        <div className="text-xs text-gray-400">
-                          {new Date(point.created_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                      <span className={`font-medium ${
-                        point.type === 'earned' || point.type === 'bonus' 
-                          ? 'text-green-600' 
-                          : 'text-red-600'
-                      }`}>
-                        {point.type === 'earned' || point.type === 'bonus' ? '+' : '-'}
-                        {point.amount.toLocaleString()}P
-                      </span>
-                    </div>
-                  ))}
+              <div className="p-6">
+                <div className="text-center mb-6">
+                  <div className="text-4xl font-bold text-blue-600 mb-2">
+                    {totalPoints.toLocaleString()}P
+                  </div>
+                  <p className="text-sm text-gray-500">1P = 1원</p>
                 </div>
-              )}
+                
+                {points.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-medium text-gray-700 mb-3">최근 포인트 내역</h3>
+                    <div className="max-h-48 overflow-y-auto space-y-2">
+                      {points.slice(0, 5).map((point) => (
+                        <div key={point.id} className="flex justify-between items-center text-sm py-2 px-3 bg-gray-50 rounded-lg">
+                          <div>
+                            <span className="text-gray-700 font-medium">{point.description || '포인트'}</span>
+                            <div className="text-xs text-gray-400 mt-1">
+                              {new Date(point.created_at).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <span className={`font-bold ${
+                            point.type === 'earned' || point.type === 'bonus' 
+                              ? 'text-green-600' 
+                              : 'text-red-600'
+                          }`}>
+                            {point.type === 'earned' || point.type === 'bonus' ? '+' : '-'}
+                            {point.amount.toLocaleString()}P
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* 쿠폰 정보 */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">보유 쿠폰</h2>
-              {userCoupons.length > 0 ? (
-                <div className="space-y-3">
-                  {userCoupons.map((userCoupon) => (
-                    <div key={userCoupon.id} className="border border-gray-200 rounded-lg p-3">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-medium text-sm">{userCoupon.coupon.name}</h3>
-                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                          {userCoupon.coupon.discount_type === 'percentage' 
-                            ? `${userCoupon.coupon.discount_value}%` 
-                            : `${userCoupon.coupon.discount_value.toLocaleString()}원`}
-                        </span>
-                      </div>
-                      {userCoupon.coupon.description && (
-                        <p className="text-xs text-gray-600 mb-2">{userCoupon.coupon.description}</p>
-                      )}
-                      <div className="text-xs text-gray-500">
-                        최소 주문: {userCoupon.coupon.min_order_amount.toLocaleString()}원
-                        {userCoupon.expires_at && (
-                          <div>만료: {new Date(userCoupon.expires_at).toLocaleDateString()}</div>
-                        )}
-                        {userCoupon.coupon.valid_until && (
-                          <div>유효기간: {new Date(userCoupon.coupon.valid_until).toLocaleDateString()}</div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center text-gray-500 py-8">
-                  <svg className="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-purple-500 to-purple-600">
+                <h2 className="text-lg font-semibold text-white flex items-center">
+                  <svg className="w-5 h-5 text-white mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                   </svg>
-                  <p className="text-sm">보유한 쿠폰이 없습니다</p>
-                </div>
-              )}
+                  보유 쿠폰
+                </h2>
+              </div>
+              <div className="p-6">
+                {userCoupons.length > 0 ? (
+                  <div className="space-y-3">
+                    {userCoupons.map((userCoupon) => (
+                      <div key={userCoupon.id} className="border border-purple-200 rounded-lg p-4 bg-purple-50">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-medium text-sm text-gray-900">{userCoupon.coupon.name}</h3>
+                          <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-medium">
+                            {userCoupon.coupon.discount_type === 'percentage' 
+                              ? `${userCoupon.coupon.discount_value}%` 
+                              : `${userCoupon.coupon.discount_value.toLocaleString()}원`}
+                          </span>
+                        </div>
+                        {userCoupon.coupon.description && (
+                          <p className="text-xs text-gray-600 mb-2">{userCoupon.coupon.description}</p>
+                        )}
+                        <div className="text-xs text-gray-500 space-y-1">
+                          <div>최소 주문: {userCoupon.coupon.min_order_amount.toLocaleString()}원</div>
+                          {userCoupon.expires_at && (
+                            <div>만료: {new Date(userCoupon.expires_at).toLocaleDateString()}</div>
+                          )}
+                          {userCoupon.coupon.valid_until && (
+                            <div>유효기간: {new Date(userCoupon.coupon.valid_until).toLocaleDateString()}</div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center text-gray-500 py-8">
+                    <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                    </svg>
+                    <p className="text-sm">보유한 쿠폰이 없습니다</p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* 주문 통계 */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">주문 통계</h2>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">총 주문 수</span>
-                  <span className="font-medium">{orderStats.totalOrders}건</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">완료된 주문</span>
-                  <span className="font-medium">{orderStats.completedOrders}건</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">총 구매 금액</span>
-                  <span className="font-medium">{orderStats.totalSpent.toLocaleString()}원</span>
-                </div>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-green-500 to-green-600">
+                <h2 className="text-lg font-semibold text-white flex items-center">
+                  <svg className="w-5 h-5 text-white mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  주문 통계
+                </h2>
               </div>
-              <button
-                onClick={() => navigate('/customer/orders')}
-                className="w-full mt-4 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600"
-              >
-                주문 내역 보기
-              </button>
+              <div className="p-6">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">총 주문 수</span>
+                    <span className="font-bold text-gray-900">{orderStats.totalOrders}건</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">완료된 주문</span>
+                    <span className="font-bold text-green-600">{orderStats.completedOrders}건</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">총 구매 금액</span>
+                    <span className="font-bold text-blue-600">{orderStats.totalSpent.toLocaleString()}원</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate('/customer/orders')}
+                  className="w-full mt-6 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                >
+                  주문 내역 보기
+                </button>
+              </div>
             </div>
 
             {/* 계정 정보 */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">계정 정보</h2>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">가입일</span>
-                  <span className="font-medium">
-                    {new Date(profile.created_at).toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">마지막 업데이트</span>
-                  <span className="font-medium">
-                    {new Date(profile.updated_at).toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">계정 상태</span>
-                  <span className={`font-medium ${profile.is_active ? 'text-green-600' : 'text-red-600'}`}>
-                    {profile.is_active ? '활성' : '비활성'}
-                  </span>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <svg className="w-5 h-5 text-gray-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  계정 정보
+                </h2>
+              </div>
+              <div className="p-6">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">가입일</span>
+                    <span className="font-medium text-gray-900">
+                      {new Date(profile.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">마지막 업데이트</span>
+                    <span className="font-medium text-gray-900">
+                      {new Date(profile.updated_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">계정 상태</span>
+                    <span className={`font-medium ${profile.is_active ? 'text-green-600' : 'text-red-600'}`}>
+                      {profile.is_active ? '활성' : '비활성'}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* 빠른 액션 */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">빠른 액션</h2>
-              <div className="space-y-3">
-                <button
-                  onClick={() => navigate('/customer/home')}
-                  className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center">
-                    <svg className="w-5 h-5 text-gray-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
-                    <span>홈으로 돌아가기</span>
-                  </div>
-                </button>
-                <button
-                  onClick={() => navigate('/customer/orders')}
-                  className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center">
-                    <svg className="w-5 h-5 text-gray-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                    </svg>
-                    <span>주문 내역</span>
-                  </div>
-                </button>
-                <button
-                  onClick={() => navigate('/customer/products')}
-                  className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center">
-                    <svg className="w-5 h-5 text-gray-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                    </svg>
-                    <span>상품 보기</span>
-                  </div>
-                </button>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <svg className="w-5 h-5 text-gray-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  빠른 액션
+                </h2>
+              </div>
+              <div className="p-6">
+                <div className="space-y-3">
+                  <button
+                    onClick={() => navigate('/customer/home')}
+                    className="w-full text-left p-4 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 group"
+                  >
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3 group-hover:bg-blue-200 transition-colors">
+                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                      </div>
+                      <span className="font-medium text-gray-900">홈으로 돌아가기</span>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => navigate('/customer/orders')}
+                    className="w-full text-left p-4 rounded-lg border border-gray-200 hover:bg-green-50 hover:border-green-300 transition-all duration-200 group"
+                  >
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3 group-hover:bg-green-200 transition-colors">
+                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
+                      </div>
+                      <span className="font-medium text-gray-900">주문 내역</span>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => navigate('/customer/products')}
+                    className="w-full text-left p-4 rounded-lg border border-gray-200 hover:bg-purple-50 hover:border-purple-300 transition-all duration-200 group"
+                  >
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3 group-hover:bg-purple-200 transition-colors">
+                        <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                      </div>
+                      <span className="font-medium text-gray-900">상품 보기</span>
+                    </div>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
