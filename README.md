@@ -110,7 +110,7 @@ npm run dev
    ```
 
 2. **SPA 라우팅 설정 확인**
-   - `serve.json` - serve 패키지 설정
+   - `server-spa.js` - 커스텀 SPA 서버 (Express 기반)
    - `public/_redirects` - Netlify 호환 redirects
    - `vercel.json` - Vercel 호환 rewrites
    - `public/_headers` - 추가 헤더 설정
@@ -120,7 +120,7 @@ npm run dev
 2. **GitHub 저장소 연결**
 3. **빌드 설정**
    - Build Command: `npm install && npm run build`
-   - Start Command: `npx serve -c serve.json -l 10000 --single --no-clipboard`
+   - Start Command: `node server-spa.js`
 4. **환경 변수 설정**
    - `NODE_ENV=production`
    - `PORT=10000`

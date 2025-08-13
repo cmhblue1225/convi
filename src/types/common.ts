@@ -6,7 +6,8 @@ export interface Product {
   name: string;
   description?: string;
   price: number;
-  image_url?: string;
+  image_url?: string;  // 하위 호환성을 위해 유지
+  image_urls?: string[];  // 실제 데이터베이스 필드
   category_id?: string;
   created_at?: string;
   updated_at?: string;
