@@ -88,9 +88,16 @@ interface ReturnRequestItem {
   current_stock: number;
 }
 
+interface Store {
+  id: string;
+  name: string;
+  address: string;
+}
+
 const HQSupply: React.FC = () => {
   const [supplyRequests, setSupplyRequests] = useState<SupplyRequest[]>([]);
   const [returnRequests, setReturnRequests] = useState<ReturnRequest[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<SupplyRequest | null>(null);
   const [selectedReturnRequest, setSelectedReturnRequest] = useState<ReturnRequest | null>(null);
@@ -103,10 +110,17 @@ const HQSupply: React.FC = () => {
   const [showShipmentModal, setShowShipmentModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [returnFilterStatus, setReturnFilterStatus] = useState<string>('all');
+  const [filterStore, setFilterStore] = useState<string>('all');
+  const [returnFilterStore, setReturnFilterStore] = useState<string>('all');
   const [approverSignature, setApproverSignature] = useState<string>('');
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'supply' | 'return'>('supply');
   const { user } = useAuthStore();
+
+  // 초기화 및 지점 목록 로드
+  useEffect(() => {
+    fetchStores();
+  }, []);
 
   // 실시간 구독 설정
   useEffect(() => {
@@ -160,7 +174,29 @@ const HQSupply: React.FC = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [filterStatus, returnFilterStatus, activeTab]);
+  }, [filterStatus, returnFilterStatus, filterStore, returnFilterStore, activeTab]);
+
+  const fetchStores = async () => {
+    try {
+      console.log('🏪 지점 목록 조회 시작...');
+      
+      const { data: storesData, error: storesError } = await supabase
+        .from('stores')
+        .select('id, name, address')
+        .eq('is_active', true)
+        .order('name');
+
+      if (storesError) {
+        console.error('❌ 지점 목록 조회 실패:', storesError);
+        return;
+      }
+
+      console.log('✅ 지점 목록 조회 성공:', storesData?.length || 0, '개');
+      setStores(storesData || []);
+    } catch (error) {
+      console.error('❌ 지점 목록 조회 중 오류:', error);
+    }
+  };
 
   const fetchSupplyRequests = async () => {
     try {
@@ -181,6 +217,10 @@ const HQSupply: React.FC = () => {
 
       if (filterStatus !== 'all') {
         query = query.eq('status', filterStatus);
+      }
+
+      if (filterStore !== 'all') {
+        query = query.eq('store_id', filterStore);
       }
 
       const { data, error } = await query;
@@ -255,6 +295,10 @@ const HQSupply: React.FC = () => {
 
       if (returnFilterStatus !== 'all') {
         query = query.eq('status', returnFilterStatus);
+      }
+
+      if (returnFilterStore !== 'all') {
+        query = query.eq('store_id', returnFilterStore);
       }
 
       const { data, error } = await query;
@@ -976,48 +1020,92 @@ const HQSupply: React.FC = () => {
       {/* 필터 */}
       <div className="mb-6 flex gap-4">
         {activeTab === 'supply' ? (
-          <div className="relative">
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white min-w-[140px]"
-            >
-              <option value="all">전체 상태</option>
-              <option value="submitted">요청됨</option>
-              <option value="approved">승인됨</option>
-              <option value="shipped">배송중</option>
-              <option value="delivered">배송완료</option>
-              <option value="rejected">거절됨</option>
-            </select>
-            {/* 드롭다운 화살표 아이콘 */}
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+          <>
+            <div className="relative">
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white min-w-[140px]"
+              >
+                <option value="all">전체 상태</option>
+                <option value="submitted">요청됨</option>
+                <option value="approved">승인됨</option>
+                <option value="shipped">배송중</option>
+                <option value="delivered">배송완료</option>
+                <option value="rejected">거절됨</option>
+              </select>
+              {/* 드롭다운 화살표 아이콘 */}
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
-          </div>
+            <div className="relative">
+              <select
+                value={filterStore}
+                onChange={(e) => setFilterStore(e.target.value)}
+                className="pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white min-w-[160px]"
+              >
+                <option value="all">전체 지점</option>
+                {stores.map((store) => (
+                  <option key={store.id} value={store.id}>
+                    {store.name}
+                  </option>
+                ))}
+              </select>
+              {/* 드롭다운 화살표 아이콘 */}
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          </>
         ) : (
-          <div className="relative">
-            <select
-              value={returnFilterStatus}
-              onChange={(e) => setReturnFilterStatus(e.target.value)}
-              className="pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white min-w-[140px]"
-            >
-              <option value="all">전체 상태</option>
-              <option value="submitted">제출됨</option>
-              <option value="approved">승인됨</option>
-              <option value="rejected">거부됨</option>
-              <option value="processing">처리중</option>
-              <option value="completed">완료됨</option>
-              <option value="cancelled">취소됨</option>
-            </select>
-            {/* 드롭다운 화살표 아이콘 */}
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+          <>
+            <div className="relative">
+              <select
+                value={returnFilterStatus}
+                onChange={(e) => setReturnFilterStatus(e.target.value)}
+                className="pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white min-w-[140px]"
+              >
+                <option value="all">전체 상태</option>
+                <option value="submitted">제출됨</option>
+                <option value="approved">승인됨</option>
+                <option value="rejected">거부됨</option>
+                <option value="processing">처리중</option>
+                <option value="completed">완료됨</option>
+                <option value="cancelled">취소됨</option>
+              </select>
+              {/* 드롭다운 화살표 아이콘 */}
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
-          </div>
+            <div className="relative">
+              <select
+                value={returnFilterStore}
+                onChange={(e) => setReturnFilterStore(e.target.value)}
+                className="pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white min-w-[160px]"
+              >
+                <option value="all">전체 지점</option>
+                {stores.map((store) => (
+                  <option key={store.id} value={store.id}>
+                    {store.name}
+                  </option>
+                ))}
+              </select>
+              {/* 드롭다운 화살표 아이콘 */}
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          </>
         )}
       </div>
 
