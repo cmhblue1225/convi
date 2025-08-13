@@ -5,6 +5,8 @@ import { useAuthStore } from '../../stores/common/authStore';
 import * as ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import SignaturePad from '../../components/common/SignaturePad';
+import ReturnRequestModal from '../../components/store/ReturnRequestModal';
+import ReturnRequestList from '../../components/store/ReturnRequestList';
 
 interface StoreProduct {
   id: string;
@@ -61,6 +63,9 @@ const StoreSupply: React.FC = () => {
   const [modalProducts, setModalProducts] = useState<StoreProduct[]>([]);
   const [approverSignature, setApproverSignature] = useState<string>('');
   const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [returnRefreshTrigger, setReturnRefreshTrigger] = useState(0);
+  const [activeTab, setActiveTab] = useState<'supply' | 'return'>('supply');
   const { user } = useAuthStore();
 
   const fetchData = useCallback(async () => {
@@ -594,7 +599,7 @@ const StoreSupply: React.FC = () => {
           worksheet.addImage(imageId, {
             tl: { col: 5.2, row: signatureStartRow + 0.95 }, // F열 시작점 (F열 너비 30에 맞춤)
             br: { col: 6.8, row: signatureStartRow + 1.05 }  // F열 끝점 (F열 너비 30에 맞춤)
-          } as any);
+          } as ExcelJS.ImageRange);
           
           // 서명 이미지가 있는 행의 높이를 고정하여 인쇄 안정성 향상
           worksheet.getRow(signatureStartRow + 1).height = 100; // 서명 이미지가 셀 내부에 완벽하게 맞도록 높이 증가
@@ -627,11 +632,8 @@ const StoreSupply: React.FC = () => {
       
       // A4 페이지 기준 계산 (297mm × 210mm, 여백 제외)
       const a4Height = 297; // mm
-      const a4Width = 210; // mm
       const marginTop = 12.7; // 0.5인치 = 12.7mm
       const marginBottom = 12.7;
-      const marginLeft = 7.6; // 0.3인치 = 7.6mm
-      const marginRight = 7.6;
       
       // 실제 사용 가능한 높이 (mm)
       const usableHeight = a4Height - marginTop - marginBottom;
@@ -994,6 +996,10 @@ const StoreSupply: React.FC = () => {
     );
   }
 
+  const handleReturnRequestSuccess = () => {
+    setReturnRefreshTrigger(prev => prev + 1);
+  };
+
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -1001,40 +1007,89 @@ const StoreSupply: React.FC = () => {
         <p className="text-gray-600">재고 현황을 확인하고 본사에 물류를 요청합니다.</p>
       </div>
 
-      {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm font-medium text-gray-500">전체 요청</div>
-          <div className="text-2xl font-bold text-gray-900">{supplyRequests.length}</div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm font-medium text-gray-500">대기중 요청</div>
-          <div className="text-2xl font-bold text-blue-600">
-            {supplyRequests.filter(r => r.status === 'submitted').length}
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm font-medium text-gray-500">배송중</div>
-          <div className="text-2xl font-bold text-purple-600">
-            {supplyRequests.filter(r => r.status === 'shipped').length}
-          </div>
+      {/* 탭 네비게이션 */}
+      <div className="mb-6">
+        <div className="border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('supply')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'supply'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              물류 요청
+            </button>
+            <button
+              onClick={() => setActiveTab('return')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'return'
+                  ? 'border-red-500 text-red-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              반품 요청
+            </button>
+          </nav>
         </div>
       </div>
 
-      {/* 물류 요청 생성 버튼 */}
-      <div className="mb-6 flex justify-end">
-        <button
-          onClick={handleCreateRequest}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
-        >
-          물류 요청
-        </button>
-      </div>
+      {/* 탭별 콘텐츠 */}
+      {activeTab === 'supply' ? (
+        <>
+          {/* 통계 카드 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="bg-white rounded-lg shadow p-4">
+              <div className="text-sm font-medium text-gray-500">전체 요청</div>
+              <div className="text-2xl font-bold text-gray-900">{supplyRequests.length}</div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-4">
+              <div className="text-sm font-medium text-gray-500">대기중 요청</div>
+              <div className="text-2xl font-bold text-blue-600">
+                {supplyRequests.filter(r => r.status === 'submitted').length}
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-4">
+              <div className="text-sm font-medium text-gray-500">배송중</div>
+              <div className="text-2xl font-bold text-purple-600">
+                {supplyRequests.filter(r => r.status === 'shipped').length}
+              </div>
+            </div>
+          </div>
+
+          {/* 물류 요청 생성 버튼 */}
+          <div className="mb-6 flex justify-end">
+            <button
+              onClick={handleCreateRequest}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+            >
+              물류 요청
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* 반품 요청 버튼 */}
+          <div className="mb-6 flex justify-end">
+            <button
+              onClick={() => setShowReturnModal(true)}
+              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm flex items-center"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m5 5v1a4 4 0 01-4 4H8m0 0l3-3m-3 3l-3-3" />
+              </svg>
+              반품 요청
+            </button>
+          </div>
+        </>
+      )}
 
       {/* 물류 요청 목록 */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-gray-900">물류 요청 목록</h2>
+      {activeTab === 'supply' && (
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-gray-900">물류 요청 목록</h2>
           <div className="flex space-x-2">
             <button
               onClick={() => setFilterStatus('all')}
@@ -1160,7 +1215,20 @@ const StoreSupply: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </div>
+        </div>
+      )}
+
+      {/* 반품 요청 목록 */}
+      {activeTab === 'return' && (
+        <ReturnRequestList refreshTrigger={returnRefreshTrigger} />
+      )}
+
+      {/* 반품 요청 모달 */}
+      <ReturnRequestModal
+        isOpen={showReturnModal}
+        onClose={() => setShowReturnModal(false)}
+        onSuccess={handleReturnRequestSuccess}
+      />
 
       {/* 물류 요청 생성 모달 */}
       {showCreateModal && (

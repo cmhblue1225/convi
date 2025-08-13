@@ -47,38 +47,126 @@ interface SupplyRequestItem {
   };
 }
 
+interface ReturnRequest {
+  id: string;
+  request_number: string;
+  store_id: string;
+  requested_by: string;
+  status: 'submitted' | 'approved' | 'rejected' | 'processing' | 'completed' | 'cancelled';
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  total_amount: number;
+  approved_amount: number | null;
+  return_reason: string;
+  additional_notes: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  rejected_reason: string | null;
+  processed_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+  store?: {
+    name: string;
+    address: string;
+  };
+  requester?: {
+    full_name: string;
+  };
+  items?: ReturnRequestItem[];
+}
+
+interface ReturnRequestItem {
+  id: string;
+  return_request_id: string;
+  product_id: string;
+  product_name: string;
+  requested_quantity: number;
+  approved_quantity: number | null;
+  unit_cost: number;
+  total_cost: number;
+  condition_notes: string | null;
+  current_stock: number;
+}
+
+interface Store {
+  id: string;
+  name: string;
+  address: string;
+}
+
 const HQSupply: React.FC = () => {
   const [supplyRequests, setSupplyRequests] = useState<SupplyRequest[]>([]);
+  const [returnRequests, setReturnRequests] = useState<ReturnRequest[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<SupplyRequest | null>(null);
+  const [selectedReturnRequest, setSelectedReturnRequest] = useState<ReturnRequest | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showReturnDetailModal, setShowReturnDetailModal] = useState(false);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [showReturnApprovalModal, setShowReturnApprovalModal] = useState(false);
   const [showRejectionModal, setShowRejectionModal] = useState(false);
+  const [showReturnRejectionModal, setShowReturnRejectionModal] = useState(false);
   const [showShipmentModal, setShowShipmentModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [returnFilterStatus, setReturnFilterStatus] = useState<string>('all');
+  const [filterStore, setFilterStore] = useState<string>('all');
+  const [returnFilterStore, setReturnFilterStore] = useState<string>('all');
   const [approverSignature, setApproverSignature] = useState<string>('');
   const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<'supply' | 'return'>('supply');
   const { user } = useAuthStore();
+
+  // 초기화 및 지점 목록 로드
+  useEffect(() => {
+    fetchStores();
+  }, []);
 
   // 실시간 구독 설정
   useEffect(() => {
-    fetchSupplyRequests();
+    if (activeTab === 'supply') {
+      fetchSupplyRequests();
+    } else {
+      fetchReturnRequests();
+    }
 
     // 실시간 구독
     const subscription = supabase
-      .channel('supply_requests_changes')
+      .channel('supply_and_return_requests_changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'supply_requests' }, 
         (payload) => {
           console.log('🔄 물류 요청 데이터 변경 감지:', payload);
-          fetchSupplyRequests(); // 데이터 새로고침
+          if (activeTab === 'supply') {
+            fetchSupplyRequests(); // 데이터 새로고침
+          }
         }
       )
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'supply_request_items' }, 
         (payload) => {
           console.log('🔄 물류 요청 아이템 데이터 변경 감지:', payload);
-          fetchSupplyRequests(); // 데이터 새로고침
+          if (activeTab === 'supply') {
+            fetchSupplyRequests(); // 데이터 새로고침
+          }
+        }
+      )
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'return_requests' }, 
+        (payload) => {
+          console.log('🔄 반품 요청 데이터 변경 감지:', payload);
+          if (activeTab === 'return') {
+            fetchReturnRequests(); // 데이터 새로고침
+          }
+        }
+      )
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'return_request_items' }, 
+        (payload) => {
+          console.log('🔄 반품 요청 아이템 데이터 변경 감지:', payload);
+          if (activeTab === 'return') {
+            fetchReturnRequests(); // 데이터 새로고침
+          }
         }
       )
       .subscribe();
@@ -86,7 +174,29 @@ const HQSupply: React.FC = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [filterStatus]);
+  }, [filterStatus, returnFilterStatus, filterStore, returnFilterStore, activeTab]);
+
+  const fetchStores = async () => {
+    try {
+      console.log('🏪 지점 목록 조회 시작...');
+      
+      const { data: storesData, error: storesError } = await supabase
+        .from('stores')
+        .select('id, name, address')
+        .eq('is_active', true)
+        .order('name');
+
+      if (storesError) {
+        console.error('❌ 지점 목록 조회 실패:', storesError);
+        return;
+      }
+
+      console.log('✅ 지점 목록 조회 성공:', storesData?.length || 0, '개');
+      setStores(storesData || []);
+    } catch (error) {
+      console.error('❌ 지점 목록 조회 중 오류:', error);
+    }
+  };
 
   const fetchSupplyRequests = async () => {
     try {
@@ -107,6 +217,10 @@ const HQSupply: React.FC = () => {
 
       if (filterStatus !== 'all') {
         query = query.eq('status', filterStatus);
+      }
+
+      if (filterStore !== 'all') {
+        query = query.eq('store_id', filterStore);
       }
 
       const { data, error } = await query;
@@ -164,9 +278,53 @@ const HQSupply: React.FC = () => {
     }
   };
 
+  const fetchReturnRequests = async () => {
+    try {
+      setLoading(true);
+      console.log('🔍 반품 요청 조회 시작...');
+      
+      let query = supabase
+        .from('return_requests')
+        .select(`
+          *,
+          store:stores(name, address),
+          requester:profiles!return_requests_requested_by_fkey(full_name),
+          items:return_request_items(*)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (returnFilterStatus !== 'all') {
+        query = query.eq('status', returnFilterStatus);
+      }
+
+      if (returnFilterStore !== 'all') {
+        query = query.eq('store_id', returnFilterStore);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('❌ 반품 요청 조회 실패:', error);
+        return;
+      }
+
+      console.log('📊 조회된 반품 요청 수:', data?.length || 0);
+      setReturnRequests(data || []);
+    } catch (error) {
+      console.error('❌ 반품 요청 조회 중 오류:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleViewDetail = (request: SupplyRequest) => {
     setSelectedRequest(request);
     setShowDetailModal(true);
+  };
+
+  const handleViewReturnDetail = (request: ReturnRequest) => {
+    setSelectedReturnRequest(request);
+    setShowReturnDetailModal(true);
   };
 
   const handleApprove = (request: SupplyRequest) => {
@@ -174,9 +332,19 @@ const HQSupply: React.FC = () => {
     setShowApprovalModal(true);
   };
 
+  const handleApproveReturn = (request: ReturnRequest) => {
+    setSelectedReturnRequest(request);
+    setShowReturnApprovalModal(true);
+  };
+
   const handleReject = (request: SupplyRequest) => {
     setSelectedRequest(request);
     setShowRejectionModal(true);
+  };
+
+  const handleRejectReturn = (request: ReturnRequest) => {
+    setSelectedReturnRequest(request);
+    setShowReturnRejectionModal(true);
   };
 
   const handleShip = (request: SupplyRequest) => {
@@ -337,6 +505,139 @@ const HQSupply: React.FC = () => {
     }
   };
 
+  const approveReturnRequest = async (formData: FormData) => {
+    if (!selectedReturnRequest) return;
+
+    try {
+      const returnId = selectedReturnRequest.id;
+      
+      // 승인된 수량 처리
+      const approvedItems = selectedReturnRequest.items?.map(item => {
+        const approvedQuantity = parseInt(formData.get(`approved_quantity_${item.id}`) as string) || 0;
+        return {
+          id: item.id,
+          approved_quantity: Math.min(approvedQuantity, item.requested_quantity)
+        };
+      }) || [];
+
+      const approvedAmount = approvedItems.reduce((sum, item) => {
+        const originalItem = selectedReturnRequest.items?.find(i => i.id === item.id);
+        return sum + (originalItem ? item.approved_quantity! * originalItem.unit_cost : 0);
+      }, 0);
+
+      // 승인된 수량을 각 아이템에 먼저 업데이트
+      for (const item of approvedItems) {
+        const { error: itemError } = await supabase
+          .from('return_request_items')
+          .update({
+            approved_quantity: item.approved_quantity
+          })
+          .eq('id', item.id);
+
+        if (itemError) {
+          throw itemError;
+        }
+      }
+
+      // 반품 요청 승인 업데이트 (트리거 실행을 위해 마지막에 실행)
+      const { error: requestError } = await supabase
+        .from('return_requests')
+        .update({
+          status: 'approved',
+          approved_amount: approvedAmount,
+          approved_by: user?.id,
+          approved_at: new Date().toISOString()
+        })
+        .eq('id', returnId);
+
+      if (requestError) {
+        throw requestError;
+      }
+
+      console.log('✅ 반품 요청 승인 완료 - 트리거가 자동으로 재고를 차감합니다:', selectedReturnRequest.request_number);
+
+      // 추가 안전장치: 잠시 후 재고가 제대로 차감되었는지 확인하고 필요시 수동 처리
+      setTimeout(async () => {
+        try {
+          // 재고 거래 이력이 생성되었는지 확인
+          const { data: transactions } = await supabase
+            .from('inventory_transactions')
+            .select('id')
+            .eq('reference_type', 'return_request')
+            .eq('reference_id', returnId);
+
+          if (!transactions || transactions.length === 0) {
+            console.warn('⚠️ 트리거가 실행되지 않았습니다. 수동으로 재고를 차감합니다.');
+            
+            // 수동으로 재고 차감 처리
+            for (const item of approvedItems) {
+              if (item.approved_quantity > 0) {
+                // store_products 재고 차감
+                const { error: stockError } = await supabase
+                  .from('store_products')
+                  .update({
+                    stock_quantity: supabase.sql`GREATEST(0, stock_quantity - ${item.approved_quantity})`,
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq('store_id', selectedReturnRequest.store_id)
+                  .eq('product_id', selectedReturnRequest.items?.find(i => i.id === item.id)?.product_id);
+
+                if (!stockError) {
+                  console.log('✅ 수동 재고 차감 완료:', item.approved_quantity);
+                }
+              }
+            }
+          } else {
+            console.log('✅ 트리거가 정상 실행되었습니다.');
+          }
+        } catch (error) {
+          console.error('❌ 재고 확인 중 오류:', error);
+        }
+      }, 2000); // 2초 후 확인
+
+      alert('반품 요청이 승인되었습니다.');
+      setShowReturnApprovalModal(false);
+      fetchReturnRequests();
+    } catch (error) {
+      console.error('❌ 반품 요청 승인 실패:', error);
+      alert('반품 요청 승인에 실패했습니다.');
+    }
+  };
+
+  const rejectReturnRequest = async (formData: FormData) => {
+    if (!selectedReturnRequest) return;
+
+    try {
+      const rejectionReason = formData.get('rejection_reason') as string;
+      
+      if (!rejectionReason?.trim()) {
+        alert('거부 사유를 입력해주세요.');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('return_requests')
+        .update({
+          status: 'rejected',
+          rejected_reason: rejectionReason,
+          approved_by: user?.id,
+          approved_at: new Date().toISOString()
+        })
+        .eq('id', selectedReturnRequest.id);
+
+      if (error) {
+        throw error;
+      }
+
+      alert('반품 요청이 거부되었습니다.');
+      setShowReturnRejectionModal(false);
+      fetchReturnRequests();
+    } catch (error) {
+      console.error('❌ 반품 요청 거부 실패:', error);
+      alert('반품 요청 거부에 실패했습니다.');
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'draft': return 'bg-gray-100 text-gray-800';
@@ -380,6 +681,30 @@ const HQSupply: React.FC = () => {
       case 'high': return '높음';
       case 'urgent': return '긴급';
       default: return priority;
+    }
+  };
+
+  const getReturnStatusColor = (status: string) => {
+    switch (status) {
+      case 'submitted': return 'bg-blue-100 text-blue-800';
+      case 'approved': return 'bg-green-100 text-green-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
+      case 'processing': return 'bg-yellow-100 text-yellow-800';
+      case 'completed': return 'bg-purple-100 text-purple-800';
+      case 'cancelled': return 'bg-gray-100 text-gray-600';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getReturnStatusText = (status: string) => {
+    switch (status) {
+      case 'submitted': return '제출됨';
+      case 'approved': return '승인됨';
+      case 'rejected': return '거부됨';
+      case 'processing': return '처리중';
+      case 'completed': return '완료됨';
+      case 'cancelled': return '취소됨';
+      default: return status;
     }
   };
 
@@ -919,35 +1244,132 @@ const HQSupply: React.FC = () => {
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">물류 관리</h1>
-        <p className="text-gray-600">지점에서 요청한 물류를 관리하고 처리합니다.</p>
+        <p className="text-gray-600">지점에서 요청한 물류 및 반품을 관리하고 처리합니다.</p>
+      </div>
+
+      {/* 탭 네비게이션 */}
+      <div className="mb-6">
+        <div className="border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('supply')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'supply'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              물류 요청
+            </button>
+            <button
+              onClick={() => setActiveTab('return')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'return'
+                  ? 'border-red-500 text-red-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              반품 요청
+            </button>
+          </nav>
+        </div>
       </div>
 
       {/* 필터 */}
       <div className="mb-6 flex gap-4">
-        <div className="relative">
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white min-w-[140px]"
-          >
-            <option value="all">전체 상태</option>
-            <option value="submitted">요청됨</option>
-            <option value="approved">승인됨</option>
-            <option value="shipped">배송중</option>
-            <option value="delivered">배송완료</option>
-            <option value="rejected">거절됨</option>
-          </select>
-          {/* 드롭다운 화살표 아이콘 */}
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
-        </div>
+        {activeTab === 'supply' ? (
+          <>
+            <div className="relative">
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white min-w-[140px]"
+              >
+                <option value="all">전체 상태</option>
+                <option value="submitted">요청됨</option>
+                <option value="approved">승인됨</option>
+                <option value="shipped">배송중</option>
+                <option value="delivered">배송완료</option>
+                <option value="rejected">거절됨</option>
+              </select>
+              {/* 드롭다운 화살표 아이콘 */}
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+            <div className="relative">
+              <select
+                value={filterStore}
+                onChange={(e) => setFilterStore(e.target.value)}
+                className="pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white min-w-[160px]"
+              >
+                <option value="all">전체 지점</option>
+                {stores.map((store) => (
+                  <option key={store.id} value={store.id}>
+                    {store.name}
+                  </option>
+                ))}
+              </select>
+              {/* 드롭다운 화살표 아이콘 */}
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="relative">
+              <select
+                value={returnFilterStatus}
+                onChange={(e) => setReturnFilterStatus(e.target.value)}
+                className="pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white min-w-[140px]"
+              >
+                <option value="all">전체 상태</option>
+                <option value="submitted">제출됨</option>
+                <option value="approved">승인됨</option>
+                <option value="rejected">거부됨</option>
+                <option value="processing">처리중</option>
+                <option value="completed">완료됨</option>
+                <option value="cancelled">취소됨</option>
+              </select>
+              {/* 드롭다운 화살표 아이콘 */}
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+            <div className="relative">
+              <select
+                value={returnFilterStore}
+                onChange={(e) => setReturnFilterStore(e.target.value)}
+                className="pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white min-w-[160px]"
+              >
+                <option value="all">전체 지점</option>
+                {stores.map((store) => (
+                  <option key={store.id} value={store.id}>
+                    {store.name}
+                  </option>
+                ))}
+              </select>
+              {/* 드롭다운 화살표 아이콘 */}
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* 물류 요청 목록 */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      {activeTab === 'supply' && (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -1074,7 +1496,112 @@ const HQSupply: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </div>
+        </div>
+      )}
+
+      {/* 반품 요청 목록 */}
+      {activeTab === 'return' && (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    요청번호
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    지점
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    상태
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    우선순위
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    반품 사유
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    총액
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    요청일
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    작업
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {returnRequests.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                      처리할 반품 요청이 없습니다.
+                    </td>
+                  </tr>
+                ) : (
+                  returnRequests.map((request) => (
+                    <tr key={request.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {request.request_number}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {request.store?.name || '알 수 없는 지점'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getReturnStatusColor(request.status)}`}>
+                          {getReturnStatusText(request.status)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(request.priority)}`}>
+                          {getPriorityText(request.priority)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {request.return_reason}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {request.total_amount?.toLocaleString()}원
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(request.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleViewReturnDetail(request)}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            상세보기
+                          </button>
+                          
+                          {request.status === 'submitted' && (
+                            <>
+                              <button
+                                onClick={() => handleApproveReturn(request)}
+                                className="text-green-600 hover:text-green-900"
+                              >
+                                승인
+                              </button>
+                              <button
+                                onClick={() => handleRejectReturn(request)}
+                                className="text-red-600 hover:text-red-900"
+                              >
+                                거부
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* 상세보기 모달 */}
       {showDetailModal && selectedRequest && (
@@ -1339,6 +1866,216 @@ const HQSupply: React.FC = () => {
                   className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
                 >
                   배송 시작
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 반품 요청 상세보기 모달 */}
+      {showReturnDetailModal && selectedReturnRequest && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">반품 요청 상세</h2>
+              <button
+                onClick={() => setShowReturnDetailModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">요청번호</label>
+                <p className="mt-1 text-sm text-gray-900">{selectedReturnRequest.request_number}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">지점</label>
+                <p className="mt-1 text-sm text-gray-900">{selectedReturnRequest.store?.name}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">상태</label>
+                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getReturnStatusColor(selectedReturnRequest.status)}`}>
+                  {getReturnStatusText(selectedReturnRequest.status)}
+                </span>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">우선순위</label>
+                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(selectedReturnRequest.priority)}`}>
+                  {getPriorityText(selectedReturnRequest.priority)}
+                </span>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">반품 사유</label>
+                <p className="mt-1 text-sm text-gray-900">{selectedReturnRequest.return_reason}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">총액</label>
+                <p className="mt-1 text-sm text-gray-900">{selectedReturnRequest.total_amount?.toLocaleString()}원</p>
+              </div>
+            </div>
+
+            {selectedReturnRequest.additional_notes && (
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700">추가 메모</label>
+                <p className="mt-1 text-sm text-gray-900 p-3 bg-gray-50 rounded-lg">{selectedReturnRequest.additional_notes}</p>
+              </div>
+            )}
+
+            {selectedReturnRequest.items && selectedReturnRequest.items.length > 0 && (
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-3">반품 상품 목록</label>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상품명</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">요청수량</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">승인수량</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">단가</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상품 상태</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {selectedReturnRequest.items.map((item) => (
+                        <tr key={item.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.product_name}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.requested_quantity}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.approved_quantity || '-'}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.unit_cost?.toLocaleString()}원</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.condition_notes || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 반품 요청 승인 모달 */}
+      {showReturnApprovalModal && selectedReturnRequest && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">반품 요청 승인 - {selectedReturnRequest.request_number}</h2>
+              <button
+                onClick={() => setShowReturnApprovalModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              approveReturnRequest(new FormData(e.currentTarget));
+            }}>
+              <div className="mb-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">반품 상품 승인</h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상품명</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">요청수량</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">승인수량</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">단가</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상품 상태</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {selectedReturnRequest.items?.map((item) => (
+                        <tr key={item.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.product_name}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.requested_quantity}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <input
+                              type="number"
+                              name={`approved_quantity_${item.id}`}
+                              min="0"
+                              max={item.requested_quantity}
+                              defaultValue={item.requested_quantity}
+                              className="w-20 px-2 py-1 border border-gray-300 rounded-md text-sm"
+                              required
+                            />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.unit_cost?.toLocaleString()}원</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.condition_notes || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowReturnApprovalModal(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700"
+                >
+                  승인
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 반품 요청 거부 모달 */}
+      {showReturnRejectionModal && selectedReturnRequest && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">반품 요청 거부</h2>
+              <button
+                onClick={() => setShowReturnRejectionModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              rejectReturnRequest(new FormData(e.currentTarget));
+            }}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">거부 사유</label>
+                <textarea
+                  name="rejection_reason"
+                  rows={4}
+                  placeholder="반품 거부 사유를 입력해주세요..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  required
+                />
+              </div>
+              
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowReturnRejectionModal(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700"
+                >
+                  거부
                 </button>
               </div>
             </form>
