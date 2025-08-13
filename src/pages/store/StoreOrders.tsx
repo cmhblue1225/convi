@@ -3,6 +3,7 @@ import { useOrderStore } from '../../stores/orderStore';
 import { useAuthStore } from '../../stores/common/authStore';
 import { supabase } from '../../lib/supabase/client';
 import ReceiptModal from '../../components/store/ReceiptModal';
+import RefundReceiptModal from '../../components/store/RefundReceiptModal';
 import type { Order } from '../../stores/orderStore';
 
 const StoreOrders: React.FC = () => {
@@ -49,6 +50,7 @@ const StoreOrders: React.FC = () => {
   const [refundsLoading, setRefundsLoading] = useState(false);
   const [selectedRefund, setSelectedRefund] = useState<any>(null);
   const [showRefundProcessModal, setShowRefundProcessModal] = useState(false);
+  const [showRefundReceiptModal, setShowRefundReceiptModal] = useState(false);
   
   // 환불 처리 모달 상태
   const [selectedRefundStatus, setSelectedRefundStatus] = useState<string>('');
@@ -203,28 +205,27 @@ const StoreOrders: React.FC = () => {
         return;
       }
 
-      // 2. 주문에서 상품 정보 조회
-      const { data: orderData, error: orderError } = await supabase
-        .from('orders' as any)
-        .select('items')
-        .eq('id', refundData.order_id)
-        .single();
+      // 2. order_items 테이블에서 상품 정보 조회 (orders.items 컬럼 대신)
+      const { data: orderItems, error: orderItemsError } = await supabase
+        .from('order_items' as any)
+        .select('*')
+        .eq('order_id', (refundData as any).order_id);
 
-      if (orderError || !orderData) {
-        console.error('주문 데이터 조회 실패:', orderError);
+      if (orderItemsError || !orderItems) {
+        console.error('주문 상품 데이터 조회 실패:', orderItemsError);
         return;
       }
 
-      console.log('📦 복귀할 상품들:', orderData.items);
+      console.log('📦 복귀할 상품들:', orderItems);
 
-      // 3. 각 상품의 재고 복귀 (SQL 함수 사용)
-      for (const item of orderData.items) {
-        // 현재 재고 조회
+      // 3. 각 상품의 재고 복귀 (store_products 테이블 사용)
+      for (const item of orderItems as any[]) {
+        // 현재 재고 조회 (store_products 테이블)
         const { data: currentInventory, error: fetchError } = await supabase
-          .from('inventory' as any)
-          .select('quantity')
+          .from('store_products' as any)
+          .select('stock_quantity')
           .eq('product_id', item.product_id)
-          .eq('store_id', selectedRefund.store_id)
+          .eq('store_id', (refundData as any).store_id)
           .single();
 
         if (fetchError) {
@@ -233,28 +234,63 @@ const StoreOrders: React.FC = () => {
         }
 
         // 새로운 수량 계산
-        const newQuantity = (currentInventory?.quantity || 0) + item.quantity;
+        const newQuantity = ((currentInventory as any)?.stock_quantity || 0) + item.quantity;
 
-        // 재고 업데이트
+        // 재고 업데이트 (store_products 테이블)
         const { error: updateError } = await supabase
-          .from('inventory' as any)
+          .from('store_products' as any)
           .update({ 
-            quantity: newQuantity,
+            stock_quantity: newQuantity,
             updated_at: new Date().toISOString()
           })
           .eq('product_id', item.product_id)
-          .eq('store_id', selectedRefund.store_id);
+          .eq('store_id', (refundData as any).store_id);
 
         if (updateError) {
           console.error(`상품 ${item.product_id} 재고 복귀 실패:`, updateError);
         } else {
-          console.log(`✅ 상품 ${item.product_id} 재고 ${item.quantity}개 복귀 완료 (${currentInventory?.quantity || 0} → ${newQuantity})`);
+          console.log(`✅ 상품 ${item.product_id} 재고 ${item.quantity}개 복귀 완료 (${(currentInventory as any)?.stock_quantity || 0} → ${newQuantity})`);
         }
       }
 
       console.log('🎉 모든 상품 재고 복귀 완료');
     } catch (error) {
       console.error('상품 재고 복귀 실패:', error);
+    }
+  };
+
+  // 쿠폰과 포인트 회수 함수
+  const restoreCouponsAndPoints = async (refundRequestId: string) => {
+    try {
+      console.log('🔄 쿠폰 및 포인트 회수 시작...');
+
+      // 현재 로그인한 사용자 정보 가져오기
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('사용자 인증 정보를 찾을 수 없습니다.');
+        return;
+      }
+
+      // 데이터베이스 함수 호출
+      const { data, error } = await supabase.rpc('restore_coupons_and_points' as any, {
+        p_refund_request_id: refundRequestId,
+        p_processed_by: user.id
+      });
+
+      if (error) {
+        console.error('쿠폰 및 포인트 회수 함수 호출 실패:', error);
+        return;
+      }
+
+      if (data && (data as any).success) {
+        console.log('🎉 쿠폰 및 포인트 회수 완료:', data);
+        console.log(`✅ 쿠폰 ${(data as any).coupons_restored}개 회수 완료`);
+        console.log(`✅ 포인트 ${(data as any).points_restored}점 회수 완료`);
+      } else {
+        console.error('쿠폰 및 포인트 회수 실패:', (data as any)?.error);
+      }
+    } catch (error) {
+      console.error('쿠폰 및 포인트 회수 실패:', error);
     }
   };
 
@@ -286,6 +322,12 @@ const StoreOrders: React.FC = () => {
     setShowRefundProcessModal(true);
   };
 
+  // 환불 영수증 모달 열기
+  const handleViewRefundReceipt = (refund: any) => {
+    setSelectedRefund(refund);
+    setShowRefundReceiptModal(true);
+  };
+
   // 환불 상태 업데이트
   const handleRefundStatusUpdate = async () => {
     if (!selectedRefund || !user?.id || !selectedRefundStatus) return;
@@ -311,20 +353,21 @@ const StoreOrders: React.FC = () => {
         .from('refund_history' as any)
         .insert([{
           refund_request_id: selectedRefund.id,
-          status: selectedRefundStatus,
+          new_status: selectedRefundStatus,
           notes: notes,
           processed_by: user.id,
           action_type: 'status_change',
           metadata: { previous_status: selectedRefund.status }
         }]);
 
-      // 환불 승인 시 상품 재고 복귀
-      if (selectedRefundStatus === 'approved') {
-        await restoreProductInventory(selectedRefund.id);
-        alert(`환불 요청이 승인되었습니다.\n\n✅ 상품이 재고에 복귀되었습니다.`);
-      } else {
-        alert(`환불 요청이 ${selectedRefundStatus === 'rejected' ? '거절' : '검토중'}되었습니다.`);
-      }
+        // 환불 승인 시 상품 재고 복귀 및 쿠폰/포인트 회수
+  if (selectedRefundStatus === 'approved') {
+    await restoreProductInventory(selectedRefund.id);
+    await restoreCouponsAndPoints(selectedRefund.id);
+    alert(`환불 요청이 승인되었습니다.\n\n✅ 상품이 재고에 복귀되었습니다.\n✅ 쿠폰과 포인트가 회수되었습니다.`);
+  } else {
+    alert(`환불 요청이 ${selectedRefundStatus === 'rejected' ? '거절' : '검토중'}되었습니다.`);
+  }
 
       setShowRefundProcessModal(false);
       fetchRefunds(); // 목록 새로고침
@@ -432,14 +475,24 @@ const StoreOrders: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        {refund.status === 'pending' && (
-                          <button
-                            onClick={() => handleProcessRefund(refund)}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                          >
-                            처리하기
-                          </button>
-                        )}
+                        <div className="flex space-x-2">
+                          {refund.status === 'pending' && (
+                            <button
+                              onClick={() => handleProcessRefund(refund)}
+                              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                              처리하기
+                            </button>
+                          )}
+                          {(refund.status === 'approved' || refund.status === 'rejected') && (
+                            <button
+                              onClick={() => handleViewRefundReceipt(refund)}
+                              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                            >
+                              영수증 보기
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -700,6 +753,17 @@ const StoreOrders: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 환불 영수증 모달 */}
+      {showRefundReceiptModal && selectedRefund && (
+        <RefundReceiptModal
+          isOpen={showRefundReceiptModal}
+          onClose={() => setShowRefundReceiptModal(false)}
+          refund={selectedRefund}
+          order={orders.find(o => o.id === selectedRefund.order_id)}
+          storeInfo={storeInfo}
+        />
       )}
     </div>
   );
