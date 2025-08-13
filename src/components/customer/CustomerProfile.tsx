@@ -100,6 +100,7 @@ const CustomerProfile: React.FC = () => {
       case 'used': return '사용';
       case 'expired': return '만료';
       case 'bonus': return '보너스';
+      case 'refund': return '환불';
       default: return type;
     }
   };
@@ -164,12 +165,12 @@ const CustomerProfile: React.FC = () => {
                 <div key={point.id} className="flex justify-between items-center py-2 border-b">
                   <div>
                     <span className={`text-sm font-medium ${
-                      point.type === 'earned' || point.type === 'bonus' 
+                      point.type === 'earned' || point.type === 'bonus' || point.type === 'refund'
                         ? 'text-green-600' 
                         : 'text-red-600'
                     }`}>
-                      {point.type === 'earned' || point.type === 'bonus' ? '+' : '-'}
-                      {point.amount.toLocaleString()} P
+                      {point.type === 'earned' || point.type === 'bonus' || point.type === 'refund' ? '+' : '-'}
+                      {Math.abs(point.amount).toLocaleString()} P
                     </span>
                     <p className="text-xs text-gray-500">{point.description}</p>
                   </div>

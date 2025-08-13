@@ -120,6 +120,7 @@ const CustomerProfile: React.FC = () => {
     if (!user?.id) return;
     
     try {
+      // 모든 쿠폰 조회 (사용 가능 + 사용 완료)
       const { data, error } = await supabase
         .from('user_coupons')
         .select(`
@@ -127,7 +128,7 @@ const CustomerProfile: React.FC = () => {
           coupon:coupons(*)
         `)
         .eq('user_id', user.id)
-        .eq('is_used', false);
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setUserCoupons(data as UserCoupon[] || []);
@@ -566,12 +567,12 @@ const CustomerProfile: React.FC = () => {
                             </div>
                           </div>
                           <span className={`font-bold ${
-                            point.type === 'earned' || point.type === 'bonus' 
+                            point.type === 'earned' || point.type === 'bonus' || point.type === 'refund'
                               ? 'text-green-600' 
                               : 'text-red-600'
                           }`}>
-                            {point.type === 'earned' || point.type === 'bonus' ? '+' : '-'}
-                            {point.amount.toLocaleString()}P
+                            {point.type === 'earned' || point.type === 'bonus' || point.type === 'refund' ? '+' : '-'}
+                            {Math.abs(point.amount).toLocaleString()}P
                           </span>
                         </div>
                       ))}
@@ -592,41 +593,102 @@ const CustomerProfile: React.FC = () => {
                 </h2>
               </div>
               <div className="p-6">
-                {userCoupons.length > 0 ? (
-                  <div className="space-y-3">
-                    {userCoupons.map((userCoupon) => (
-                      <div key={userCoupon.id} className="border border-purple-200 rounded-lg p-4 bg-purple-50">
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-medium text-sm text-gray-900">{userCoupon.coupon.name}</h3>
-                          <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-medium">
-                            {userCoupon.coupon.discount_type === 'percentage' 
-                              ? `${userCoupon.coupon.discount_value}%` 
-                              : `${userCoupon.coupon.discount_value.toLocaleString()}원`}
-                          </span>
-                        </div>
-                        {userCoupon.coupon.description && (
-                          <p className="text-xs text-gray-600 mb-2">{userCoupon.coupon.description}</p>
-                        )}
-                        <div className="text-xs text-gray-500 space-y-1">
-                          <div>최소 주문: {userCoupon.coupon.min_order_amount.toLocaleString()}원</div>
-                          {userCoupon.expires_at && (
-                            <div>만료: {new Date(userCoupon.expires_at).toLocaleDateString()}</div>
-                          )}
-                          {userCoupon.coupon.valid_until && (
-                            <div>유효기간: {new Date(userCoupon.coupon.valid_until).toLocaleDateString()}</div>
-                          )}
-                        </div>
+                {(() => {
+                  // 사용 가능한 쿠폰 필터링
+                  const availableCoupons = userCoupons.filter(uc => !uc.is_used && uc.coupon);
+                  // 사용 완료된 쿠폰 필터링
+                  const usedCoupons = userCoupons.filter(uc => uc.is_used && uc.coupon);
+                  
+                  // 쿠폰이 없는 경우
+                  if (userCoupons.length === 0) {
+                    return (
+                      <div className="text-center text-gray-500 py-8">
+                        <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                        </svg>
+                        <p className="text-sm">보유한 쿠폰이 없습니다</p>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center text-gray-500 py-8">
-                    <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                    </svg>
-                    <p className="text-sm">보유한 쿠폰이 없습니다</p>
-                  </div>
-                )}
+                    );
+                  }
+                  
+                  // 쿠폰이 있는 경우
+                  return (
+                    <div className="space-y-4">
+                      {/* 사용 가능한 쿠폰 */}
+                      {availableCoupons.length > 0 && (
+                        <div>
+                          <h3 className="text-sm font-medium text-green-700 mb-3 flex items-center">
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            사용 가능한 쿠폰 ({availableCoupons.length}개)
+                          </h3>
+                          <div className="space-y-3">
+                            {availableCoupons.map((userCoupon) => (
+                              <div key={userCoupon.id} className="border border-green-200 rounded-lg p-4 bg-green-50">
+                                <div className="flex justify-between items-start mb-2">
+                                  <h3 className="font-medium text-sm text-gray-900">{userCoupon.coupon?.name || '쿠폰명 없음'}</h3>
+                                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
+                                    {userCoupon.coupon?.discount_type === 'percentage' 
+                                      ? `${userCoupon.coupon?.discount_value || 0}%` 
+                                      : `${(userCoupon.coupon?.discount_value || 0).toLocaleString()}원`}
+                                  </span>
+                                </div>
+                                {userCoupon.coupon?.description && (
+                                  <p className="text-xs text-gray-600 mb-2">{userCoupon.coupon.description}</p>
+                                )}
+                                <div className="text-xs text-gray-500 space-y-1">
+                                  <div>최소 주문: {(userCoupon.coupon?.min_order_amount || 0).toLocaleString()}원</div>
+                                  {userCoupon.expires_at && (
+                                    <div>만료: {new Date(userCoupon.expires_at).toLocaleDateString()}</div>
+                                  )}
+                                  {userCoupon.coupon?.valid_until && (
+                                    <div>유효기간: {new Date(userCoupon.coupon.valid_until).toLocaleDateString()}</div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 사용 완료된 쿠폰 */}
+                      {usedCoupons.length > 0 && (
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-500 mb-3 flex items-center">
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            사용 완료된 쿠폰 ({usedCoupons.length}개)
+                          </h3>
+                          <div className="space-y-3">
+                            {usedCoupons.map((userCoupon) => (
+                              <div key={userCoupon.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50 opacity-75">
+                                <div className="flex justify-between items-start mb-2">
+                                  <h3 className="font-medium text-sm text-gray-500 line-through">{userCoupon.coupon?.name || '쿠폰명 없음'}</h3>
+                                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full font-medium">
+                                    {userCoupon.coupon?.discount_type === 'percentage' 
+                                      ? `${userCoupon.coupon?.discount_value || 0}%` 
+                                      : `${(userCoupon.coupon?.discount_value || 0).toLocaleString()}원`}
+                                  </span>
+                                </div>
+                                {userCoupon.coupon?.description && (
+                                  <p className="text-xs text-gray-500 mb-2">{userCoupon.coupon.description}</p>
+                                )}
+                                <div className="text-xs text-gray-400 space-y-1">
+                                  <div>사용일: {userCoupon.used_at ? new Date(userCoupon.used_at).toLocaleDateString() : '알 수 없음'}</div>
+                                  {userCoupon.used_order_id && (
+                                    <div>주문 ID: {userCoupon.used_order_id.slice(0, 8)}...</div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
