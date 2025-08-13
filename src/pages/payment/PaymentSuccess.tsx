@@ -22,6 +22,9 @@ const PaymentSuccess: React.FC = () => {
   const { clearCart } = useCartStore();
   const { addOrder } = useOrderStore();
 
+  // 디버깅을 위한 로그
+  console.log('🎯 PaymentSuccess 컴포넌트 로드됨', window.location.href);
+
   // 고유한 주문번호 생성 함수
   const generateUniqueOrderNumber = (): string => {
     const timestamp = Date.now();
@@ -37,11 +40,24 @@ const PaymentSuccess: React.FC = () => {
         return;
       }
 
-      // URL 파라미터에서 결제 정보 추출
+      // URL 파라미터에서 결제 정보 추출 (중복 파라미터 처리)
       const paymentKey = searchParams.get('paymentKey');
-      const orderId = searchParams.get('orderId');
-      const amount = searchParams.get('amount');
+      const orderIdParam = searchParams.getAll('orderId');
+      const amountParam = searchParams.getAll('amount');
       const method = searchParams.get('method') || 'toss';
+      
+      // 중복 파라미터가 있는 경우 첫 번째 값 사용
+      const orderId = orderIdParam.length > 0 ? orderIdParam[0] : null;
+      const amount = amountParam.length > 0 ? amountParam[0] : null;
+      
+      console.log('🔍 URL 파라미터 (중복 처리):', { 
+        paymentKey, 
+        orderId, 
+        amount, 
+        method,
+        allOrderIds: orderIdParam,
+        allAmounts: amountParam
+      });
 
       // localStorage 기반 중복 처리 방지
       const processedKey = `payment_processed_${orderId}_${paymentKey}`;
@@ -60,7 +76,6 @@ const PaymentSuccess: React.FC = () => {
         setIsProcessed(true); // 처리 시작 플래그 설정
         localStorage.setItem(processedKey, Date.now().toString()); // 처리 완료 표시
 
-        console.log('🔍 URL 파라미터:', { paymentKey, orderId, amount, method });
 
         if (!orderId || !amount) {
           throw new Error('결제 정보가 올바르지 않습니다.');

@@ -6,5 +6,17 @@ services:
     staticPublishPath: dist
     routes:
       - type: rewrite
+        source: /payment/*
+        destination: /index.html
+      - type: rewrite
+        source: /customer/*
+        destination: /index.html
+      - type: rewrite
+        source: /store/*
+        destination: /index.html
+      - type: rewrite
+        source: /hq/*
+        destination: /index.html
+      - type: rewrite
         source: /*
         destination: /index.html

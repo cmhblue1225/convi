@@ -1,8 +1,1 @@
-# SPA fallback for all routes
-/* /index.html 200
-
-# Specific payment routes
-/payment/* /index.html 200
-/customer/* /index.html 200
-/store/* /index.html 200
-/hq/* /index.html 200
+/*    /index.html   200
