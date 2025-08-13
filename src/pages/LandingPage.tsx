@@ -303,9 +303,30 @@ const LandingPage: React.FC = () => {
             <div>
               <h4 className="font-semibold mb-4">회사</h4>
               <ul className="space-y-2 text-gray-400">
-                <li>소개</li>
-                <li>채용</li>
-                <li>개인정보처리방침</li>
+                <li>
+                  <button
+                  className="p-0 text-left text-gray-400 hover:underline"
+                  onClick={() => window.location.href = '/company/about'}
+                  >
+                  소개
+                  </button>
+                </li>
+                <li>
+                  <button
+                  className="p-0 text-left text-gray-400 hover:underline"
+                  onClick={() => window.location.href = '/company/careers'}
+                  >
+                  채용
+                  </button>
+                </li>
+                <li>
+                  <button
+                  className="p-0 text-left text-gray-400 hover:underline"
+                  onClick={() => window.location.href = '/company/privacy'}
+                  >
+                  개인정보처리방침
+                  </button>
+                </li>
               </ul>
             </div>
           </div>

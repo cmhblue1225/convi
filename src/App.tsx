@@ -49,9 +49,14 @@ import HQSupply from './pages/hq/HQSupply';
 import HQAnalytics from './pages/hq/HQAnalytics';
 
 // Support Pages
-import CustomerSupportPage from './pages/support/CustomerSupport';
-import QASupportPage from './pages/support/QASupport';
-import FAQSupportPage from './pages/support/FAQSupport';
+import CustomerSupport from './pages/support/CustomerSupport';
+import QASupport from './pages/support/QASupport';
+import FAQSupport from './pages/support/FAQSupport';
+
+// Company Pages
+import About from './pages/company/About';
+import Careers from './pages/company/Careers';
+import Privacy from './pages/company/Privacy';
 
 // Components
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -177,9 +182,16 @@ function App() {
 
             {/* Support Routes */}
             <Route path="/support">
-              <Route path="customer" element={<CustomerSupportPage />} />
-              <Route path="qa" element={<QASupportPage />} />
-              <Route path="faq" element={<FAQSupportPage />} />
+              <Route path="customer" element={<CustomerSupport />} />
+              <Route path="qa" element={<QASupport />} />
+              <Route path="faq" element={<FAQSupport />} />
+            </Route>
+
+            {/* Company Routes */}
+            <Route path="/company">
+              <Route path="about" element={<About />} />
+              <Route path="careers" element={<Careers />} />
+              <Route path="privacy" element={<Privacy />} />
             </Route>
 
             {/* 404 Page */}
