@@ -4,7 +4,9 @@ import { useAuthStore } from '../../stores/common/authStore';
 import { useOrderStore } from '../../stores/orderStore';
 import { supabase } from '../../lib/supabase/client';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
-import type { UserCoupon, Point } from '../../types/common';
+import type { UserCoupon, Point, Product, StoreProduct } from '../../types/common';
+import { ProductCard } from '../../components/product/ProductCard';
+import { useCartStore } from '../../stores/cartStore';
 
 interface Profile {
   id: string;
@@ -49,6 +51,8 @@ const CustomerProfile: React.FC = () => {
   const [userCoupons, setUserCoupons] = useState<UserCoupon[]>([]);
   const [points, setPoints] = useState<Point[]>([]);
   const [totalPoints, setTotalPoints] = useState(0);
+  const [wishlistProducts, setWishlistProducts] = useState<(Product & { store_products: StoreProduct[] })[]>([]);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -67,6 +71,8 @@ const CustomerProfile: React.FC = () => {
     promotions: true,
     newsletter: false
   });
+  
+  const { addItem } = useCartStore();
 
   // 프로필 데이터 로드
   const fetchProfile = async () => {
@@ -113,6 +119,7 @@ const CustomerProfile: React.FC = () => {
       fetchProfile();
       fetchUserCoupons();
       fetchPoints();
+      fetchWishlistProducts();
     }
   }, [user]);
 
@@ -157,6 +164,87 @@ const CustomerProfile: React.FC = () => {
       setTotalPoints(total);
     } catch (error) {
       console.error('포인트 조회 오류:', error);
+    }
+  };
+
+  // 찜 목록 상품 조회
+  const fetchWishlistProducts = async () => {
+    if (!user?.id) return;
+    
+    setWishlistLoading(true);
+    try {
+      // 찜한 상품 ID 조회
+      const { data: wishlistData, error: wishlistError } = await supabase
+        .from('wishlists')
+        .select('product_id')
+        .eq('user_id', user.id);
+      
+      if (wishlistError) throw wishlistError;
+      
+      if (!wishlistData || wishlistData.length === 0) {
+        setWishlistProducts([]);
+        return;
+      }
+      
+      const productIds = wishlistData.map(item => item.product_id);
+      
+      // 상품 정보와 매장 정보 조회
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select(`
+          *,
+          store_products(*)
+        `)
+        .in('id', productIds)
+        .eq('is_active', true);
+      
+      if (productsError) throw productsError;
+      
+      setWishlistProducts(productsData || []);
+    } catch (error) {
+      console.error('찜 목록 조회 오류:', error);
+    } finally {
+      setWishlistLoading(false);
+    }
+  };
+  
+  // 찜 목록에서 장바구니 담기
+  const addWishlistToCart = (product: Product & { store_products: StoreProduct[] }) => {
+    if (!product.store_products || product.store_products.length === 0) {
+      alert('현재 판매하지 않는 상품입니다.');
+      return;
+    }
+    
+    // 첫 번째 매장 상품 정보 사용 (추후 매장 선택 기능 추가 가능)
+    const storeProduct = product.store_products[0];
+    
+    if (storeProduct.stock_quantity <= 0) {
+      alert('재고가 부족합니다.');
+      return;
+    }
+    
+    addItem(product, storeProduct, 1);
+    alert(`${product.name}을(를) 장바구니에 담았습니다!`);
+  };
+  
+  // 찜 목록에서 제거
+  const removeFromWishlist = async (productId: string) => {
+    if (!user?.id) return;
+    
+    try {
+      const { error } = await supabase
+        .from('wishlists')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('product_id', productId);
+      
+      if (error) throw error;
+      
+      // 로컬 상태 업데이트
+      setWishlistProducts(prev => prev.filter(product => product.id !== productId));
+    } catch (error) {
+      console.error('찜 목록 제거 오류:', error);
+      alert('찜 목록에서 제거하는 중 오류가 발생했습니다.');
     }
   };
 
@@ -689,6 +777,113 @@ const CustomerProfile: React.FC = () => {
                     </div>
                   );
                 })()}
+              </div>
+            </div>
+
+            {/* 찜 목록 */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-red-500 to-red-600">
+                <h2 className="text-lg font-semibold text-white flex items-center">
+                  <svg className="w-5 h-5 text-white mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                  찜한 상품
+                </h2>
+              </div>
+              <div className="p-6">
+                {wishlistLoading ? (
+                  <div className="flex justify-center items-center py-8">
+                    <LoadingSpinner size="md" />
+                  </div>
+                ) : wishlistProducts.length === 0 ? (
+                  <div className="text-center text-gray-500 py-8">
+                    <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                    <p className="text-sm mb-3">찜한 상품이 없습니다</p>
+                    <button
+                      onClick={() => navigate('/customer/products')}
+                      className="text-red-600 hover:text-red-700 text-sm font-medium"
+                    >
+                      상품 둘러보기
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="text-sm text-gray-700 mb-3">
+                      총 {wishlistProducts.length}개의 상품을 찜했습니다
+                    </div>
+                    <div className="grid gap-3">
+                      {wishlistProducts.slice(0, 3).map((product) => {
+                        const storeProduct = product.store_products?.[0];
+                        const hasStock = storeProduct && storeProduct.stock_quantity > 0;
+                        
+                        return (
+                          <div key={product.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <div className="flex items-start space-x-3">
+                              <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                                {product.image_urls && product.image_urls.length > 0 ? (
+                                  <img
+                                    src={product.image_urls[0]}
+                                    alt={product.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-medium text-sm text-gray-900 line-clamp-1">{product.name}</h3>
+                                {storeProduct && (
+                                  <p className="text-sm font-bold text-gray-900 mt-1">
+                                    {storeProduct.price.toLocaleString()}원
+                                  </p>
+                                )}
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {hasStock ? '구매 가능' : '품절'}
+                                </p>
+                              </div>
+                              <div className="flex flex-col space-y-1">
+                                <button
+                                  onClick={() => removeFromWishlist(product.id)}
+                                  className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                                  title="찜 해제"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                                {hasStock && (
+                                  <button
+                                    onClick={() => addWishlistToCart(product)}
+                                    className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
+                                    title="장바구니 담기"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v5a2 2 0 01-2 2H9a2 2 0 01-2-2v-5m6-5V6a2 2 0 00-2-2H9a2 2 0 00-2 2v2" />
+                                    </svg>
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {wishlistProducts.length > 3 && (
+                      <button
+                        onClick={() => navigate('/customer/products')} // 추후 전용 찜 목록 페이지 추가 가능
+                        className="w-full text-center py-2 text-sm text-red-600 hover:text-red-700 font-medium"
+                      >
+                        {wishlistProducts.length - 3}개 더 보기
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
