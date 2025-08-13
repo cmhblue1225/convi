@@ -25,7 +25,9 @@
     "postinstall": "npm run setup:excel || true",
     "serve:prod": "npx serve -c serve.json -l 10000 --single --no-clipboard",
     "serve:local": "npx serve -c serve.json -l 3000 --single --no-clipboard",
-    "test:prod": "npm run build && npm run serve:local"
+    "test:prod": "npm run build && npm run serve:local",
+    "start": "node server-spa.js",
+    "production": "npm run build && npm run start"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.7",

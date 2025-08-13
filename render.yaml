@@ -3,7 +3,7 @@ services:
     name: convenience-store-v2
     env: node
     buildCommand: npm install && npm run build
-    startCommand: npx serve -c serve.json -l 10000 --single --no-clipboard
+    startCommand: node server-spa.js
     plan: free
     envVars:
       - key: NODE_ENV
