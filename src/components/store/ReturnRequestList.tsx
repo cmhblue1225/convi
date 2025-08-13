@@ -76,6 +76,10 @@ const ReturnRequestList: React.FC<ReturnRequestListProps> = ({ refreshTrigger })
   const [selectedRequest, setSelectedRequest] = useState<ReturnRequest | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [requestToCancel, setRequestToCancel] = useState<ReturnRequest | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelling, setCancelling] = useState(false);
   const { user } = useAuthStore();
 
   const fetchReturnRequests = useCallback(async () => {
@@ -153,6 +157,66 @@ const ReturnRequestList: React.FC<ReturnRequestListProps> = ({ refreshTrigger })
   const closeDetailModal = () => {
     setSelectedRequest(null);
     setShowDetailModal(false);
+  };
+
+  const handleCancelRequest = (request: ReturnRequest) => {
+    // 취소 가능한 상태인지 확인 (제출됨 상태만 허용)
+    if (request.status !== 'submitted') {
+      alert('취소할 수 없는 상태입니다. 제출됨 상태에서만 취소가 가능합니다. 현재 상태: ' + STATUS_LABELS[request.status as keyof typeof STATUS_LABELS]);
+      return;
+    }
+    
+    setRequestToCancel(request);
+    setShowCancelModal(true);
+  };
+
+  const confirmCancel = async () => {
+    if (!requestToCancel || !user?.id) {
+      alert('사용자 정보가 없습니다.');
+      return;
+    }
+
+    try {
+      setCancelling(true);
+
+      // 데이터베이스 함수 호출
+      const { data, error } = await supabase.rpc('cancel_return_request', {
+        request_id: requestToCancel.id,
+        cancelled_by_user_id: user.id,
+        cancel_reason: cancelReason.trim() || null
+      });
+
+      if (error) {
+        console.error('❌ 반품 요청 취소 실패:', error);
+        alert('반품 요청 취소에 실패했습니다: ' + error.message);
+        return;
+      }
+
+      if (data && !data.success) {
+        alert('반품 요청 취소에 실패했습니다: ' + data.error);
+        return;
+      }
+
+      alert(data?.message || '반품 요청이 성공적으로 취소되었습니다.');
+      
+      // 모달 닫기 및 데이터 새로고침
+      setShowCancelModal(false);
+      setRequestToCancel(null);
+      setCancelReason('');
+      fetchReturnRequests();
+      
+    } catch (error) {
+      console.error('❌ 반품 요청 취소 중 오류:', error);
+      alert('반품 요청 취소 중 오류가 발생했습니다.');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const closeCancelModal = () => {
+    setShowCancelModal(false);
+    setRequestToCancel(null);
+    setCancelReason('');
   };
 
   if (loading) {
@@ -238,12 +302,23 @@ const ReturnRequestList: React.FC<ReturnRequestListProps> = ({ refreshTrigger })
                                 </p>
                               )}
                             </div>
-                            <button
-                              onClick={() => openDetailModal(request)}
-                              className="ml-4 px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
-                            >
-                              상세보기
-                            </button>
+                            <div className="ml-4 flex space-x-2">
+                              <button
+                                onClick={() => openDetailModal(request)}
+                                className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
+                              >
+                                상세보기
+                              </button>
+                              {request.status === 'submitted' && (
+                                <button
+                                  onClick={() => handleCancelRequest(request)}
+                                  className="px-3 py-1 bg-red-600 text-white text-sm rounded-md hover:bg-red-700"
+                                  title="반품 요청 취소"
+                                >
+                                  취소
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                         {request.rejected_reason && (
@@ -427,12 +502,88 @@ const ReturnRequestList: React.FC<ReturnRequestListProps> = ({ refreshTrigger })
             </div>
 
             <div className="p-6 border-t bg-gray-50">
-              <div className="flex justify-end">
+              <div className="flex justify-between">
+                <div>
+                  {selectedRequest.status === 'submitted' && (
+                    <button
+                      onClick={() => {
+                        closeDetailModal();
+                        handleCancelRequest(selectedRequest);
+                      }}
+                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                    >
+                      반품 요청 취소
+                    </button>
+                  )}
+                </div>
                 <button
                   onClick={closeDetailModal}
                   className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
                 >
                   닫기
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 취소 확인 모달 */}
+      {showCancelModal && requestToCancel && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center mb-4">
+                <div className="bg-red-100 rounded-full p-3 mr-4">
+                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 15.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">반품 요청 취소</h3>
+                  <p className="text-sm text-gray-500">
+                    {requestToCancel.request_number}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-sm text-gray-700 mb-3">
+                  이 반품 요청을 취소하시겠습니까?
+                  <span className="block mt-1 text-gray-600 text-xs">
+                    💡 제출됨 상태에서만 취소가 가능합니다.
+                  </span>
+                </p>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    취소 사유 (선택사항)
+                  </label>
+                  <textarea
+                    value={cancelReason}
+                    onChange={(e) => setCancelReason(e.target.value)}
+                    rows={3}
+                    placeholder="취소 사유를 입력해주세요..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={closeCancelModal}
+                  disabled={cancelling}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={confirmCancel}
+                  disabled={cancelling}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center"
+                >
+                  {cancelling && <LoadingSpinner />}
+                  {cancelling ? '처리 중...' : '반품 요청 취소'}
                 </button>
               </div>
             </div>
