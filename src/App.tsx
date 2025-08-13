@@ -48,6 +48,11 @@ import HQProducts from './pages/hq/HQProducts';
 import HQSupply from './pages/hq/HQSupply';
 import HQAnalytics from './pages/hq/HQAnalytics';
 
+// Support Pages
+import CustomerSupportPage from './pages/support/CustomerSupport';
+import QASupportPage from './pages/support/QASupport';
+import FAQSupportPage from './pages/support/FAQSupport';
+
 // Components
 import ProtectedRoute from './components/common/ProtectedRoute';
 
@@ -168,6 +173,13 @@ function App() {
               
               <Route path="supply" element={<HQSupply />} />
               <Route path="analytics" element={<HQAnalytics />} />
+            </Route>
+
+            {/* Support Routes */}
+            <Route path="/support">
+              <Route path="customer" element={<CustomerSupportPage />} />
+              <Route path="qa" element={<QASupportPage />} />
+              <Route path="faq" element={<FAQSupportPage />} />
             </Route>
 
             {/* 404 Page */}
