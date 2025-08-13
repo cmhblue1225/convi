@@ -53,11 +53,16 @@ export interface Order {
   order_number: string;
   status: string;
   total_amount: number;
+  subtotal?: number;
+  tax_amount?: number;
+  delivery_fee?: number;
+  coupon_discount?: number;
+  points_used?: number;
   payment_method?: string;
   payment_status?: string;
   order_type?: string;
   pickup_time?: string;
-  delivery_address?: string;
+  delivery_address?: any;
   customer_notes?: string;
   created_at?: string;
   updated_at?: string;

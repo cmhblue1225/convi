@@ -29,9 +29,11 @@ export interface Order {
   items: OrderItem[];
   deliveryAddress?: DeliveryAddress;
   paymentMethod: 'card' | 'cash' | 'mobile' | 'toss' | 'kakao' | 'naver' | 'payco';
+  paymentStatus?: 'pending' | 'paid' | 'failed' | 'refunded';
   subtotal: number;
   taxAmount: number;
   deliveryFee: number;
+  couponDiscount?: number;
   totalAmount: number;
   // 포인트 정보 추가
   pointsUsed?: number;
@@ -110,6 +112,7 @@ export const useOrderStore = create<OrderState>()(
             subtotal: orderData.subtotal,
             tax_amount: orderData.taxAmount,
             delivery_fee: orderData.deliveryFee,
+            coupon_discount: (orderData as any).couponDiscount || 0,
             total_amount: orderData.totalAmount,
             // 포인트 정보 추가
             points_used: (orderData as any).pointsUsed || 0,
@@ -318,9 +321,11 @@ export const useOrderStore = create<OrderState>()(
             items: orderData.items, // 원본 데이터 사용 (Supabase에서 items가 제대로 저장되지 않을 수 있음)
             deliveryAddress: data.delivery_address ? JSON.parse(data.delivery_address) : undefined,
             paymentMethod: data.payment_method,
+            paymentStatus: data.payment_status,
             subtotal: data.subtotal,
             taxAmount: data.tax_amount,
             deliveryFee: data.delivery_fee,
+            couponDiscount: data.coupon_discount || 0,
             totalAmount: data.total_amount,
             // 포인트 정보 추가
             pointsUsed: data.points_used || 0,
@@ -618,10 +623,15 @@ export const useOrderStore = create<OrderState>()(
                 item.delivery_address) : 
               undefined,
             paymentMethod: item.payment_method,
+            paymentStatus: item.payment_status,
             subtotal: item.subtotal,
             taxAmount: item.tax_amount,
             deliveryFee: item.delivery_fee,
+            couponDiscount: item.coupon_discount || 0,
             totalAmount: item.total_amount,
+            // 포인트 정보 추가
+            pointsUsed: item.points_used || 0,
+            pointsDiscountAmount: item.points_discount_amount || 0,
             status: item.status,
             createdAt: item.created_at,
             updatedAt: item.updated_at,
