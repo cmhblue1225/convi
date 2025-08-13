@@ -3,5 +3,12 @@ services:
     name: convenience-store-v2
     env: node
     buildCommand: npm install && npm run build
-    startCommand: npx serve -c serve.json -l 10000
+    startCommand: npx serve -c serve.json -l 10000 --single --no-clipboard
     plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+    healthCheckPath: /
+    autoDeploy: true

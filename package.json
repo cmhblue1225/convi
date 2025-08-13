@@ -22,7 +22,10 @@
     "server": "node server.js",
     "dev:full": "concurrently \"npm run server\" \"npm run dev\"",
     "setup:excel": "node scripts/setup-excel.js",
-    "postinstall": "npm run setup:excel || true"
+    "postinstall": "npm run setup:excel || true",
+    "serve:prod": "npx serve -c serve.json -l 10000 --single --no-clipboard",
+    "serve:local": "npx serve -c serve.json -l 3000 --single --no-clipboard",
+    "test:prod": "npm run build && npm run serve:local"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.7",
