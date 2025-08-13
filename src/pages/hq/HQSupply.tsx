@@ -70,7 +70,7 @@ interface ReturnRequest {
     address: string;
   };
   requester?: {
-    name: string;
+    full_name: string;
   };
   items?: ReturnRequestItem[];
 }
@@ -248,7 +248,7 @@ const HQSupply: React.FC = () => {
         .select(`
           *,
           store:stores(name, address),
-          requester:profiles!return_requests_requested_by_fkey(name),
+          requester:profiles!return_requests_requested_by_fkey(full_name),
           items:return_request_items(*)
         `)
         .order('created_at', { ascending: false });
@@ -481,7 +481,21 @@ const HQSupply: React.FC = () => {
         return sum + (originalItem ? item.approved_quantity! * originalItem.unit_cost : 0);
       }, 0);
 
-      // 반품 요청 승인 업데이트
+      // 승인된 수량을 각 아이템에 먼저 업데이트
+      for (const item of approvedItems) {
+        const { error: itemError } = await supabase
+          .from('return_request_items')
+          .update({
+            approved_quantity: item.approved_quantity
+          })
+          .eq('id', item.id);
+
+        if (itemError) {
+          throw itemError;
+        }
+      }
+
+      // 반품 요청 승인 업데이트 (트리거 실행을 위해 마지막에 실행)
       const { error: requestError } = await supabase
         .from('return_requests')
         .update({
@@ -496,19 +510,46 @@ const HQSupply: React.FC = () => {
         throw requestError;
       }
 
-      // 승인된 수량을 각 아이템에 업데이트
-      for (const item of approvedItems) {
-        const { error: itemError } = await supabase
-          .from('return_request_items')
-          .update({
-            approved_quantity: item.approved_quantity
-          })
-          .eq('id', item.id);
+      console.log('✅ 반품 요청 승인 완료 - 트리거가 자동으로 재고를 차감합니다:', selectedReturnRequest.request_number);
 
-        if (itemError) {
-          throw itemError;
+      // 추가 안전장치: 잠시 후 재고가 제대로 차감되었는지 확인하고 필요시 수동 처리
+      setTimeout(async () => {
+        try {
+          // 재고 거래 이력이 생성되었는지 확인
+          const { data: transactions } = await supabase
+            .from('inventory_transactions')
+            .select('id')
+            .eq('reference_type', 'return_request')
+            .eq('reference_id', returnId);
+
+          if (!transactions || transactions.length === 0) {
+            console.warn('⚠️ 트리거가 실행되지 않았습니다. 수동으로 재고를 차감합니다.');
+            
+            // 수동으로 재고 차감 처리
+            for (const item of approvedItems) {
+              if (item.approved_quantity > 0) {
+                // store_products 재고 차감
+                const { error: stockError } = await supabase
+                  .from('store_products')
+                  .update({
+                    stock_quantity: supabase.sql`GREATEST(0, stock_quantity - ${item.approved_quantity})`,
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq('store_id', selectedReturnRequest.store_id)
+                  .eq('product_id', selectedReturnRequest.items?.find(i => i.id === item.id)?.product_id);
+
+                if (!stockError) {
+                  console.log('✅ 수동 재고 차감 완료:', item.approved_quantity);
+                }
+              }
+            }
+          } else {
+            console.log('✅ 트리거가 정상 실행되었습니다.');
+          }
+        } catch (error) {
+          console.error('❌ 재고 확인 중 오류:', error);
         }
-      }
+      }, 2000); // 2초 후 확인
 
       alert('반품 요청이 승인되었습니다.');
       setShowReturnApprovalModal(false);

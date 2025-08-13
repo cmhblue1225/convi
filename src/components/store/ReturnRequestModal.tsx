@@ -399,19 +399,14 @@ const ReturnRequestModal: React.FC<ReturnRequestModalProps> = ({
         throw new Error('지점 정보를 찾을 수 없습니다.');
       }
 
-      // 반품 요청 번호 생성 (클라이언트 측에서 생성)
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const timestamp = now.getTime().toString().slice(-6); // 마지막 6자리
-      const requestNumberData = `RET-${year}${month}-${timestamp}`;
+      // 반품 요청 번호는 데이터베이스 트리거에서 자동 생성됨
 
       const finalReason = returnReason === '기타' ? customReason : returnReason;
       const totalAmount = calculateTotalAmount();
 
       // 반품 요청 생성
       const returnRequestData: any = {
-        request_number: requestNumberData,
+        // request_number는 데이터베이스 트리거에서 자동 생성
         store_id: storeData.id,
         requested_by: user?.id,
         status: 'submitted',

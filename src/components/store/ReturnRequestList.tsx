@@ -17,15 +17,9 @@ interface ReturnRequest {
   rejected_reason: string | null;
   created_at: string;
   updated_at: string;
-  return_type: 'general' | 'supply_request';
-  supply_request_id: string | null;
   items?: ReturnRequestItem[];
   approver?: {
     full_name: string;
-  };
-  supply_request?: {
-    request_number: string;
-    status: string;
   };
 }
 
@@ -105,8 +99,7 @@ const ReturnRequestList: React.FC<ReturnRequestListProps> = ({ refreshTrigger })
         .select(`
           *,
           approver:profiles!return_requests_approved_by_fkey(full_name),
-          items:return_request_items(*),
-          supply_request:supply_requests(request_number, status)
+          items:return_request_items(*)
         `)
         .eq('store_id', storeData.id)
         .order('created_at', { ascending: false });
@@ -218,41 +211,33 @@ const ReturnRequestList: React.FC<ReturnRequestListProps> = ({ refreshTrigger })
                           </div>
                         </div>
                         <div className="mt-2">
-                                                      <div className="flex justify-between items-start">
-                              <div>
-                                <p className="text-sm text-gray-900">
-                                  <span className="font-medium">반품 사유:</span> {request.return_reason}
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                  <span className="font-medium">신청 금액:</span> {request.total_amount.toLocaleString()}원
-                                  {request.approved_amount && request.approved_amount !== request.total_amount && (
-                                    <span className="ml-2">
-                                      / <span className="font-medium">승인 금액:</span> {request.approved_amount.toLocaleString()}원
-                                    </span>
-                                  )}
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                  <span className="font-medium">신청일:</span> {new Date(request.created_at).toLocaleDateString('ko-KR')}
-                                  {request.approved_at && (
-                                    <span className="ml-2">
-                                      / <span className="font-medium">처리일:</span> {new Date(request.approved_at).toLocaleDateString('ko-KR')}
-                                    </span>
-                                  )}
-                                </p>
-                                {request.items && (
-                                  <p className="text-sm text-gray-500">
-                                    <span className="font-medium">상품 수:</span> {request.items.length}개 상품
-                                  </p>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="text-sm text-gray-900">
+                                <span className="font-medium">반품 사유:</span> {request.return_reason}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                <span className="font-medium">신청 금액:</span> {request.total_amount.toLocaleString()}원
+                                {request.approved_amount && request.approved_amount !== request.total_amount && (
+                                  <span className="ml-2">
+                                    / <span className="font-medium">승인 금액:</span> {request.approved_amount.toLocaleString()}원
+                                  </span>
                                 )}
-                                {request.return_type === 'supply_request' && request.supply_request && (
-                                  <p className="text-sm text-blue-600">
-                                    <span className="font-medium">연관 물류 요청:</span> {request.supply_request.request_number}
-                                    <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                      물류요청별 반품
-                                    </span>
-                                  </p>
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                <span className="font-medium">신청일:</span> {new Date(request.created_at).toLocaleDateString('ko-KR')}
+                                {request.approved_at && (
+                                  <span className="ml-2">
+                                    / <span className="font-medium">처리일:</span> {new Date(request.approved_at).toLocaleDateString('ko-KR')}
+                                  </span>
                                 )}
-                              </div>
+                              </p>
+                              {request.items && (
+                                <p className="text-sm text-gray-500">
+                                  <span className="font-medium">상품 수:</span> {request.items.length}개 상품
+                                </p>
+                              )}
+                            </div>
                             <button
                               onClick={() => openDetailModal(request)}
                               className="ml-4 px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
@@ -325,14 +310,6 @@ const ReturnRequestList: React.FC<ReturnRequestListProps> = ({ refreshTrigger })
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="font-medium text-gray-600">반품 유형:</span>
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                          selectedRequest.return_type === 'supply_request' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {selectedRequest.return_type === 'supply_request' ? '물류요청별 반품' : '일반 반품'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
                         <span className="font-medium text-gray-600">반품 사유:</span>
                         <span>{selectedRequest.return_reason}</span>
                       </div>
@@ -344,12 +321,6 @@ const ReturnRequestList: React.FC<ReturnRequestListProps> = ({ refreshTrigger })
                         <div className="flex justify-between">
                           <span className="font-medium text-gray-600">승인 금액:</span>
                           <span className="font-bold text-green-600">{selectedRequest.approved_amount.toLocaleString()}원</span>
-                        </div>
-                      )}
-                      {selectedRequest.return_type === 'supply_request' && selectedRequest.supply_request && (
-                        <div className="flex justify-between">
-                          <span className="font-medium text-gray-600">연관 물류 요청:</span>
-                          <span className="text-blue-600 font-medium">{selectedRequest.supply_request.request_number}</span>
                         </div>
                       )}
                     </div>
