@@ -2,7 +2,7 @@ services:
   - type: web
     name: convenience-store-v2
     env: node
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: node server-spa.js
     plan: free
     envVars:
@@ -10,5 +10,5 @@ services:
         value: production
       - key: PORT
         value: 10000
-    healthCheckPath: /
+    healthCheckPath: /health
     autoDeploy: true
