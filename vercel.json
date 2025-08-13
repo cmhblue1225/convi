@@ -1,0 +1,43 @@
+{
+  "rewrites": [
+    {
+      "source": "/payment/(.*)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/customer/(.*)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/store/(.*)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/hq/(.*)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/auth",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/test-(.*)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "**/*.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    }
+  ]
+}

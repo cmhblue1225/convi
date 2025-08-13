@@ -100,6 +100,39 @@ VITE_APP_VERSION="2.0.0"
 npm run dev
 ```
 
+## 🚀 Render 배포 (SPA 라우팅 최적화)
+
+### 배포 준비
+1. **빌드 테스트**
+   ```bash
+   npm run build
+   npm run serve:local  # 로컬에서 프로덕션 빌드 테스트
+   ```
+
+2. **SPA 라우팅 설정 확인**
+   - `serve.json` - serve 패키지 설정
+   - `public/_redirects` - Netlify 호환 redirects
+   - `vercel.json` - Vercel 호환 rewrites
+   - `public/_headers` - 추가 헤더 설정
+
+### Render 배포
+1. **Render 대시보드에서 새 Web Service 생성**
+2. **GitHub 저장소 연결**
+3. **빌드 설정**
+   - Build Command: `npm install && npm run build`
+   - Start Command: `npx serve -c serve.json -l 10000 --single --no-clipboard`
+4. **환경 변수 설정**
+   - `NODE_ENV=production`
+   - `PORT=10000`
+5. **배포 완료!**
+
+### SPA 라우팅 문제 해결
+- ✅ `/payment/success` - 결제 성공 페이지
+- ✅ `/payment/fail` - 결제 실패 페이지  
+- ✅ `/customer/*` - 고객 페이지
+- ✅ `/store/*` - 점주 페이지
+- ✅ `/hq/*` - 본사 페이지
+
 ### 6. 테스트 계정으로 바로 체험
 브라우저에서 `http://localhost:5173`으로 접속 후:
 - **고객**: customer1@test.com / test123

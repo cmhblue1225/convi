@@ -1,95 +1,280 @@
-import type { Database } from '../lib/supabase/types';
+// ===== 기본 엔티티 타입들 (가장 먼저 정의) =====
 
-// 데이터베이스 테이블 타입들
-export type Profile = Database['public']['Tables']['profiles']['Row'];
-export type ProfileInsert = Database['public']['Tables']['profiles']['Insert'];
-export type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
+// 상품 관련 타입
+export interface Product {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  image_url?: string;
+  category_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
-export type Store = Database['public']['Tables']['stores']['Row'];
-export type StoreInsert = Database['public']['Tables']['stores']['Insert'];
-export type StoreUpdate = Database['public']['Tables']['stores']['Update'];
+// 주문 관련 타입
+export interface Order {
+  id: string;
+  customer_id: string;
+  store_id: string;
+  order_number: string;
+  status: string;
+  total_amount: number;
+  payment_method?: string;
+  payment_status?: string;
+  order_type?: string;
+  pickup_time?: string;
+  delivery_address?: string;
+  customer_notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
-export type Product = Database['public']['Tables']['products']['Row'];
-export type ProductInsert = Database['public']['Tables']['products']['Insert'];
-export type ProductUpdate = Database['public']['Tables']['products']['Update'];
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  created_at?: string;
+}
 
-export type Category = Database['public']['Tables']['categories']['Row'];
-export type CategoryInsert = Database['public']['Tables']['categories']['Insert'];
-export type CategoryUpdate = Database['public']['Tables']['categories']['Update'];
+// Order 타입의 Insert/Update 버전
+export type OrderInsert = Omit<Order, 'id' | 'created_at' | 'updated_at'>;
+export type OrderUpdate = Partial<Omit<Order, 'id' | 'created_at' | 'updated_at'>>;
 
-export type StoreProduct = Database['public']['Tables']['store_products']['Row'];
-export type StoreProductInsert = Database['public']['Tables']['store_products']['Insert'];
-export type StoreProductUpdate = Database['public']['Tables']['store_products']['Update'];
+export type OrderItemInsert = Omit<OrderItem, 'id' | 'created_at'>;
+export type OrderItemUpdate = Partial<Omit<OrderItem, 'id' | 'created_at'>>;
 
-export type Order = Database['public']['Tables']['orders']['Row'];
-export type OrderInsert = Database['public']['Tables']['orders']['Insert'];
-export type OrderUpdate = Database['public']['Tables']['orders']['Update'];
+// ===== 환불 시스템 타입들 =====
 
-export type OrderItem = Database['public']['Tables']['order_items']['Row'];
-export type OrderItemInsert = Database['public']['Tables']['order_items']['Insert'];
-export type OrderItemUpdate = Database['public']['Tables']['order_items']['Update'];
+export interface RefundRequest {
+  id: string;
+  order_id: string;
+  customer_id: string;
+  store_id: string;
+  request_type: string;
+  reason: string;
+  description?: string;
+  refund_items: any[];
+  requested_refund_amount: number;
+  approved_refund_amount?: number;
+  status: string;
+  priority?: string;
+  refund_method?: string;
+  admin_notes?: string;
+  customer_phone?: string;
+  refund_deadline?: string;
+  is_urgent?: boolean;
+  estimated_processing_time?: number;
+  created_at?: string;
+  updated_at?: string;
+  processed_at?: string;
+  processed_by?: string;
+  attachments?: any;
+  refund_fee?: number;
+  rejection_reason?: string;
+  requested_at?: string;
+}
 
-export type OrderStatusHistory = Database['public']['Tables']['order_status_history']['Row'];
+export interface RefundHistory {
+  id: string;
+  refund_request_id: string;
+  new_status: string;
+  previous_status?: string;
+  notes?: string;
+  processed_by: string;
+  processed_at?: string;
+  action_type?: string;
+  metadata?: any;
+  ip_address?: any;
+  user_agent?: string;
+}
 
-export type SupplyRequest = Database['public']['Tables']['supply_requests']['Row'];
-export type SupplyRequestInsert = Database['public']['Tables']['supply_requests']['Insert'];
-export type SupplyRequestUpdate = Database['public']['Tables']['supply_requests']['Update'];
+export interface RefundSettlement {
+  id: string;
+  refund_request_id: string;
+  settlement_amount: number;
+  settlement_type: string;
+  payment_method?: string;
+  external_payment_id?: string;
+  external_refund_id?: string;
+  processing_fee?: number;
+  tax_amount?: number;
+  net_refund_amount?: number;
+  status: string;
+  refund_reason_code?: string;
+  customer_communication_log?: any[];
+  refund_method_details?: any;
+  estimated_completion_date?: string;
+  processed_at?: string;
+  processed_by?: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
-export type SupplyRequestItem = Database['public']['Tables']['supply_request_items']['Row'];
-export type SupplyRequestItemInsert = Database['public']['Tables']['supply_request_items']['Insert'];
-export type SupplyRequestItemUpdate = Database['public']['Tables']['supply_request_items']['Update'];
+export interface RefundPolicy {
+  id: string;
+  store_id?: string;
+  policy_name: string;
+  description: string;
+  refund_window_minutes: number;
+  allow_partial_refund?: boolean;
+  allow_cancellation?: boolean;
+  require_reason?: boolean;
+  refund_fee_rate?: number;
+  min_refund_amount?: number;
+  perishable_refund_policy?: string;
+  prepared_food_refund_policy?: string;
+  general_goods_refund_policy?: string;
+  is_active?: boolean;
+  auto_approve_threshold?: number;
+  max_refund_percentage?: number;
+  requires_manager_approval?: boolean;
+  refund_processing_fee?: number;
+  exchange_policy?: string;
+  store_credit_expiry_days?: number;
+  notification_settings?: any;
+  business_hours_start?: string;
+  business_hours_end?: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
-export type Shipment = Database['public']['Tables']['shipments']['Row'];
-export type ShipmentInsert = Database['public']['Tables']['shipments']['Insert'];
-export type ShipmentUpdate = Database['public']['Tables']['shipments']['Update'];
+export interface RefundNotification {
+  id: string;
+  refund_request_id: string;
+  user_id: string;
+  notification_type: string;
+  title: string;
+  message: string;
+  is_read?: boolean;
+  read_at?: string;
+  sent_at?: string;
+  delivery_method?: string;
+  delivery_status?: string;
+  created_at?: string;
+}
 
-export type InventoryTransaction = Database['public']['Tables']['inventory_transactions']['Row'];
-export type InventoryTransactionInsert = Database['public']['Tables']['inventory_transactions']['Insert'];
-export type InventoryTransactionUpdate = Database['public']['Tables']['inventory_transactions']['Update'];
+export interface RefundAttachment {
+  id: string;
+  refund_request_id: string;
+  file_name: string;
+  file_url: string;
+  file_size: number;
+  mime_type: string;
+  uploaded_by: string;
+  upload_purpose?: string;
+  is_verified?: boolean;
+  verified_by?: string;
+  verified_at?: string;
+  created_at?: string;
+}
 
-export type Notification = Database['public']['Tables']['notifications']['Row'];
-export type NotificationInsert = Database['public']['Tables']['notifications']['Insert'];
-export type NotificationUpdate = Database['public']['Tables']['notifications']['Update'];
+export interface RefundTemplate {
+  id: string;
+  store_id?: string;
+  template_name: string;
+  template_type: string;
+  subject: string;
+  body: string;
+  variables?: any;
+  is_active?: boolean;
+  created_by: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
-export type DailySalesSummary = Database['public']['Tables']['daily_sales_summary']['Row'];
-export type ProductSalesSummary = Database['public']['Tables']['product_sales_summary']['Row'];
+// ===== 환불 관련 열거형 타입들 =====
 
-export type SystemSetting = Database['public']['Tables']['system_settings']['Row'];
+export type RefundStatus = 'pending' | 'under_review' | 'approved' | 'rejected' | 'processing' | 'completed' | 'cancelled';
+export type RefundMethod = 'payment_refund' | 'store_credit' | 'exchange' | 'partial_refund';
+export type RefundPriority = 'low' | 'normal' | 'high' | 'urgent';
+export type RefundActionType = 'status_change' | 'note_added' | 'priority_changed' | 'deadline_updated';
+export type RefundNotificationType = 'status_update' | 'deadline_reminder' | 'approval_required' | 'completion_notice';
+export type RefundDeliveryMethod = 'in_app' | 'email' | 'sms' | 'push';
+export type RefundAttachmentPurpose = 'evidence' | 'receipt' | 'damage_photo' | 'other';
+export type RefundTemplateType = 'approval_email' | 'rejection_email' | 'completion_email' | 'customer_notification';
 
-// 사용자 역할 타입
+// ===== 환불 관련 폼 타입들 =====
+
+export interface RefundRequestForm {
+  order_id: string;
+  request_type: string;
+  reason: string;
+  description?: string;
+  refund_items: Array<{
+    product_id: string;
+    product_name: string;
+    quantity: number;
+    price: number;
+    reason: string;
+  }>;
+  requested_refund_amount: number;
+  customer_phone?: string;
+}
+
+export interface RefundProcessForm {
+  refund_request_id: string;
+  new_status: RefundStatus;
+  notes?: string;
+  approved_amount?: number;
+  rejection_reason?: string;
+}
+
+export interface RefundStatistics {
+  total_requests: number;
+  pending_requests: number;
+  approved_requests: number;
+  rejected_requests: number;
+  completed_requests: number;
+  total_refund_amount: number;
+  avg_processing_time: number;
+  urgent_requests: number;
+}
+
+export interface RefundFilter {
+  status?: RefundStatus[];
+  priority?: RefundPriority[];
+  store_id?: string;
+  customer_id?: string;
+  date_from?: string;
+  date_to?: string;
+  is_urgent?: boolean;
+  refund_method?: RefundMethod[];
+}
+
+export interface RefundPolicySettings {
+  auto_approve_threshold: number;
+  max_refund_percentage: number;
+  requires_manager_approval: boolean;
+  refund_processing_fee: number;
+  exchange_policy: string;
+  store_credit_expiry_days: number;
+  notification_settings: {
+    email: boolean;
+    sms: boolean;
+    push: boolean;
+  };
+}
+
+// ===== 시스템 기본 타입들 =====
+
 export type UserRole = 'customer' | 'store_owner' | 'hq_admin' | 'headquarters';
-
-// 사용자 상태 타입
 export type UserStatus = 'active' | 'inactive' | 'suspended';
-
-// 주문 상태 타입
 export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed' | 'cancelled';
-
-// 주문 타입
 export type OrderType = 'pickup' | 'delivery';
-
-// 결제 방법 타입
 export type PaymentMethod = 'card' | 'cash' | 'kakao_pay' | 'toss_pay' | 'naver_pay';
-
-// 결제 상태 타입
 export type PaymentStatus = 'pending' | 'paid' | 'refunded' | 'failed';
-
-// 공급 요청 상태 타입
 export type SupplyRequestStatus = 'draft' | 'submitted' | 'approved' | 'rejected' | 'shipped' | 'delivered' | 'cancelled';
-
-// 우선순위 타입
 export type Priority = 'low' | 'normal' | 'high' | 'urgent';
-
-// 배송 상태 타입
 export type ShipmentStatus = 'preparing' | 'shipped' | 'in_transit' | 'delivered' | 'failed';
-
-// 재고 거래 타입
 export type InventoryTransactionType = 'in' | 'out' | 'adjustment' | 'expired' | 'damaged' | 'returned';
-
-// 알림 타입
 export type NotificationType = 'order_status' | 'low_stock' | 'supply_request' | 'system' | 'promotion';
 
-// 확장된 사용자 타입 (기존 호환성을 위해)
+// ===== 사용자 관련 타입들 =====
+
 export interface User {
   id: string;
   email: string;
@@ -99,7 +284,6 @@ export interface User {
   updated_at: string;
 }
 
-// 확장된 사용자 프로필 타입 (기존 호환성을 위해) 
 export interface UserProfile {
   id: string;
   user_id: string;
@@ -121,10 +305,11 @@ export interface UserProfile {
   updated_at: string;
 }
 
-// 주소 타입
+// ===== 기타 시스템 타입들 =====
+
 export interface Address {
   id?: string;
-  name?: string; // 주소 별칭 (집, 회사 등)
+  name?: string;
   address: string;
   detail_address?: string;
   postal_code?: string;
@@ -136,16 +321,14 @@ export interface Address {
   is_default?: boolean;
 }
 
-// 영업시간 타입
 export interface BusinessHours {
   [key: string]: {
-    open: string; // HH:MM 형식
-    close: string; // HH:MM 형식
+    open: string;
+    close: string;
     is_closed?: boolean;
   };
 }
 
-// 장바구니 아이템 타입
 export interface CartItem {
   id: string;
   product_id: string;
@@ -158,7 +341,6 @@ export interface CartItem {
   store_id: string;
 }
 
-// 장바구니 타입
 export interface Cart {
   id: string;
   customer_id: string;
@@ -172,7 +354,6 @@ export interface Cart {
   updated_at: string;
 }
 
-// 검색 필터 타입
 export interface SearchFilters {
   category_id?: string;
   min_price?: number;
@@ -184,7 +365,6 @@ export interface SearchFilters {
   sort_order?: 'asc' | 'desc';
 }
 
-// 페이지네이션 타입
 export interface Pagination {
   page: number;
   limit: number;
@@ -192,7 +372,6 @@ export interface Pagination {
   total_pages: number;
 }
 
-// API 응답 타입
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
@@ -201,7 +380,6 @@ export interface ApiResponse<T = any> {
   pagination?: Pagination;
 }
 
-// 통계 데이터 타입
 export interface SalesStats {
   total_revenue: number;
   total_orders: number;
@@ -218,23 +396,20 @@ export interface InventoryStats {
   total_value: number;
 }
 
-// 대시보드 데이터 타입
 export interface DashboardData {
   sales_stats: SalesStats;
   inventory_stats?: InventoryStats;
   recent_orders: Order[];
-  notifications: Notification[];
+  notifications: any[];
   quick_actions?: string[];
 }
 
-// 위치 정보 타입
 export interface Location {
   latitude: number;
   longitude: number;
   address?: string;
 }
 
-// 파일 업로드 타입
 export interface FileUpload {
   file: File;
   url?: string;
@@ -242,7 +417,6 @@ export interface FileUpload {
   error?: string;
 }
 
-// 폼 상태 타입
 export interface FormState<T = any> {
   data: T;
   errors: Record<string, string>;
@@ -250,29 +424,25 @@ export interface FormState<T = any> {
   isValid: boolean;
 }
 
-// 테이블 정렬 타입
 export interface TableSort {
   field: string;
   direction: 'asc' | 'desc';
 }
 
-// 테이블 필터 타입
 export interface TableFilter {
   field: string;
   operator: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'like' | 'in';
   value: any;
 }
 
-// 모달/다이얼로그 상태 타입
 export interface ModalState {
   isOpen: boolean;
   title?: string;
-  content?: React.ReactNode;
+  content?: any;
   onConfirm?: () => void;
   onCancel?: () => void;
 }
 
-// 토스트/알림 메시지 타입
 export interface ToastMessage {
   id?: string;
   type: 'success' | 'error' | 'warning' | 'info';

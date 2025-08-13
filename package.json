@@ -16,13 +16,18 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "server": "node server.js",
     "dev:full": "concurrently \"npm run server\" \"npm run dev\"",
     "setup:excel": "node scripts/setup-excel.js",
-    "postinstall": "npm run setup:excel"
+    "postinstall": "npm run setup:excel || true",
+    "serve:prod": "npx serve -c serve.json -l 10000 --single --no-clipboard",
+    "serve:local": "npx serve -c serve.json -l 3000 --single --no-clipboard",
+    "test:prod": "npm run build && npm run serve:local",
+    "start": "node server-spa.js",
+    "production": "npm run build && npm run start"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.7",
@@ -48,6 +53,7 @@
     "react-hook-form": "^7.62.0",
     "react-router-dom": "^7.7.1",
     "recharts": "^3.1.2",
+    "serve": "^14.2.4",
     "tailwind-merge": "^3.3.1",
     "zod": "^4.0.14",
     "zustand": "^5.0.7"

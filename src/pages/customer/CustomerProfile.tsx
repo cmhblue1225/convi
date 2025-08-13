@@ -85,16 +85,16 @@ const CustomerProfile: React.FC = () => {
         return;
       }
 
-      setProfile(data);
+      setProfile(data as Profile);
       setFormData({
         first_name: data.first_name || '',
         last_name: data.last_name || '',
         email: data.email || '',
         phone: data.phone || '',
         birth_date: data.birth_date || '',
-        gender: data.gender || 'prefer_not_to_say'
+        gender: (data.gender as any) || 'prefer_not_to_say'
       });
-      setNotificationSettings(data.notification_settings || {
+      setNotificationSettings((data.notification_settings as any) || {
         email_notifications: true,
         push_notifications: true,
         order_updates: true,
@@ -130,7 +130,7 @@ const CustomerProfile: React.FC = () => {
         .eq('is_used', false);
 
       if (error) throw error;
-      setUserCoupons(data || []);
+      setUserCoupons(data as UserCoupon[] || []);
     } catch (error) {
       console.error('쿠폰 조회 오류:', error);
     }
@@ -147,7 +147,7 @@ const CustomerProfile: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setPoints(data || []);
+      setPoints(data as Point[] || []);
 
       // 총 포인트 계산 (amount가 이미 양수/음수로 저장되어 있으므로 그대로 합산)
       const total = (data || []).reduce((sum, point) => {

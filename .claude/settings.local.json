@@ -13,7 +13,9 @@
       "WebFetch(domain:apidocs.ncloud.com)",
       "Bash(node server.js)",
       "mcp__supabase__apply_migration",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npm install:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }
