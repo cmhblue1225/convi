@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase/client';
 import { useAuthStore } from '../../stores/common/authStore';
 import PaymentMethodSelector from '../../components/payment/PaymentMethodSelector';
 import PaymentProcessor from '../../components/payment/PaymentProcessor';
+import { usePointsValidation } from '../../hooks/usePointsValidation';
 import type { UserCoupon, CouponValidation } from '../../types/common';
 
 // 결제 방법 타입 정의 (orderStore와 통일)
@@ -45,9 +46,15 @@ const Checkout: React.FC = () => {
   const [selectedCoupon, setSelectedCoupon] = useState<string>('');
   const [couponValidation, setCouponValidation] = useState<CouponValidation | null>(null);
   const [pointsToUse, setPointsToUse] = useState<number>(0);
-  const [totalPoints, setTotalPoints] = useState(0);
   const [finalAmount, setFinalAmount] = useState(totalAmount);
   const [orderNumber, setOrderNumber] = useState<string>('');
+
+  // 포인트 검증 훅 사용
+  const { totalPoints, maxUsablePoints, isValidPointsUsage, getValidationMessage } = usePointsValidation({
+    userId: user?.id || '',
+    totalAmount,
+    couponDiscount: couponValidation?.discount_amount || 0
+  });
 
   // 선택된 지점 정보
   const selectedStore = JSON.parse(localStorage.getItem('selectedStore') || '{}');
@@ -167,10 +174,17 @@ const Checkout: React.FC = () => {
   };
 
   const handlePointsChange = (points: number) => {
-    // 전액 포인트 결제를 허용하기 위해 finalAmount 대신 원래 totalAmount 사용
-    const remainingAmount = totalAmount - (couponValidation?.discount_amount || 0);
-    const maxPoints = Math.min(totalPoints, remainingAmount);
-    setPointsToUse(Math.min(points, maxPoints));
+    // 포인트 사용 유효성 검사
+    if (!isValidPointsUsage(points)) {
+      const message = getValidationMessage(points);
+      alert(message);
+      
+      // 유효하지 않은 경우 최대 사용 가능한 포인트로 설정
+      setPointsToUse(maxUsablePoints);
+      return;
+    }
+    
+    setPointsToUse(points);
   };
 
   const handleAddressChange = (field: keyof DeliveryAddress, value: string) => {
@@ -231,6 +245,13 @@ const Checkout: React.FC = () => {
 
   const handleProceedToPayment = () => {
     if (!validateForm()) return;
+    
+    // 포인트 사용 최종 검증
+    if (pointsToUse > 0 && !isValidPointsUsage(pointsToUse)) {
+      const message = getValidationMessage(pointsToUse);
+      alert(message);
+      return;
+    }
     
     // 주문번호 생성 (한 번만)
     if (!orderNumber) {
@@ -631,9 +652,18 @@ const Checkout: React.FC = () => {
 
                 {totalPoints > 0 && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      포인트 ({totalPoints.toLocaleString()}P 보유)
-                    </label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        포인트 ({totalPoints.toLocaleString()}P 보유)
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setPointsToUse(maxUsablePoints)}
+                        className="text-xs text-blue-600 hover:text-blue-700 underline"
+                      >
+                        최대 사용
+                      </button>
+                    </div>
                     <input
                       type="number"
                       value={pointsToUse || ''}
@@ -642,10 +672,16 @@ const Checkout: React.FC = () => {
                         if (inputValue === '' || inputValue === '0') {
                           setPointsToUse(0);
                         } else {
-                          handlePointsChange(Number(inputValue));
+                          const points = Number(inputValue);
+                          // 음수 입력 방지
+                          if (points < 0) {
+                            setPointsToUse(0);
+                            return;
+                          }
+                          handlePointsChange(points);
                         }
                       }}
-                      max={Math.min(totalPoints, totalAmount - (couponValidation?.discount_amount || 0))}
+                      max={maxUsablePoints}
                       min="0"
                       placeholder="사용할 포인트"
                       className="w-full p-2 border border-gray-300 rounded-lg text-sm"
@@ -658,6 +694,10 @@ const Checkout: React.FC = () => {
                       onBlur={(e) => {
                         if (e.target.value === '') {
                           setPointsToUse(0);
+                        }
+                        // 포커스 해제 시 최대값 검증
+                        if (pointsToUse > maxUsablePoints) {
+                          setPointsToUse(maxUsablePoints);
                         }
                       }}
                     />
