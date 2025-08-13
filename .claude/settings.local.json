@@ -15,7 +15,8 @@
       "mcp__supabase__apply_migration",
       "Bash(npm install:*)",
       "Bash(npm install:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "mcp__supabase__execute_sql"
     ],
     "deny": []
   }
