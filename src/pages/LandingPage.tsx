@@ -216,9 +216,8 @@ const LandingPage: React.FC = () => {
               <h4 className="font-semibold mb-4">제품</h4>
               <ul className="space-y-2 text-gray-400">
                 <li>
-                  <Button
-                  variant="link"
-                  className="p-0 h-auto text-left hover:underline"
+                  <button
+                  className="p-0 text-left text-gray-400 hover:underline"
                   onClick={() => {
                     if (!isAuthenticated) {
                     window.location.href = '/auth';
@@ -232,12 +231,11 @@ const LandingPage: React.FC = () => {
                   }}
                   >
                   고객 앱
-                  </Button>
+                  </button>
                 </li>
                 <li>
-                  <Button
-                  variant="link"
-                  className="p-0 h-auto text-left hover:underline"
+                  <button
+                  className="p-0 text-left text-gray-400 hover:underline"
                   onClick={() => {
                     if (!isAuthenticated) {
                     window.location.href = '/auth';
@@ -251,12 +249,11 @@ const LandingPage: React.FC = () => {
                   }}
                   >
                   점주 대시보드
-                  </Button>
+                  </button>
                 </li>
                 <li>
-                  <Button
-                  variant="link"
-                  className="p-0 h-auto text-left hover:underline"
+                  <button
+                  className="p-0 text-left text-gray-400 hover:underline"
                   onClick={() => {
                     if (!isAuthenticated) {
                     window.location.href = '/auth';
@@ -270,16 +267,37 @@ const LandingPage: React.FC = () => {
                   }}
                   >
                   본사 관리 시스템
-                  </Button>
+                  </button>
                 </li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4">지원</h4>
               <ul className="space-y-2 text-gray-400">
-                <li>고객센터</li>
-                <li>문의하기</li>
-                <li>FAQ</li>
+                <li>
+                  <button
+                  className="p-0 text-left text-gray-400 hover:underline"
+                  onClick={() => window.location.href = '/support/customer'}
+                  >
+                  고객센터
+                  </button>
+                </li>
+                <li>
+                  <button
+                  className="p-0 text-left text-gray-400 hover:underline"
+                  onClick={() => window.location.href = '/support/qa'}
+                  >
+                  문의하기
+                  </button>
+                </li>
+                <li>
+                  <button
+                  className="p-0 text-left text-gray-400 hover:underline"
+                  onClick={() => window.location.href = '/support/faq'}
+                  >
+                  FAQ
+                  </button>
+                </li>
               </ul>
             </div>
             <div>
