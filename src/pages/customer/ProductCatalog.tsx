@@ -141,17 +141,18 @@ const ProductCatalog: React.FC = () => {
       
       if (error) throw error;
 
-      // 행사 정보 가져오기
+      // 행사 정보 가져오기 (전체 매장 행사 + 해당 지점 행사)
       const { data: promotionData, error: promotionError } = await supabase
         .from('promotion_products')
         .select(`
           product_id,
+          store_id,
           promotions!inner(
             name,
             promotion_type
           )
         `)
-        .is('store_id', null) // 전체 매장 행사 (NULL)
+        .or(`store_id.is.null,store_id.eq.${selectedStore.id}`) // 전체 매장 행사 또는 해당 지점 행사
         .eq('promotions.is_active', true);
 
       if (promotionError) {
@@ -202,8 +203,24 @@ const ProductCatalog: React.FC = () => {
       return;
     }
     
+    // 행사 정보가 있으면 StoreProduct에 추가
+    const storeProductWithPromotion = {
+      ...storeProduct,
+      promotionType: product.promotionInfo?.promotion_type || null,
+      promotionName: product.promotionInfo?.promotion_name || null
+    };
+    
     console.log(`🛒 장바구니 추가: ${product.name} (재고: ${storeProduct.stock_quantity} → ${realTimeStock - 1})`);
-    addItem(product, storeProduct, 1);
+    addItem(product, storeProductWithPromotion, 1);
+    
+    // 행사 상품인 경우 알림
+    if (product.promotionInfo?.promotion_type) {
+      const promotionMessage = product.promotionInfo.promotion_type === 'buy_one_get_one' 
+        ? '1+1 행사! 2개를 담으면 1개 가격으로 계산됩니다! 🎉'
+        : '2+1 행사! 3개를 담으면 2개 가격으로 계산됩니다! 🎉';
+      
+      alert(promotionMessage);
+    }
   };
 
   const goBackToStoreSelection = () => {
@@ -387,7 +404,8 @@ const ProductCatalog: React.FC = () => {
                 discount_rate: storeProduct.discount_rate,
                 stock_quantity: realTimeStock,
                 safety_stock: storeProduct.safety_stock,
-                price: storeProduct.price // 기본 price 필드도 유지
+                price: storeProduct.price, // 기본 price 필드도 유지
+                promotionInfo: product.promotionInfo // 행사 정보 추가
               };
 
               return (

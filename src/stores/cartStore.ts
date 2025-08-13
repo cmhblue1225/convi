@@ -29,6 +29,7 @@ interface CartStore {
   }>;
   
   // Actions
+  calculatePromotionPrice: (storeProduct: any, quantity: number) => number;
   addItem: (product: Product, storeProduct: StoreProduct, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
@@ -54,6 +55,34 @@ export const useCartStore = create<CartStore>()(
       deliveryFee: 0,
       totalAmount: 0,
       reorderHistory: [],
+
+      // 행사 가격 계산 함수
+      calculatePromotionPrice: (storeProduct: any, quantity: number) => {
+        // 기본 할인율 적용
+        const basePrice = (storeProduct.discount_rate || 0) > 0 
+          ? storeProduct.price * (1 - (storeProduct.discount_rate || 0))
+          : storeProduct.price;
+
+        // 행사 타입이 없으면 기본 가격 계산
+        if (!storeProduct.promotionType) {
+          return basePrice * quantity;
+        }
+
+        // 행사 가격 계산
+        if (storeProduct.promotionType === 'buy_one_get_one') {
+          // 1+1: 2개를 담으면 1개 가격으로 계산
+          const promotionGroups = Math.floor(quantity / 2);
+          const remainingItems = quantity % 2;
+          return (basePrice * promotionGroups) + (basePrice * remainingItems);
+        } else if (storeProduct.promotionType === 'buy_two_get_one') {
+          // 2+1: 3개를 담으면 2개 가격으로 계산
+          const promotionGroups = Math.floor(quantity / 3);
+          const remainingItems = quantity % 3;
+          return (basePrice * 2 * promotionGroups) + (basePrice * remainingItems);
+        }
+
+        return basePrice * quantity;
+      },
 
       addItem: (product, storeProduct, quantity = 1) => {
         let { items, storeId } = get();
@@ -96,14 +125,13 @@ export const useCartStore = create<CartStore>()(
             return;
           }
           
-          const finalPrice = (storeProduct.discount_rate || 0) > 0 
-            ? storeProduct.price * (1 - (storeProduct.discount_rate || 0))
-            : storeProduct.price;
+          // 행사 가격 계산
+          const finalPrice = get().calculatePromotionPrice(storeProduct, newQuantity);
             
           updatedItems[existingItemIndex] = {
             ...updatedItems[existingItemIndex],
             quantity: newQuantity,
-            subtotal: finalPrice * newQuantity
+            subtotal: finalPrice
           };
           set({ items: updatedItems });
         } else {
@@ -113,17 +141,15 @@ export const useCartStore = create<CartStore>()(
             return;
           }
           
-          // 새 상품 추가
-          const finalPrice = (storeProduct.discount_rate || 0) > 0 
-            ? storeProduct.price * (1 - (storeProduct.discount_rate || 0))
-            : storeProduct.price;
+          // 행사 가격 계산
+          const finalPrice = get().calculatePromotionPrice(storeProduct, quantity);
             
           const newItem: CartItem = {
             id: `${product.id}-${Date.now()}`,
             product,
             storeProduct,
             quantity,
-            subtotal: finalPrice * quantity
+            subtotal: finalPrice
           };
           set({
             items: [...items, newItem],
@@ -156,14 +182,12 @@ export const useCartStore = create<CartStore>()(
               return item;
             }
             
-            const finalPrice = (item.storeProduct.discount_rate || 0) > 0 
-              ? item.storeProduct.price * (1 - (item.storeProduct.discount_rate || 0))
-              : item.storeProduct.price;
+            const finalPrice = get().calculatePromotionPrice(item.storeProduct, quantity);
               
             return {
               ...item,
               quantity,
-              subtotal: finalPrice * quantity
+              subtotal: finalPrice
             };
           }
           return item;

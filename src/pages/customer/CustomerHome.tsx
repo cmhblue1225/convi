@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/common/authStore';
 import { useCartStore } from '../../stores/cartStore';
-import { useOrderStore } from '../../stores/orderStore';
 import { supabase } from '../../lib/supabase/client';
+import type { Product, StoreProduct } from '../../types/common';
 
 interface QuickCategory {
   id: string;
@@ -21,16 +21,35 @@ interface RecentOrder {
   created_at: string;
 }
 
+interface PromotionProduct {
+  id: string;
+  name: string;
+  price: number;
+  basePrice: number;
+  imageUrl: string | null;
+  promotionType: string;
+  promotionName: string;
+  stockQuantity: number;
+  storeProductId: string;
+}
+
+interface PromotionBanner {
+  id: string;
+  title: string;
+  subtitle: string;
+  discount: string;
+  product: PromotionProduct;
+}
+
 const CustomerHome: React.FC = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuthStore();
-  const { getItemCount } = useCartStore();
-  const { fetchOrders } = useOrderStore();
-  const [selectedStore, setSelectedStore] = useState<any>(null);
+  const { getItemCount, addItem } = useCartStore();
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [quickCategories, setQuickCategories] = useState<QuickCategory[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
-  const [promotionProducts, setPromotionProducts] = useState<any[]>([]);
+  const [promotionProducts, setPromotionProducts] = useState<PromotionProduct[]>([]);
+  const [promotionBanners, setPromotionBanners] = useState<PromotionBanner[]>([]);
 
   const getCategoryIcon = (slug?: string, name?: string) => {
     const key = (slug || name || '').toLowerCase();
@@ -118,11 +137,21 @@ const CustomerHome: React.FC = () => {
 
   const fetchPromotionProducts = async (storeId?: string) => {
     try {
+      // 선택된 지점 정보 가져오기
+      const selectedStore = JSON.parse(localStorage.getItem('selectedStore') || '{}');
+      if (!selectedStore.id) {
+        console.log('지점이 선택되지 않음');
+        setPromotionProducts([]);
+        setPromotionBanners([]);
+        return;
+      }
+
       // 먼저 행사 상품 정보를 가져옵니다
-      const { data: promotionData, error: promotionError } = await supabase
+      const { data: promotionData, error: promotionError } = await (supabase as any)
         .from('promotion_products')
         .select(`
           product_id,
+          store_id,
           promotions!inner(
             name,
             promotion_type
@@ -134,27 +163,31 @@ const CustomerHome: React.FC = () => {
             image_urls
           )
         `)
-        .is('store_id', null) // 전체 매장 행사 (NULL)
+        .or(`store_id.is.null,store_id.eq.${selectedStore.id}`) // 전체 매장 행사 또는 해당 지점 행사
         .eq('promotions.is_active', true);
 
       if (promotionError) throw promotionError;
 
       // 행사 상품들의 product_id 목록을 추출
-      const productIds = promotionData?.map(item => item.product_id) || [];
+      const productIds = (promotionData as any[])?.map(item => item.product_id) || [];
 
       if (productIds.length === 0) {
         setPromotionProducts([]);
+        setPromotionBanners([]);
         return;
       }
 
-      // 해당 상품들의 store_products 정보를 가져옵니다
+      // 해당 지점의 store_products 정보를 가져옵니다
       const { data: storeProductsData, error: storeProductsError } = await supabase
         .from('store_products')
         .select(`
+          id,
           product_id,
           price,
+          stock_quantity,
           is_available
         `)
+        .eq('store_id', selectedStore.id)
         .in('product_id', productIds)
         .eq('is_available', true);
 
@@ -167,7 +200,7 @@ const CustomerHome: React.FC = () => {
       });
 
       // 행사 상품과 store_products 정보를 결합
-      const products = (promotionData || [])
+      const products = ((promotionData as any[]) || [])
         .filter(item => storeProductsMap.has(item.product_id))
         .map((item: any) => {
           const storeProduct = storeProductsMap.get(item.product_id);
@@ -178,11 +211,24 @@ const CustomerHome: React.FC = () => {
             basePrice: item.products.base_price,
             imageUrl: item.products.image_urls?.[0] || null,
             promotionType: item.promotions.promotion_type,
-            promotionName: item.promotions.name
+            promotionName: item.promotions.name,
+            stockQuantity: storeProduct.stock_quantity,
+            storeProductId: storeProduct.id
           };
         });
 
-      setPromotionProducts(products.slice(0, 4)); // 최대 4개만 표시
+      setPromotionProducts(products); // 모든 행사 상품 표시
+      
+      // 배너용 데이터 생성 (최대 8개)
+      const banners = products.slice(0, 8).map((product, index) => ({
+        id: `banner-${index}`,
+        title: `${product.promotionType === 'buy_one_get_one' ? '1+1' : '2+1'} 할인 이벤트`,
+        subtitle: product.name,
+        discount: product.promotionType === 'buy_one_get_one' ? '50%' : '33%',
+        product: product
+      }));
+      
+      setPromotionBanners(banners);
     } catch (error) {
       console.error('행사 상품 조회 오류:', error);
     }
@@ -231,32 +277,29 @@ const CustomerHome: React.FC = () => {
     }
   };
 
-  const promoItems = [
-    { id: '1', title: '2+1 할인 이벤트', subtitle: '음료수 전품목', discount: '33%' },
-    { id: '2', title: '신상품 출시', subtitle: '프리미엄 도시락', discount: '신상' },
-    { id: '3', title: '밤 10시 이후', subtitle: '김밥 할인', discount: '20%' },
-  ];
+  // 하드코딩된 promoItems 제거
+  // const promoItems = [
+  //   { id: '1', title: '2+1 할인 이벤트', subtitle: '음료수 전품목', discount: '33%' },
+  //   { id: '2', title: '신상품 출시', subtitle: '프리미엄 도시락', discount: '신상' },
+  //   { id: '3', title: '밤 10시 이후', subtitle: '김밥 할인', discount: '20%' },
+  // ];
 
   useEffect(() => {
     // 선택된 지점 정보 로드
     const storeData = localStorage.getItem('selectedStore');
     if (storeData) {
-      setSelectedStore(JSON.parse(storeData));
+      const selectedStore = JSON.parse(storeData);
+      // 빠른 카테고리 로딩 (선택된 지점 기준)
+      fetchQuickCategories(selectedStore.id);
+      fetchPromotionProducts(selectedStore.id);
+    } else {
+      // 선택된 지점 정보가 없으면 전체 카테고리 로딩
+      fetchQuickCategories();
+      fetchPromotionProducts();
     }
 
     // 최근 주문 내역 로드
     fetchRecentOrders();
-    
-    // 빠른 카테고리 로딩 (선택된 지점 기준)
-    try {
-      const store = localStorage.getItem('selectedStore');
-      const parsed = store ? JSON.parse(store) : null;
-      fetchQuickCategories(parsed?.id);
-      fetchPromotionProducts(parsed?.id);
-    } catch {
-      fetchQuickCategories();
-      fetchPromotionProducts();
-    }
   }, [user]);
 
   const getGreeting = () => {
@@ -327,6 +370,163 @@ const CustomerHome: React.FC = () => {
     }
   };
 
+  const handleAddToCart = async (product: PromotionProduct) => {
+    const storeData = localStorage.getItem('selectedStore');
+    if (!storeData) {
+      alert('먼저 매장을 선택해주세요.');
+      return;
+    }
+
+    const selectedStore = JSON.parse(storeData);
+
+    try {
+      // Product 객체 생성
+      const productObj: Product = {
+        id: product.id,
+        name: product.name,
+        description: '',
+        category_id: null,
+        brand: '',
+        manufacturer: '',
+        unit: '개',
+        image_urls: product.imageUrl ? [product.imageUrl] : [],
+        base_price: product.basePrice,
+        cost_price: null,
+        tax_rate: 0.1,
+        is_active: true,
+        requires_preparation: false,
+        preparation_time: 0,
+        nutritional_info: {},
+        allergen_info: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        is_wishlisted: false,
+        wishlist_count: 0,
+        shelf_life_days: null
+      };
+
+      // StoreProduct 객체 생성 (실제 지점 정보 사용)
+      const storeProductObj: StoreProduct = {
+        id: product.storeProductId,
+        store_id: selectedStore.id,
+        product_id: product.id,
+        price: product.price,
+        stock_quantity: product.stockQuantity,
+        safety_stock: 10,
+        max_stock: 100,
+        is_available: true,
+        discount_rate: 0,
+        promotion_start_date: null,
+        promotion_end_date: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      // 행사 정보를 StoreProduct에 추가
+      const promotionStoreProduct = {
+        ...storeProductObj,
+        promotionType: product.promotionType,
+        promotionName: product.promotionName
+      };
+
+      // 장바구니에 추가 (1개씩, 행사 정보 포함)
+      addItem(productObj, promotionStoreProduct, 1);
+      
+      // 행사 혜택 알림
+      const promotionMessage = product.promotionType === 'buy_one_get_one' 
+        ? '1+1 행사! 1개 가격으로 1개씩 담으세요! 🎉'
+        : '2+1 행사! 2개 가격으로 3개 효과! 🎉';
+      
+      alert(promotionMessage);
+    } catch (error) {
+      console.error('장바구니 추가 오류:', error);
+      alert('장바구니 추가 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleBannerClick = async (item: PromotionBanner) => {
+    const storeData = localStorage.getItem('selectedStore');
+    if (!storeData) {
+      alert('먼저 매장을 선택해주세요.');
+      return;
+    }
+
+    const selectedStore = JSON.parse(storeData);
+
+    // 사용자에게 선택 옵션 제공
+    const choice = confirm(`${item.subtitle} 상품을 장바구니에 추가하시겠습니까?\n\n확인: 장바구니 추가\n취소: 상품 상세 보기`);
+    
+    if (choice) {
+      // 장바구니에 추가
+      try {
+        // Product 객체 생성
+        const productObj: Product = {
+          id: item.product.id,
+          name: item.product.name,
+          description: '',
+          category_id: null,
+          brand: '',
+          manufacturer: '',
+          unit: '개',
+          image_urls: item.product.imageUrl ? [item.product.imageUrl] : [],
+          base_price: item.product.basePrice,
+          cost_price: null,
+          tax_rate: 0.1,
+          is_active: true,
+          requires_preparation: false,
+          preparation_time: 0,
+          nutritional_info: {},
+          allergen_info: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          is_wishlisted: false,
+          wishlist_count: 0,
+          shelf_life_days: null
+        };
+
+        // StoreProduct 객체 생성 (실제 지점 정보 사용)
+        const storeProductObj: StoreProduct = {
+          id: item.product.storeProductId,
+          store_id: selectedStore.id,
+          product_id: item.product.id,
+          price: item.product.price,
+          stock_quantity: item.product.stockQuantity,
+          safety_stock: 10,
+          max_stock: 100,
+          is_available: true,
+          discount_rate: 0,
+          promotion_start_date: null,
+          promotion_end_date: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+
+        // 행사 정보를 StoreProduct에 추가
+        const promotionStoreProduct = {
+          ...storeProductObj,
+          promotionType: item.product.promotionType,
+          promotionName: item.product.promotionName
+        };
+
+        // 장바구니에 추가 (1개씩, 행사 정보 포함)
+        addItem(productObj, promotionStoreProduct, 1);
+        
+        // 행사 혜택 알림
+        const promotionMessage = item.product.promotionType === 'buy_one_get_one' 
+          ? '1+1 행사! 1개 가격으로 1개씩 담으세요! 🎉'
+          : '2+1 행사! 2개 가격으로 3개 효과! 🎉';
+        
+        alert(promotionMessage);
+      } catch (error) {
+        console.error('장바구니 추가 오류:', error);
+        alert('장바구니 추가 중 오류가 발생했습니다.');
+      }
+    } else {
+      // 상품 상세 페이지로 이동
+      navigate(`/customer/products?product=${item.product.id}`);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="px-4 py-6">
@@ -353,7 +553,10 @@ const CustomerHome: React.FC = () => {
               <div>
                 <p className="text-sm text-gray-500">현재 선택 지점</p>
                 <p className="font-semibold text-gray-900">
-                  {selectedStore ? selectedStore.name : '지점을 선택해주세요'}
+                  {(() => {
+                    const storeData = localStorage.getItem('selectedStore');
+                    return storeData ? JSON.parse(storeData).name : '지점을 선택해주세요';
+                  })()}
                 </p>
               </div>
             </div>
@@ -361,66 +564,129 @@ const CustomerHome: React.FC = () => {
               onClick={handleStoreSelect}
               className="text-blue-600 text-sm font-medium hover:text-blue-700"
             >
-              {selectedStore ? '변경' : '선택'}
+              {localStorage.getItem('selectedStore') ? '변경' : '선택'}
             </button>
           </div>
         </div>
 
         {/* 행사 상품 섹션 */}
-        {promotionProducts.length > 0 && (
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">🎉 행사 상품</h2>
-            <div className="grid grid-cols-2 gap-3">
-              {promotionProducts.map((product) => (
-                <div key={product.id} className="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      product.promotionType === 'buy_one_get_one' 
-                        ? 'bg-blue-100 text-blue-800' 
-                        : 'bg-green-100 text-green-800'
-                    }`}>
-                      {product.promotionType === 'buy_one_get_one' ? '1+1' : '2+1'}
-                    </span>
-                  </div>
-                  <div className="text-sm font-medium text-gray-900 mb-1">{product.name}</div>
-                  <div className="text-lg font-bold text-red-600">{product.price.toLocaleString()}원</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 프로모션 배너 */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-gray-900">🎉 특가 혜택</h2>
-            <button
-              onClick={() => navigate('/customer/promotions')}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-            >
-              전체보기
-            </button>
-          </div>
-          <div className="flex gap-3 overflow-x-auto pb-2">
-            {promoItems.map((item) => (
+            <h2 className="text-lg font-semibold text-gray-900">🎉 행사 상품</h2>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">
+                {promotionProducts.length}개 상품
+              </span>
               <button
-                key={item.id}
                 onClick={() => navigate('/customer/promotions')}
-                className="flex-shrink-0 w-64 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-4 text-white hover:from-blue-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105"
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
               >
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h3 className="font-semibold text-sm">{item.title}</h3>
-                    <p className="text-xs opacity-90">{item.subtitle}</p>
-                  </div>
-                  <span className="bg-white bg-opacity-20 px-2 py-1 rounded text-xs font-medium">
-                    {item.discount}
-                  </span>
-                </div>
+                전체보기
               </button>
-            ))}
+            </div>
+          </div>
+          {promotionProducts.length > 0 ? (
+            <div className="bg-white rounded-lg border border-gray-200 max-h-64 overflow-hidden">
+              <div className="h-64 overflow-y-auto">
+                <div className="p-4 space-y-4">
+                  {/* 필터 버튼 */}
+                  <div className="flex gap-2 overflow-x-auto pb-2">
+                    <button className="flex-shrink-0 px-3 py-1 bg-blue-500 text-white text-sm rounded-full hover:bg-blue-600">
+                      전체
+                    </button>
+                    <button className="flex-shrink-0 px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded-full hover:bg-gray-300">
+                      1+1 행사
+                    </button>
+                    <button className="flex-shrink-0 px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded-full hover:bg-gray-300">
+                      2+1 행사
+                    </button>
+                  </div>
+                  
+                  {/* 상품 그리드 */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {promotionProducts.map((product) => (
+                      <div key={product.id} className="bg-gray-50 rounded-lg p-3 shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            product.promotionType === 'buy_one_get_one' 
+                              ? 'bg-blue-100 text-blue-800' 
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                            {product.promotionType === 'buy_one_get_one' ? '1+1' : '2+1'}
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAddToCart(product);
+                            }}
+                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                          >
+                            장바구니+
+                          </button>
+                        </div>
+                        <div className="text-sm font-medium text-gray-900 mb-1 truncate">{product.name}</div>
+                        <div className="text-lg font-bold text-red-600">{product.price.toLocaleString()}원</div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          할인율: {product.promotionType === 'buy_one_get_one' ? '50%' : '33%'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* 하단 정보 */}
+                  <div className="bg-blue-50 rounded-lg p-3 text-center">
+                    <p className="text-sm text-blue-700">
+                      💡 행사 상품은 매장별로 재고 상황이 다를 수 있습니다
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-gray-50 rounded-lg p-6 text-center">
+              <div className="text-gray-400 mb-2">
+                <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                </svg>
+              </div>
+              <p className="text-gray-500 text-sm mb-3">현재 진행 중인 행사 상품이 없습니다.</p>
+              <button
+                onClick={() => navigate('/customer/products')}
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 text-sm"
+              >
+                전체 상품 보기
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* 특가 혜택 배너 */}
+        {promotionBanners.length > 0 && (
+        <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold text-gray-900">🎉 특가 혜택</h2>
+            </div>
+          <div 
+            onClick={() => navigate('/customer/promotions')}
+            className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-4 text-white hover:from-blue-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 cursor-pointer"
+          >
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="font-semibold text-lg">1+1 & 2+1 행사 진행중!</h3>
+                <p className="text-sm opacity-90 mt-1">다양한 상품들이 특별한 할인으로 준비되어 있어요</p>
+              </div>
+              <div className="text-right">
+                <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm font-medium">
+                  최대 50% 할인
+                </span>
+                <div className="text-xs opacity-75 mt-1">
+                  {promotionProducts.length}개 상품
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+        )}
 
         {/* 빠른 카테고리 */}
         <div className="mb-6">

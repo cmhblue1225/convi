@@ -5,10 +5,42 @@ export interface Product {
   id: string;
   name: string;
   description?: string;
-  price: number;
-  image_url?: string;  // 하위 호환성을 위해 유지
-  image_urls?: string[];  // 실제 데이터베이스 필드
+  barcode?: string;
   category_id?: string;
+  brand?: string;
+  manufacturer?: string;
+  unit?: string;
+  image_urls?: string[];
+  base_price?: number;
+  cost_price?: number;
+  tax_rate?: number;
+  is_active?: boolean;
+  requires_preparation?: boolean;
+  preparation_time?: number;
+  nutritional_info?: any;
+  allergen_info?: string[];
+  created_at?: string;
+  updated_at?: string;
+  is_wishlisted?: boolean;
+  wishlist_count?: number;
+  shelf_life_days?: number;
+  price?: number;
+  image_url?: string;  // 하위 호환성을 위해 유지
+}
+
+// 매장별 상품 타입
+export interface StoreProduct {
+  id: string;
+  store_id: string;
+  product_id: string;
+  price: number;
+  stock_quantity: number;
+  safety_stock?: number;
+  max_stock?: number;
+  is_available: boolean;
+  discount_rate?: number;
+  promotion_start_date?: string | null;
+  promotion_end_date?: string | null;
   created_at?: string;
   updated_at?: string;
 }

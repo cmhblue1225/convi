@@ -12,6 +12,10 @@ interface ProductCardProps {
     stock_quantity?: number;
     safety_stock?: number;
     brand?: string;
+    promotionInfo?: {
+      promotion_type: 'buy_one_get_one' | 'buy_two_get_one' | null;
+      promotion_name: string | null;
+    };
   };
   onAddToCart?: () => void;
   showWishlist?: boolean;
@@ -35,6 +39,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const hasImages = product.image_urls && product.image_urls.length > 0;
   const imageUrls = hasImages ? product.image_urls : [];
   const price = product.base_price || product.price || 0;
+
+  // 행사 배지 렌더링 함수
+  const getPromotionBadge = () => {
+    if (!product.promotionInfo?.promotion_type) return null;
+    
+    const isOnePlusOne = product.promotionInfo.promotion_type === 'buy_one_get_one';
+    return (
+      <span className={`inline-flex px-1.5 py-0.5 text-xs font-semibold rounded-full ${
+        isOnePlusOne ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+      }`}>
+        {isOnePlusOne ? '1+1' : '2+1'}
+      </span>
+    );
+  };
 
   // 할인 정보 계산
   const hasDiscount = product.discount_rate && product.discount_rate > 0;
@@ -164,12 +182,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </div>
       )}
 
-      {/* 할인 배지 */}
-      {hasDiscount && (
-        <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded">
-          {Math.round(product.discount_rate * 100)}% 할인
-        </div>
-      )}
+      {/* 배지들 */}
+      <div className="absolute top-2 left-2 z-10 space-y-1">
+        {/* 할인 배지 */}
+        {hasDiscount && (
+          <div className="bg-red-500 text-white text-xs px-2 py-1 rounded">
+            {Math.round(product.discount_rate * 100)}% 할인
+          </div>
+        )}
+        
+        {/* 행사 배지 */}
+        {getPromotionBadge()}
+      </div>
 
       {/* 이미지 섹션 */}
       <div className="aspect-square bg-gray-100 rounded-lg mb-4 overflow-hidden">
