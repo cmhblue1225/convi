@@ -130,9 +130,9 @@ const CartPage: React.FC = () => {
                     <div className="flex items-center space-x-4">
                       {/* 상품 이미지 */}
                       <div className="flex-shrink-0">
-                        {item.product.image_url ? (
+                        {(item.product.image_urls && item.product.image_urls.length > 0) || item.product.image_url ? (
                           <img
-                            src={item.product.image_url}
+                            src={item.product.image_urls?.[0] || item.product.image_url}
                             alt={item.product.name}
                             className="w-20 h-20 object-cover rounded-lg"
                           />
