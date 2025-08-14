@@ -117,6 +117,12 @@ const Location: React.FC<LocationProps> = ({ width = '80%', height = '600px' }) 
   };
 
   const addAllStoreMarkers = (naverMap: any, userLat: number, userLng: number) => {
+    // 네이버 지도 API가 완전히 로드되었는지 확인
+    if (!window.naver || !window.naver.maps || !window.naver.maps.Marker) {
+      console.error('네이버 지도 API가 아직 로드되지 않았습니다.');
+      return;
+    }
+
     // 기존 마커들 제거
     markersRef.current.forEach(marker => {
       marker.setMap(null);
@@ -136,6 +142,12 @@ const Location: React.FC<LocationProps> = ({ width = '80%', height = '600px' }) 
         markersRef.current.push(marker);
 
         const distance = getDistanceFromCoordinates(userLat, userLng, store.lat, store.lng);
+        
+        if (!window.naver?.maps?.InfoWindow || !window.naver?.maps?.Event) {
+          console.error('네이버 지도 InfoWindow 또는 Event API가 없습니다.');
+          return;
+        }
+        
         const infoWindow = new window.naver.maps.InfoWindow({
           content: `
             <div style="padding: 10px; font-size: 14px;">
@@ -159,7 +171,10 @@ const Location: React.FC<LocationProps> = ({ width = '80%', height = '600px' }) 
 
   useEffect(() => {
     const initializeMap = () => {
-      if (!mapRef.current || !window.naver) return;
+      if (!mapRef.current || !window.naver || !window.naver.maps || !window.naver.maps.Map) {
+        console.error('네이버 지도 API가 완전히 로드되지 않았습니다.');
+        return;
+      }
 
       const defaultCenter = new window.naver.maps.LatLng(37.5665, 126.9780);
       
@@ -176,6 +191,12 @@ const Location: React.FC<LocationProps> = ({ width = '80%', height = '600px' }) 
           (position) => {
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
+            
+            if (!window.naver?.maps?.LatLng || !window.naver?.maps?.Marker) {
+              console.error('네이버 지도 API 객체가 없습니다.');
+              return;
+            }
+            
             const userPosition = new window.naver.maps.LatLng(lat, lng);
 
             setUserLocation({ lat, lng });
@@ -199,14 +220,24 @@ const Location: React.FC<LocationProps> = ({ width = '80%', height = '600px' }) 
     };
 
     const loadNaverMapsScript = () => {
-      if (window.naver) {
+      if (window.naver?.maps?.Map) {
         initializeMap();
         return;
       }
 
       const script = document.createElement('script');
       script.src = 'https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=mmo6s8b443';
-      script.onload = initializeMap;
+      script.onload = () => {
+        // 스크립트 로드 후 약간의 지연을 두고 API 객체 완전 로드 확인
+        setTimeout(() => {
+          if (window.naver?.maps?.Map) {
+            initializeMap();
+          } else {
+            console.error('네이버 지도 API 객체가 완전히 로드되지 않았습니다.');
+            setIsLoading(false);
+          }
+        }, 100);
+      };
       script.onerror = () => {
         console.error('네이버 지도 스크립트를 로드할 수 없습니다.');
         setIsLoading(false);
