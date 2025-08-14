@@ -1009,6 +1009,19 @@ const CustomerProfile: React.FC = () => {
                       <span className="font-medium text-gray-900">상품 보기</span>
                     </div>
                   </button>
+                  <button
+                    onClick={() => navigate('/customer/refunds')}
+                    className="w-full text-left p-4 rounded-lg border border-gray-200 hover:bg-orange-50 hover:border-orange-300 transition-all duration-200 group"
+                  >
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-3 group-hover:bg-orange-200 transition-colors">
+                        <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                        </svg>
+                      </div>
+                      <span className="font-medium text-gray-900">환불 요청 현황</span>
+                    </div>
+                  </button>
                 </div>
               </div>
             </div>
