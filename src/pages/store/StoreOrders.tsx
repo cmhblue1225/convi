@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useOrderStore } from '../../stores/orderStore';
 import { useAuthStore } from '../../stores/common/authStore';
+import { usePointStore } from '../../stores/pointStore';
 import { supabase } from '../../lib/supabase/client';
 import ReceiptModal from '../../components/store/ReceiptModal';
 import RefundReceiptModal from '../../components/store/RefundReceiptModal';
-import type { Order } from '../../stores/orderStore';
+import type { Order, RefundRequest } from '../../types/common';
 
 const StoreOrders: React.FC = () => {
   const { orders, isLoading, fetchOrders, subscribeToOrders, unsubscribeFromOrders, updateOrderStatus } = useOrderStore();
@@ -271,7 +272,7 @@ const StoreOrders: React.FC = () => {
         return;
       }
 
-      // 데이터베이스 함수 호출
+      // 데이터베이스 함수 호출 (기존 쿠폰 회수 로직)
       const { data, error } = await supabase.rpc('restore_coupons_and_points' as any, {
         p_refund_request_id: refundRequestId,
         p_processed_by: user.id

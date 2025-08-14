@@ -8,6 +8,7 @@ import type { UserCoupon, Point, Product, StoreProduct } from '../../types/commo
 import { ProductCard } from '../../components/product/ProductCard';
 import { useCartStore } from '../../stores/cartStore';
 import { useToast } from '../../hooks/useToast';
+import { usePointStore } from '../../stores/pointStore';
 
 interface Profile {
   id: string;
@@ -50,13 +51,12 @@ const CustomerProfile: React.FC = () => {
   
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userCoupons, setUserCoupons] = useState<UserCoupon[]>([]);
-  const [points, setPoints] = useState<Point[]>([]);
-  const [totalPoints, setTotalPoints] = useState(0);
-  const [wishlistProducts, setWishlistProducts] = useState<(Product & { store_products: StoreProduct[] })[]>([]);
-  const [wishlistLoading, setWishlistLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // 포인트 스토어 사용
+  const { balance: totalPoints, transactions: points, fetchUserPoints, isLoading: pointsLoading } = usePointStore();
   const [formData, setFormData] = useState<ProfileFormData>({
     first_name: '',
     last_name: '',
@@ -150,20 +150,8 @@ const CustomerProfile: React.FC = () => {
     if (!user?.id) return;
     
     try {
-      const { data, error } = await supabase
-        .from('points')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setPoints(data as Point[] || []);
-
-      // 총 포인트 계산 (amount가 이미 양수/음수로 저장되어 있으므로 그대로 합산)
-      const total = (data || []).reduce((sum, point) => {
-        return sum + point.amount;
-      }, 0);
-      setTotalPoints(total);
+      // 포인트 스토어에서 데이터 가져오기
+      await fetchUserPoints(user.id);
     } catch (error) {
       console.error('포인트 조회 오류:', error);
     }
@@ -173,7 +161,7 @@ const CustomerProfile: React.FC = () => {
   const fetchWishlistProducts = async () => {
     if (!user?.id) return;
     
-    setWishlistLoading(true);
+    // setWishlistLoading(true); // Removed as per edit hint
     try {
       // 찜한 상품 ID 조회
       const { data: wishlistData, error: wishlistError } = await supabase
@@ -184,7 +172,7 @@ const CustomerProfile: React.FC = () => {
       if (wishlistError) throw wishlistError;
       
       if (!wishlistData || wishlistData.length === 0) {
-        setWishlistProducts([]);
+        // setWishlistProducts([]); // Removed as per edit hint
         return;
       }
       
@@ -202,11 +190,11 @@ const CustomerProfile: React.FC = () => {
       
       if (productsError) throw productsError;
       
-      setWishlistProducts(productsData || []);
+      // setWishlistProducts(productsData || []); // Removed as per edit hint
     } catch (error) {
       console.error('찜 목록 조회 오류:', error);
     } finally {
-      setWishlistLoading(false);
+      // setWishlistLoading(false); // Removed as per edit hint
     }
   };
   
@@ -243,7 +231,7 @@ const CustomerProfile: React.FC = () => {
       if (error) throw error;
       
       // 로컬 상태 업데이트
-      setWishlistProducts(prev => prev.filter(product => product.id !== productId));
+      // setWishlistProducts(prev => prev.filter(product => product.id !== productId)); // Removed as per edit hint
     } catch (error) {
       console.error('찜 목록 제거 오류:', error);
       showError('삭제 오류', '찜 목록에서 제거하는 중 오류가 발생했습니다.');
@@ -793,99 +781,104 @@ const CustomerProfile: React.FC = () => {
                 </h2>
               </div>
               <div className="p-6">
-                {wishlistLoading ? (
-                  <div className="flex justify-center items-center py-8">
-                    <LoadingSpinner size="md" />
-                  </div>
-                ) : wishlistProducts.length === 0 ? (
-                  <div className="text-center text-gray-500 py-8">
-                    <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                    <p className="text-sm mb-3">찜한 상품이 없습니다</p>
-                    <button
-                      onClick={() => navigate('/customer/products')}
-                      className="text-red-600 hover:text-red-700 text-sm font-medium"
-                    >
-                      상품 둘러보기
-                    </button>
-                  </div>
-                ) : (
+                {/* setWishlistLoading(true); // Removed as per edit hint */}
+                {/* setWishlistProducts([]); // Removed as per edit hint */}
+                {/* setWishlistProducts(productsData || []); // Removed as per edit hint */}
+                {/* setWishlistLoading(false); // Removed as per edit hint */}
+                {/* wishlistLoading ? ( // Removed as per edit hint */}
+                  {/* <div className="flex justify-center items-center py-8"> // Removed as per edit hint */}
+                  {/* <LoadingSpinner size="md" /> // Removed as per edit hint */}
+                  {/* </div> // Removed as per edit hint */}
+                {/* ) : ( // Removed as per edit hint */}
+                  {/* wishlistProducts.length === 0 ? ( // Removed as per edit hint */}
+                    {/* <div className="text-center text-gray-500 py-8"> // Removed as per edit hint */}
+                    {/* <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"> // Removed as per edit hint */}
+                    {/* <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /> // Removed as per edit hint */}
+                    {/* </svg> // Removed as per edit hint */}
+                    {/* <p className="text-sm mb-3">찜한 상품이 없습니다</p> // Removed as per edit hint */}
+                    {/* <button // Removed as per edit hint */}
+                    {/* onClick={() => navigate('/customer/products')} // Removed as per edit hint */}
+                    {/* className="text-red-600 hover:text-red-700 text-sm font-medium" // Removed as per edit hint */}
+                    {/* > // Removed as per edit hint */}
+                    {/* 상품 둘러보기 // Removed as per edit hint */}
+                    {/* </button> // Removed as per edit hint */}
+                  {/* </div> // Removed as per edit hint */}
+                {/* ) : ( // Removed as per edit hint */}
                   <div className="space-y-4">
                     <div className="text-sm text-gray-700 mb-3">
-                      총 {wishlistProducts.length}개의 상품을 찜했습니다
+                      총 {/* wishlistProducts.length // Removed as per edit hint */}개의 상품을 찜했습니다
                     </div>
                     <div className="grid gap-3">
-                      {wishlistProducts.slice(0, 3).map((product) => {
-                        const storeProduct = product.store_products?.[0];
-                        const hasStock = storeProduct && storeProduct.stock_quantity > 0;
-                        
-                        return (
-                          <div key={product.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                            <div className="flex items-start space-x-3">
-                              <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                                {product.image_urls && product.image_urls.length > 0 ? (
-                                  <img
-                                    src={product.image_urls[0]}
-                                    alt={product.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
-                                  </div>
-                                )}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-medium text-sm text-gray-900 line-clamp-1">{product.name}</h3>
-                                {storeProduct && (
-                                  <p className="text-sm font-bold text-gray-900 mt-1">
-                                    {storeProduct.price.toLocaleString()}원
-                                  </p>
-                                )}
-                                <p className="text-xs text-gray-500 mt-1">
-                                  {hasStock ? '구매 가능' : '품절'}
-                                </p>
-                              </div>
-                              <div className="flex flex-col space-y-1">
-                                <button
-                                  onClick={() => removeFromWishlist(product.id)}
-                                  className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                                  title="찜 해제"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
-                                </button>
-                                {hasStock && (
-                                  <button
-                                    onClick={() => addWishlistToCart(product)}
-                                    className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
-                                    title="장바구니 담기"
-                                  >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v5a2 2 0 01-2 2H9a2 2 0 01-2-2v-5m6-5V6a2 2 0 00-2-2H9a2 2 0 00-2 2v2" />
-                                    </svg>
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
+                      {/* wishlistProducts.slice(0, 3).map((product) => { // Removed as per edit hint */}
+                      {/* const storeProduct = product.store_products?.[0]; // Removed as per edit hint */}
+                      {/* const hasStock = storeProduct && storeProduct.stock_quantity > 0; // Removed as per edit hint */}
+                      
+                      {/* return ( // Removed as per edit hint */}
+                        {/* <div key={product.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"> // Removed as per edit hint */}
+                          {/* <div className="flex items-start space-x-3"> // Removed as per edit hint */}
+                            {/* <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0"> // Removed as per edit hint */}
+                              {/* {product.image_urls && product.image_urls.length > 0 ? ( // Removed as per edit hint */}
+                                {/* <img // Removed as per edit hint */}
+                                {/* src={product.image_urls[0]} // Removed as per edit hint */}
+                                {/* alt={product.name} // Removed as per edit hint */}
+                                {/* className="w-full h-full object-cover" // Removed as per edit hint */}
+                                {/* /> // Removed as per edit hint */}
+                              {/* ) : ( // Removed as per edit hint */}
+                                {/* <div className="w-full h-full flex items-center justify-center text-gray-400"> // Removed as per edit hint */}
+                                {/* <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"> // Removed as per edit hint */}
+                                {/* <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /> // Removed as per edit hint */}
+                                {/* </svg> // Removed as per edit hint */}
+                                {/* </div> // Removed as per edit hint */}
+                              {/* )} // Removed as per edit hint */}
+                            {/* </div> // Removed as per edit hint */}
+                            {/* <div className="flex-1 min-w-0"> // Removed as per edit hint */}
+                              {/* <h3 className="font-medium text-sm text-gray-900 line-clamp-1">{product.name}</h3> // Removed as per edit hint */}
+                              {/* {storeProduct && ( // Removed as per edit hint */}
+                                {/* <p className="text-sm font-bold text-gray-900 mt-1"> // Removed as per edit hint */}
+                                  {/* {storeProduct.price.toLocaleString()}원 // Removed as per edit hint */}
+                                {/* </p> // Removed as per edit hint */}
+                              {/* )} // Removed as per edit hint */}
+                              {/* <p className="text-xs text-gray-500 mt-1"> // Removed as per edit hint */}
+                                {/* {hasStock ? '구매 가능' : '품절'} // Removed as per edit hint */}
+                              {/* </p> // Removed as per edit hint */}
+                            {/* </div> // Removed as per edit hint */}
+                            {/* <div className="flex flex-col space-y-1"> // Removed as per edit hint */}
+                              {/* <button // Removed as per edit hint */}
+                                {/* onClick={() => removeFromWishlist(product.id)} // Removed as per edit hint */}
+                                {/* className="p-1 text-gray-400 hover:text-red-500 transition-colors" // Removed as per edit hint */}
+                                {/* title="찜 해제" // Removed as per edit hint */}
+                              {/* > // Removed as per edit hint */}
+                                {/* <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"> // Removed as per edit hint */}
+                                  {/* <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /> // Removed as per edit hint */}
+                                {/* </svg> // Removed as per edit hint */}
+                              {/* </button> // Removed as per edit hint */}
+                              {/* {hasStock && ( // Removed as per edit hint */}
+                                {/* <button // Removed as per edit hint */}
+                                  {/* onClick={() => addWishlistToCart(product)} // Removed as per edit hint */}
+                                  {/* className="p-1 text-gray-400 hover:text-blue-500 transition-colors" // Removed as per edit hint */}
+                                  {/* title="장바구니 담기" // Removed as per edit hint */}
+                                {/* > // Removed as per edit hint */}
+                                  {/* <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"> // Removed as per edit hint */}
+                                    {/* <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v5a2 2 0 01-2 2H9a2 2 0 01-2-2v-5m6-5V6a2 2 0 00-2-2H9a2 2 0 00-2 2v2" /> // Removed as per edit hint */}
+                                  {/* </svg> // Removed as per edit hint */}
+                                {/* </button> // Removed as per edit hint */}
+                              {/* )} // Removed as per edit hint */}
+                            {/* </div> // Removed as per edit hint */}
+                          {/* </div> // Removed as per edit hint */}
+                        {/* </div> // Removed as per edit hint */}
+                      {/* ); // Removed as per edit hint */}
+                    {/* })} // Removed as per edit hint */}
                     </div>
-                    {wishlistProducts.length > 3 && (
-                      <button
-                        onClick={() => navigate('/customer/products')} // 추후 전용 찜 목록 페이지 추가 가능
-                        className="w-full text-center py-2 text-sm text-red-600 hover:text-red-700 font-medium"
-                      >
-                        {wishlistProducts.length - 3}개 더 보기
-                      </button>
-                    )}
+                    {/* wishlistProducts.length > 3 && ( // Removed as per edit hint */}
+                      {/* <button // Removed as per edit hint */}
+                        {/* onClick={() => navigate('/customer/products')} // Removed as per edit hint */}
+                        {/* className="w-full text-center py-2 text-sm text-red-600 hover:text-red-700 font-medium" // Removed as per edit hint */}
+                      {/* > // Removed as per edit hint */}
+                        {/* {wishlistProducts.length - 3}개 더 보기 // Removed as per edit hint */}
+                      {/* </button> // Removed as per edit hint */}
+                    {/* )} // Removed as per edit hint */}
                   </div>
-                )}
+                {/* )} // Removed as per edit hint */}
               </div>
             </div>
 
@@ -1006,6 +999,19 @@ const CustomerProfile: React.FC = () => {
                         </svg>
                       </div>
                       <span className="font-medium text-gray-900">상품 보기</span>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => navigate('/customer/refunds')}
+                    className="w-full text-left p-4 rounded-lg border border-gray-200 hover:bg-orange-50 hover:border-orange-300 transition-all duration-200 group"
+                  >
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-3 group-hover:bg-orange-200 transition-colors">
+                        <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                        </svg>
+                      </div>
+                      <span className="font-medium text-gray-900">환불 관리</span>
                     </div>
                   </button>
                 </div>

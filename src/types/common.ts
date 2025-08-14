@@ -303,7 +303,7 @@ export type UserRole = 'customer' | 'store_owner' | 'hq_admin' | 'headquarters';
 export type UserStatus = 'active' | 'inactive' | 'suspended';
 export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed' | 'cancelled';
 export type OrderType = 'pickup' | 'delivery';
-export type PaymentMethod = 'card' | 'cash' | 'toss_pay' | 'naver_pay';
+export type PaymentMethod = 'card' | 'cash' | 'kakao_pay' | 'toss_pay' | 'naver_pay';
 export type PaymentStatus = 'pending' | 'paid' | 'refunded' | 'failed';
 export type SupplyRequestStatus = 'draft' | 'submitted' | 'approved' | 'rejected' | 'shipped' | 'delivered' | 'cancelled';
 export type Priority = 'low' | 'normal' | 'high' | 'urgent';
@@ -527,7 +527,7 @@ export interface Point {
   id: string;
   user_id: string;
   amount: number;
-  type: 'earned' | 'used' | 'expired' | 'bonus';
+  type: 'earned' | 'used' | 'expired' | 'bonus' | 'refund';
   description?: string | null;
   order_id?: string | null;
   expires_at?: string | null;
