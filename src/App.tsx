@@ -47,7 +47,7 @@ import HQLayout from './pages/hq/HQLayout';
 import HQDashboard from './pages/hq/HQDashboard';
 import HQStores from './pages/hq/HQStores';
 import HQProducts from './pages/hq/HQProducts';
-
+import HQMembers from './pages/hq/HQMembers';
 import HQSupply from './pages/hq/HQSupply';
 import HQAnalytics from './pages/hq/HQAnalytics';
 
@@ -204,7 +204,7 @@ function App() {
               <Route path="dashboard" element={<HQDashboard />} />
               <Route path="stores" element={<HQStores />} />
               <Route path="products" element={<HQProducts />} />
-              
+              <Route path="members" element={<HQMembers />} />
               <Route path="supply" element={<HQSupply />} />
               <Route path="analytics" element={<HQAnalytics />} />
             </Route>

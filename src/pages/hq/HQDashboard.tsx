@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase/client';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
-import MemberManagement from '../../components/hq/MemberManagement';
-import type { UserCoupon, Point } from '../../types/common';
+import type { Point } from '../../types/common';
 
 interface Store {
   id: string;
@@ -74,7 +73,7 @@ const HQDashboard: React.FC = () => {
     total_members: 0
   });
   const [pointsData, setPointsData] = useState<Point[]>([]);
-  const [selectedStore, setSelectedStore] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'coupons' | 'points'>('coupons');
 
   useEffect(() => {
     fetchDashboardData();
@@ -473,128 +472,7 @@ const HQDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* 쿠폰 & 포인트 통계 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 쿠폰 관리 */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="p-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">🎫 쿠폰 관리</h3>
-              <button
-                onClick={() => navigate('/hq/products')}
-                className="bg-white bg-opacity-20 text-white px-3 py-1 rounded text-sm hover:bg-opacity-30 transition-colors"
-              >
-                관리하기
-              </button>
-            </div>
-          </div>
-          
-          <div className="p-6">
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{couponStats.total_coupons}</div>
-                <div className="text-sm text-gray-600">총 쿠폰</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{couponStats.active_coupons}</div>
-                <div className="text-sm text-gray-600">활성 쿠폰</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">{couponStats.used_coupons}</div>
-                <div className="text-sm text-gray-600">사용된 쿠폰</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-red-600">₩{couponStats.total_discount_amount.toLocaleString()}</div>
-                <div className="text-sm text-gray-600">총 할인 금액</div>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">쿠폰 사용률</span>
-                <span className="font-medium">
-                  {couponStats.total_coupons > 0 
-                    ? Math.round((couponStats.used_coupons / couponStats.total_coupons) * 100)
-                    : 0}%
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-blue-600 h-2 rounded-full transition-all" 
-                  style={{ 
-                    width: `${couponStats.total_coupons > 0 
-                      ? (couponStats.used_coupons / couponStats.total_coupons) * 100 
-                      : 0}%` 
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 포인트 관리 */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="p-4 bg-gradient-to-r from-green-500 to-green-600 text-white">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">💰 포인트 관리</h3>
-              <button
-                onClick={() => navigate('/hq/products')}
-                className="bg-white bg-opacity-20 text-white px-3 py-1 rounded text-sm hover:bg-opacity-30 transition-colors"
-              >
-                관리하기
-              </button>
-            </div>
-          </div>
-          
-          <div className="p-6">
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{pointStats.total_points_issued.toLocaleString()}P</div>
-                <div className="text-sm text-gray-600">총 발행 포인트</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-red-600">{pointStats.total_points_used.toLocaleString()}P</div>
-                <div className="text-sm text-gray-600">사용된 포인트</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{pointStats.active_points.toLocaleString()}P</div>
-                <div className="text-sm text-gray-600">활성 포인트</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">
-                  {pointStats.total_members > 0 
-                    ? Math.round(pointStats.active_points / pointStats.total_members).toLocaleString()
-                    : 0}P
-                </div>
-                <div className="text-sm text-gray-600">회원당 평균</div>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">포인트 사용률</span>
-                <span className="font-medium">
-                  {pointStats.total_points_issued > 0 
-                    ? Math.round((pointStats.total_points_used / pointStats.total_points_issued) * 100)
-                    : 0}%
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-green-600 h-2 rounded-full transition-all" 
-                  style={{ 
-                    width: `${pointStats.total_points_issued > 0 
-                      ? (pointStats.total_points_used / pointStats.total_points_issued) * 100 
-                      : 0}%` 
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 지점별 현황 */}
+      {/* 지점별 현황 - 상단으로 이동 */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="p-4 bg-gray-50 border-b">
           <h3 className="text-lg font-semibold text-gray-900">지점별 현황</h3>
@@ -607,8 +485,7 @@ const HQDashboard: React.FC = () => {
             return (
               <div
                 key={stats.store_id}
-                className={`border-2 rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${getStoreStatusColor(stats)}`}
-                onClick={() => setSelectedStore(selectedStore === stats.store_id ? null : stats.store_id)}
+                className={`border-2 rounded-lg p-4 transition-all hover:shadow-md ${getStoreStatusColor(stats)}`}
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center">
@@ -620,7 +497,7 @@ const HQDashboard: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                   <div>
                     <p className="text-gray-600">총 주문</p>
                     <p className="font-semibold text-gray-900">{stats.total_orders}건</p>
@@ -644,42 +521,41 @@ const HQDashboard: React.FC = () => {
                 </div>
 
                 {stats.supply_requests_pending > 0 && (
-                  <div className="mt-3 p-2 bg-red-100 rounded-lg">
+                  <div className="mb-3 p-2 bg-red-100 rounded-lg">
                     <p className="text-sm text-red-800 font-medium">
                       🚨 물류 요청 대기: {stats.supply_requests_pending}건
                     </p>
                   </div>
                 )}
 
-                {selectedStore === stats.store_id && (
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">지점장:</span>
-                        <span className="font-medium">{store?.profiles?.full_name || '미등록'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">연락처:</span>
-                        <span className="font-medium">{store?.phone || '미등록'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">최근 주문:</span>
-                        <span className="font-medium">
-                          {stats.last_order_date 
-                            ? new Date(stats.last_order_date).toLocaleDateString()
-                            : '주문 없음'
-                          }
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">개점일:</span>
-                        <span className="font-medium">
-                          {store && store.created_at ? new Date(store.created_at).toLocaleDateString() : '-'}
-                        </span>
-                      </div>
+                {/* 상세 정보 - 항상 표시 */}
+                <div className="pt-4 border-t border-gray-200">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">지점장:</span>
+                      <span className="font-medium">{store?.profiles?.full_name || '미등록'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">연락처:</span>
+                      <span className="font-medium">{store?.phone || '미등록'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">최근 주문:</span>
+                      <span className="font-medium">
+                        {stats.last_order_date 
+                          ? new Date(stats.last_order_date).toLocaleDateString()
+                          : '주문 없음'
+                        }
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">개점일:</span>
+                      <span className="font-medium">
+                        {store && store.created_at ? new Date(store.created_at).toLocaleDateString() : '-'}
+                      </span>
                     </div>
                   </div>
-                )}
+                </div>
               </div>
             );
           })}
@@ -690,6 +566,150 @@ const HQDashboard: React.FC = () => {
             등록된 지점이 없습니다.
           </div>
         )}
+      </div>
+
+      {/* 쿠폰 & 포인트 관리 - 탭 형태로 변경 */}
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        {/* 탭 헤더 */}
+        <div className="border-b border-gray-200">
+          <nav className="flex space-x-8" aria-label="Tabs">
+            <button
+              onClick={() => setActiveTab('coupons')}
+              className={`py-4 px-6 border-b-2 font-medium text-sm ${
+                activeTab === 'coupons'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              🎫 쿠폰 관리
+            </button>
+            <button
+              onClick={() => setActiveTab('points')}
+              className={`py-4 px-6 border-b-2 font-medium text-sm ${
+                activeTab === 'points'
+                  ? 'border-green-500 text-green-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              💰 포인트 관리
+            </button>
+          </nav>
+        </div>
+
+        {/* 탭 콘텐츠 */}
+        <div className="p-6">
+          {activeTab === 'coupons' && (
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">쿠폰 통계</h3>
+                <button
+                  onClick={() => navigate('/hq/products')}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  쿠폰 관리하기
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">{couponStats.total_coupons}</div>
+                  <div className="text-sm text-gray-600">총 쿠폰</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">{couponStats.active_coupons}</div>
+                  <div className="text-sm text-gray-600">활성 쿠폰</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-orange-600">{couponStats.used_coupons}</div>
+                  <div className="text-sm text-gray-600">사용된 쿠폰</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-red-600">₩{couponStats.total_discount_amount.toLocaleString()}</div>
+                  <div className="text-sm text-gray-600">총 할인 금액</div>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">쿠폰 사용률</span>
+                  <span className="font-medium">
+                    {couponStats.total_coupons > 0 
+                      ? Math.round((couponStats.used_coupons / couponStats.total_coupons) * 100)
+                      : 0}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div 
+                    className="bg-blue-600 h-3 rounded-full transition-all" 
+                    style={{ 
+                      width: `${couponStats.total_coupons > 0 
+                        ? (couponStats.used_coupons / couponStats.total_coupons) * 100 
+                        : 0}%` 
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'points' && (
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">포인트 통계</h3>
+                <button
+                  onClick={() => navigate('/hq/products')}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  포인트 관리하기
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">{pointStats.total_points_issued.toLocaleString()}P</div>
+                  <div className="text-sm text-gray-600">총 발행 포인트</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-red-600">{pointStats.total_points_used.toLocaleString()}P</div>
+                  <div className="text-sm text-gray-600">사용된 포인트</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">{pointStats.active_points.toLocaleString()}P</div>
+                  <div className="text-sm text-gray-600">활성 포인트</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {pointStats.total_members > 0 
+                      ? Math.round(pointStats.active_points / pointStats.total_members).toLocaleString()
+                      : 0}P
+                  </div>
+                  <div className="text-sm text-gray-600">회원당 평균</div>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">포인트 사용률</span>
+                  <span className="font-medium">
+                    {pointStats.total_points_issued > 0 
+                      ? Math.round((pointStats.total_points_used / pointStats.total_points_issued) * 100)
+                      : 0}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div 
+                    className="bg-green-600 h-3 rounded-full transition-all" 
+                    style={{ 
+                      width: `${pointStats.total_points_issued > 0 
+                        ? (pointStats.total_points_used / pointStats.total_points_issued) * 100 
+                        : 0}%` 
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 물류 요청 요약 */}
@@ -727,11 +747,6 @@ const HQDashboard: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* 회원 관리 */}
-      <div className="mt-8">
-        <MemberManagement />
-      </div>
     </div>
   );
 };
