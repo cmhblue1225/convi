@@ -16,7 +16,7 @@ const __dirname = path.dirname(__filename);
 
 // CORS 설정
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000', 'https://your-app.onrender.com'],
+  origin: ['http://localhost:5173', 'http://localhost:3000', 'https://convi-adx1.onrender.com'],
   credentials: true
 }));
 
