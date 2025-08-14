@@ -61,6 +61,12 @@ import About from './pages/company/About';
 import Careers from './pages/company/Careers';
 import Privacy from './pages/company/Privacy';
 
+// Manual Pages
+import ManualMain from './pages/manual/ManualMain';
+import CustomerManual from './pages/manual/CustomerManual';
+import StoreManual from './pages/manual/StoreManual';
+import HQManual from './pages/manual/HQManual';
+
 // Components
 import ProtectedRoute from './components/common/ProtectedRoute';
 
@@ -215,6 +221,14 @@ function App() {
               <Route path="about" element={<About />} />
               <Route path="careers" element={<Careers />} />
               <Route path="privacy" element={<Privacy />} />
+            </Route>
+
+            {/* Manual Routes */}
+            <Route path="/manual">
+              <Route index element={<ManualMain />} />
+              <Route path="customer" element={<CustomerManual />} />
+              <Route path="store" element={<StoreManual />} />
+              <Route path="hq" element={<HQManual />} />
             </Route>
 
             {/* 404 Page */}
