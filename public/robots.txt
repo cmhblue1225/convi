@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+
+# 사이트맵 위치
+Sitemap: https://convistore.com/sitemap.xml
+
+# 크롤링 지연 (선택사항)
+Crawl-delay: 1
+
+# 제외할 경로들
+Disallow: /api/
+Disallow: /admin/
+Disallow: /_next/
+Disallow: /node_modules/
+Disallow: /.git/
+Disallow: /dist/
+Disallow: /build/
+Disallow: /temp/
+Disallow: /private/

@@ -26,7 +26,7 @@ const RefundReceipt = forwardRef<HTMLDivElement, RefundReceiptProps>(({
   };
 
   return (
-    <div ref={ref} className="refund-receipt bg-white p-6 max-w-md mx-auto font-mono text-sm">
+    <div ref={ref} className="bg-white p-6 max-w-md mx-auto font-mono text-sm leading-relaxed print:shadow-none print:border print:border-gray-300">
       {/* 환불 영수증 헤더 */}
       <div className="text-center border-b-2 border-gray-800 pb-4 mb-4">
         <h1 className="text-xl font-bold text-gray-800 mb-2">환불 영수증</h1>
@@ -115,19 +115,6 @@ const RefundReceipt = forwardRef<HTMLDivElement, RefundReceiptProps>(({
         <div className="mt-2">발행일시: {formatDate(new Date().toISOString())}</div>
       </div>
 
-      {/* 스타일 */}
-      <style jsx>{`
-        .refund-receipt {
-          font-family: 'Courier New', monospace;
-          line-height: 1.4;
-        }
-        @media print {
-          .refund-receipt {
-            box-shadow: none;
-            border: 1px solid #ccc;
-          }
-        }
-      `}</style>
     </div>
   );
 });

@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '../../stores/cartStore';
+import { useToast } from '../../hooks/useToast';
+import { useConfirm } from '../../hooks/useConfirm';
+import ConfirmModal from '../common/ConfirmModal';
 
 interface CartProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
+const Cart: React.FC<CartProps> = React.memo(({ isOpen, onClose }) => {
   const navigate = useNavigate();
+  const { showWarning } = useToast();
+  const { confirmState, showConfirm, closeConfirm, handleCancel } = useConfirm();
   const {
     items,
     orderType,
@@ -41,15 +46,21 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
     removeItem(productId);
   };
 
-  const handleClearCart = () => {
-    if (window.confirm('장바구니를 비우시겠습니까?')) {
+  const handleClearCart = async () => {
+    const confirmed = await showConfirm({
+      title: '장바구니 비우기',
+      message: '장바구니를 비우시겠습니까?',
+      type: 'warning'
+    });
+    
+    if (confirmed) {
       clearCart();
     }
   };
 
   const handleCheckout = () => {
     if (items.length === 0) {
-      alert('장바구니가 비어있습니다.');
+      showWarning('빈 장바구니', '장바구니가 비어있습니다.');
       return;
     }
     
@@ -268,8 +279,20 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
           )}
         </div>
       </div>
+      
+      {/* Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmState.isOpen}
+        onClose={handleCancel}
+        onConfirm={confirmState.onConfirm}
+        title={confirmState.title}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        type={confirmState.type}
+      />
     </div>
   );
-};
+});
 
 export default Cart;

@@ -6,7 +6,7 @@ interface LoadingSpinnerProps {
   className?: string;
 }
 
-export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ 
+export const LoadingSpinner: React.FC<LoadingSpinnerProps> = React.memo(({ 
   size = 'md', 
   className 
 }) => {
@@ -43,6 +43,6 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
       </svg>
     </div>
   );
-};
+});
 
 export default LoadingSpinner; 

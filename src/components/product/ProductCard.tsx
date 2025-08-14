@@ -25,7 +25,7 @@ interface ProductCardProps {
   showGallery?: boolean;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ 
+export const ProductCard: React.FC<ProductCardProps> = React.memo(({ 
   product, 
   onAddToCart,
   showWishlist = true,
@@ -313,4 +313,4 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       )}
     </div>
   );
-};
+});

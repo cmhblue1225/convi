@@ -66,13 +66,22 @@ const CustomerOrders: React.FC = () => {
   };
 
   useEffect(() => {
+    console.log('📋 CustomerOrders 컴포넌트 마운트됨 - 주문 목록 강제 새로고침');
+    
     // 컴포넌트 마운트 시 주문 목록 조회 및 실시간 구독
     fetchOrders();
     subscribeToOrders();
 
-    // 컴포넌트 언마운트 시 구독 해제
+    // 추가로 1초 후 한 번 더 새로고침 (결제 완료 직후 접근한 경우를 위해)
+    const refreshTimer = setTimeout(() => {
+      console.log('🔄 CustomerOrders - 1초 후 추가 새로고침');
+      fetchOrders();
+    }, 1000);
+
+    // 컴포넌트 언마운트 시 구독 해제 및 타이머 정리
     return () => {
       unsubscribeFromOrders();
+      clearTimeout(refreshTimer);
     };
   }, [fetchOrders, subscribeToOrders, unsubscribeFromOrders]);
 

@@ -50,7 +50,7 @@
 
 ### 결제 & 외부 연동
 - **토스페이먼츠** - 카드, 간편결제, 계좌이체
-- **KakaoMap API** - 지점 위치 및 배송 서비스
+- **Google Maps API** - 지점 위치 및 배송 서비스 (CORS 문제 해결)
 
 ### 개발 & 배포 도구
 - **ESLint + Prettier** - 코드 품질 및 포맷팅
@@ -83,6 +83,10 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 # 토스페이먼츠 설정 (결제 기능용)
 VITE_TOSS_CLIENT_KEY=your_toss_client_key
+
+# Google Maps API 설정 (지도 기능용)
+VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+VITE_GOOGLE_GEOCODING_API_KEY=your_geocoding_api_key
 
 # 앱 설정
 VITE_APP_NAME="편의점 종합 솔루션"

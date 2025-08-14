@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { requestCardPayment, requestEasyPayment, requestTossPayment } from '../../lib/payment/tossPayments';
-import { initKakaoPaySDK, initiateKakaoPayPayment } from '../../lib/payment/kakaoPay';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import TossPaymentWindow from './TossPaymentWidget';
 
 // 결제 방법 타입 정의 (orderStore와 통일)
-type PaymentMethod = 'card' | 'cash' | 'mobile' | 'toss' | 'kakao' | 'naver' | 'payco';
+type PaymentMethod = 'card' | 'cash' | 'mobile' | 'toss' | 'naver' | 'payco';
 
 // 토스페이먼츠 결제 정보 타입 정의 (로컬에서 정의)
 interface PaymentInfo {
@@ -19,15 +18,6 @@ interface PaymentInfo {
   failUrl?: string;
 }
 
-// 카카오페이 결제 정보 타입 정의 (로컬에서 정의)
-interface KakaoPaymentInfo {
-  orderId: string;
-  orderName: string;
-  amount: number;
-  customerName?: string;
-  customerEmail?: string;
-  customerPhone?: string;
-}
 
 interface PaymentProcessorProps {
   paymentMethod: PaymentMethod;
@@ -65,9 +55,6 @@ const PaymentProcessor: React.FC<PaymentProcessorProps> = ({
           break;
         case 'toss':
           await handleTossPayment();
-          break;
-        case 'kakao':
-          await handleKakaoPayment();
           break;
         case 'naver':
         case 'payco':
@@ -139,17 +126,6 @@ const PaymentProcessor: React.FC<PaymentProcessorProps> = ({
     setShowTossWidget(true);
   };
 
-  const handleKakaoPayment = async () => {
-    setProcessingMessage('카카오페이 결제는 현재 준비 중입니다.');
-    // 실제 카카오페이 결제 로직 대신 임시 처리
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        alert('카카오페이 결제는 현재 준비 중입니다.');
-        onCancel(); // 결제 취소 또는 이전 단계로 돌아가기
-        resolve(null);
-      }, 1000);
-    });
-  };
 
   
 
@@ -258,7 +234,6 @@ const PaymentProcessor: React.FC<PaymentProcessorProps> = ({
     const methodNames: Record<PaymentMethod, string> = {
       card: '카드',
       toss: '토스페이',
-      kakao: '카카오페이',
       naver: '네이버페이',
       payco: '페이코',
       mobile: '휴대폰 결제',
@@ -271,7 +246,6 @@ const PaymentProcessor: React.FC<PaymentProcessorProps> = ({
     const icons: Record<PaymentMethod, string> = {
       card: '💳',
       toss: '💚',
-      kakao: '💛',
       naver: '🟢',
       payco: '🔵',
       mobile: '📱',

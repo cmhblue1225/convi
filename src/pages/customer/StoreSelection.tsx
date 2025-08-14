@@ -3,15 +3,24 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase/client';
 import type { Store } from '../../types/common';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
-import Location from '../../components/map/MapLocation';
-import { geocodeAddress, getDistanceFromCoordinates } from '../../lib/geocoding/geocoding';
+import GoogleMap from '../../components/map/GoogleMap';
+import { geocodeAddress, getDistanceFromCoordinates } from '../../lib/geocoding/google-geocoding';
 
 const StoreSelection: React.FC = () => {
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
-  const [storeCoordinates, setStoreCoordinates] = useState<Record<string, {lat: number, lng: number}>>({});
+  const [mapStores, setMapStores] = useState<Array<{
+    id: string;
+    name: string;
+    lat: number;
+    lng: number;
+    address: string;
+    phone?: string;
+    delivery_available?: boolean;
+    pickup_available?: boolean;
+  }>>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -103,22 +112,31 @@ const StoreSelection: React.FC = () => {
         setStores(storesData);
         
         // 각 지점의 주소를 좌표로 변환
-        const coordinatesMap: Record<string, {lat: number, lng: number}> = {};
+        const storesForMap: typeof mapStores = [];
         
         for (const store of storesData) {
           const geocodingResult = await geocodeAddress(store.address);
           
           if (geocodingResult.success && geocodingResult.coordinates) {
-            coordinatesMap[store.id] = geocodingResult.coordinates;
+            storesForMap.push({
+              id: store.id,
+              name: store.name,
+              lat: geocodingResult.coordinates.lat,
+              lng: geocodingResult.coordinates.lng,
+              address: store.address,
+              phone: store.phone,
+              delivery_available: store.delivery_available,
+              pickup_available: store.pickup_available
+            });
             console.log(`✅ ${store.name} 좌표 변환 성공:`, geocodingResult.coordinates);
           } else {
             console.warn(`⚠️ ${store.name} 주소 변환 실패: ${geocodingResult.error}`);
             console.warn(`   주소: ${store.address}`);
-            // 좌표 변환에 실패한 경우 coordinatesMap에 추가하지 않음 (거리 계산 안함)
+            // 좌표 변환에 실패한 경우 지도에 표시하지 않음
           }
         }
         
-        setStoreCoordinates(coordinatesMap);
+        setMapStores(storesForMap);
       } else {
         console.log('⚠️ 활성화된 지점이 없습니다.');
         setStores([]);
@@ -138,15 +156,46 @@ const StoreSelection: React.FC = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setUserLocation({
+          const newLocation = {
             lat: position.coords.latitude,
             lng: position.coords.longitude
-          });
+          };
+          setUserLocation(newLocation);
+          console.log('📍 사용자 위치 업데이트:', newLocation);
         },
         (error) => {
           console.log('위치 정보를 가져올 수 없습니다:', error);
+          
+          // 사용자에게 친숙한 에러 메시지
+          let userMessage = '';
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              userMessage = '위치 권한을 허용하면 가까운 지점을 찾을 수 있습니다.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              userMessage = '위치 정보를 사용할 수 없어 기본 위치로 설정됩니다.';
+              break;
+            case error.TIMEOUT:
+              userMessage = '위치 검색 시간이 초과되었습니다.';
+              break;
+            default:
+              userMessage = '위치 정보를 가져올 수 없습니다.';
+          }
+          
+          console.log('ℹ️ 위치 정보:', userMessage);
+          // 기본 위치로 설정 (서울 중심)
+          setUserLocation({ lat: 37.5665, lng: 126.9780 });
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5분
         }
       );
+    } else {
+      console.log('이 브라우저는 위치 서비스를 지원하지 않습니다.');
+      // 기본 위치로 설정
+      setUserLocation({ lat: 37.5665, lng: 126.9780 });
     }
   };
 
@@ -255,26 +304,67 @@ const StoreSelection: React.FC = () => {
     );
   }
 
+  // 지도에서 지점 선택 시 호출되는 함수
+  const handleMapStoreSelect = (mapStore: typeof mapStores[0]) => {
+    const store = stores.find(s => s.id === mapStore.id);
+    if (store) {
+      selectStore(store);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
-        <Location width="100%" height="600px" />
+        {/* 페이지 제목 */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">지점 선택</h1>
           <p className="text-gray-600">가까운 편의점을 선택해주세요</p>
+          {userLocation && (
+            <p className="text-sm text-blue-600 mt-2">
+              📍 현재 위치 기준으로 가까운 순서대로 표시됩니다
+            </p>
+          )}
         </div>
         
+        {/* Google Maps */}
+        <div className="mb-8">
+          <GoogleMap
+            width="100%"
+            height="500px"
+            stores={mapStores}
+            userLocation={userLocation}
+            onStoreSelect={handleMapStoreSelect}
+            zoom={13}
+          />
+        </div>
+        
+        {/* 지점 목록 (거리순 정렬) */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
-          {stores.map((store) => {
-            // 실제 주소로부터 변환된 좌표를 사용하여 거리 계산
-            let distance = null;
-            if (userLocation && storeCoordinates[store.id]) {
-              const storeCoords = storeCoordinates[store.id];
-              distance = getDistanceFromCoordinates(
-                userLocation.lat, userLocation.lng,
-                storeCoords.lat, storeCoords.lng
-              );
-            }
+          {stores
+            .map((store) => {
+              // 지도 데이터에서 해당 지점의 좌표를 찾아 거리 계산
+              let distance = null;
+              if (userLocation) {
+                const mapStore = mapStores.find(ms => ms.id === store.id);
+                if (mapStore) {
+                  distance = getDistanceFromCoordinates(
+                    userLocation.lat, userLocation.lng,
+                    mapStore.lat, mapStore.lng
+                  );
+                }
+              }
+              return { ...store, distance };
+            })
+            .sort((a, b) => {
+              // 거리순 정렬 (거리 정보가 없는 경우 맨 뒤로)
+              if (a.distance === null && b.distance === null) return 0;
+              if (a.distance === null) return 1;
+              if (b.distance === null) return -1;
+              return a.distance - b.distance;
+            })
+            .map((storeWithDistance) => {
+              const store = storeWithDistance;
+              const distance = storeWithDistance.distance;
 
             return (
               <div

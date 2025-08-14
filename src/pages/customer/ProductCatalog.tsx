@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { supabase } from '../../lib/supabase/client';
 import type { Product, Category, StoreProduct } from '../../types/common';
@@ -8,6 +8,7 @@ import { useCartStore } from '../../stores/cartStore';
 import { WishlistButton } from '../../components/common/WishlistButton';
 import { useAuthStore } from '../../stores/common/authStore';
 import { ProductCard } from '../../components/product/ProductCard';
+import { useToast } from '../../hooks/useToast';
 
 interface ProductWithStock extends Product {
   store_products: StoreProduct[];
@@ -32,6 +33,7 @@ const ProductCatalog: React.FC = () => {
   const location = useLocation();
   
   const { addItem, getItemCount, items } = useCartStore();
+  const { showWarning, showSuccess } = useToast();
 
   // 선택된 지점 정보 가져오기
   const selectedStore = JSON.parse(localStorage.getItem('selectedStore') || '{}');
@@ -185,12 +187,14 @@ const ProductCatalog: React.FC = () => {
     }
   };
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = useMemo(() => {
+    return products.filter(product =>
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [products, searchTerm]);
 
-  const addToCart = (product: ProductWithStock) => {
+  const addToCart = useCallback((product: ProductWithStock) => {
     const storeProduct = product.store_products[0];
     
     // 현재 장바구니에 담긴 수량 확인
@@ -199,7 +203,7 @@ const ProductCatalog: React.FC = () => {
     const realTimeStock = storeProduct.stock_quantity - cartQuantity;
     
     if (realTimeStock <= 0) {
-      alert(`${product.name}은(는) 재고가 부족합니다. (남은 재고: ${realTimeStock}개)`);
+      showWarning('재고 부족', `${product.name}은(는) 재고가 부족합니다. (남은 재고: ${realTimeStock}개)`);
       return;
     }
     
@@ -215,13 +219,15 @@ const ProductCatalog: React.FC = () => {
     
     // 행사 상품인 경우 알림
     if (product.promotionInfo?.promotion_type) {
-      const promotionMessage = product.promotionInfo.promotion_type === 'buy_one_get_one' 
-        ? '1+1 행사! 2개를 담으면 1개 가격으로 계산됩니다! 🎉'
-        : '2+1 행사! 3개를 담으면 2개 가격으로 계산됩니다! 🎉';
+      const isOneOnePromotion = product.promotionInfo.promotion_type === 'buy_one_get_one';
+      const promotionTitle = isOneOnePromotion ? '1+1 행사!' : '2+1 행사!';
+      const promotionMessage = isOneOnePromotion 
+        ? '2개 담으면 1개 가격! 🎉'
+        : '3개 담으면 2개 가격! 🎉';
       
-      alert(promotionMessage);
+      showSuccess(promotionTitle, promotionMessage);
     }
-  };
+  }, [items, addItem, showWarning, showSuccess]);
 
   const goBackToStoreSelection = () => {
     console.log('🔄 지점 변경 버튼 클릭');
@@ -248,11 +254,11 @@ const ProductCatalog: React.FC = () => {
   };
 
   // 현재 선택된 카테고리 이름 가져오기
-  const getCurrentCategoryName = () => {
+  const getCurrentCategoryName = useMemo(() => {
     if (selectedCategory === 'all') return '전체 상품';
     const category = categories.find(cat => cat.id === selectedCategory);
     return category ? category.name : '전체 상품';
-  };
+  }, [selectedCategory, categories]);
 
   if (!selectedStore.id) {
     return (
@@ -303,7 +309,7 @@ const ProductCatalog: React.FC = () => {
               <p className="text-gray-600 text-sm">{selectedStore.address}</p>
               {/* 현재 카테고리 표시 */}
               <p className="text-blue-600 text-sm font-medium mt-1">
-                📂 {getCurrentCategoryName()}
+                📂 {getCurrentCategoryName}
               </p>
             </div>
             <div className="flex items-center space-x-3">
@@ -352,25 +358,26 @@ const ProductCatalog: React.FC = () => {
         </div>
         
         {/* 카테고리 필터 */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-          <div className="flex gap-2 overflow-x-auto pb-2">
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">카테고리</h2>
+          <div className="flex flex-wrap gap-3 overflow-x-auto pb-2">
             <button
-              className={`px-4 py-2 rounded-full whitespace-nowrap font-medium transition-colors ${
+              className={`px-6 py-3 rounded-full whitespace-nowrap font-medium transition-all duration-200 shadow-sm ${
                 selectedCategory === 'all'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-blue-500 text-white shadow-blue-200'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-md'
               }`}
               onClick={() => handleCategoryChange('all')}
             >
-              전체
+              🏪 전체
             </button>
             {categories.map((category) => (
               <button
                 key={category.id}
-                className={`px-4 py-2 rounded-full whitespace-nowrap font-medium transition-colors ${
+                className={`px-6 py-3 rounded-full whitespace-nowrap font-medium transition-all duration-200 shadow-sm ${
                   selectedCategory === category.id
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-blue-500 text-white shadow-blue-200'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-md'
                 }`}
                 onClick={() => handleCategoryChange(category.id)}
               >
@@ -432,7 +439,7 @@ const ProductCatalog: React.FC = () => {
         {!loading && filteredProducts.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-500 mb-4">
-              {searchTerm ? '검색 결과가 없습니다.' : `${getCurrentCategoryName()}에 등록된 상품이 없습니다.`}
+              {searchTerm ? '검색 결과가 없습니다.' : `${getCurrentCategoryName}에 등록된 상품이 없습니다.`}
             </div>
             {searchTerm && (
               <button 
