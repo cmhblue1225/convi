@@ -180,3 +180,4 @@ GRANT EXECUTE ON FUNCTION cancel_return_request(UUID, UUID, TEXT) TO authenticat
 COMMENT ON FUNCTION handle_return_request_cancellation() IS '반품 요청 취소 시 재고를 자동으로 복원하고 거래 이력을 기록';
 COMMENT ON TRIGGER trigger_handle_return_request_cancellation ON return_requests IS '반품 요청 취소 시 재고 복원을 자동으로 처리하는 트리거';
 COMMENT ON FUNCTION cancel_return_request(UUID, UUID, TEXT) IS '반품 요청을 취소하는 함수 (API 호출용)';
+

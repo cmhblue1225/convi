@@ -91,3 +91,4 @@ CREATE TRIGGER trigger_handle_return_request_approval
 COMMENT ON FUNCTION handle_return_request_approval() IS '반품 요청 승인 시 지점 재고를 자동으로 차감하고 거래 이력을 기록';
 COMMENT ON TRIGGER trigger_handle_return_request_approval ON return_requests IS '반품 요청 승인 시 재고 차감을 자동으로 처리하는 트리거';
 
+
