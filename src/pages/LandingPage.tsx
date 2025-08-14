@@ -99,6 +99,11 @@ const LandingPage: React.FC = () => {
                   무료로 시작하기
                 </Button>
               </Link>
+              <Link to="/manual">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto">
+                  📋 사용자 매뉴얼 보기
+                </Button>
+              </Link>
               <Button 
                 variant="outline" 
                 size="lg" 
