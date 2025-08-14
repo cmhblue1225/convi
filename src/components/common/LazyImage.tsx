@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { generatePlaceholder, getDefaultProductImage } from '../../lib/imageUtils';
+import { generatePlaceholder, getDefaultProductImage, getOptimizedImageUrl } from '../../lib/imageUtils';
 
 interface LazyImageProps {
   src: string;
@@ -9,12 +9,14 @@ interface LazyImageProps {
   height?: number;
   fallback?: string;
   placeholder?: string;
+  quality?: number;
+  format?: 'webp' | 'avif';
   onLoad?: () => void;
   onError?: () => void;
   onClick?: () => void;
 }
 
-export const LazyImage: React.FC<LazyImageProps> = ({
+export const LazyImage: React.FC<LazyImageProps> = React.memo(({
   src,
   alt,
   className = '',
@@ -22,6 +24,8 @@ export const LazyImage: React.FC<LazyImageProps> = ({
   height,
   fallback,
   placeholder,
+  quality = 80,
+  format,
   onLoad,
   onError,
   onClick
@@ -78,13 +82,24 @@ export const LazyImage: React.FC<LazyImageProps> = ({
     return getDefaultProductImage();
   };
 
-  // 유효한 이미지 URL인지 확인
+  // 유효한 이미지 URL인지 확인 및 최적화
   const getValidSrc = () => {
     // src가 빈 문자열이거나 null/undefined인 경우 대체 이미지 사용
     if (!src || src.trim() === '') {
       return getFallbackSrc();
     }
-    return isError ? getFallbackSrc() : src;
+    
+    if (isError) {
+      return getFallbackSrc();
+    }
+    
+    // 이미지 최적화 적용
+    return getOptimizedImageUrl(src, {
+      width,
+      height,
+      quality,
+      format
+    });
   };
 
   return (
@@ -122,6 +137,6 @@ export const LazyImage: React.FC<LazyImageProps> = ({
       )}
     </div>
   );
-};
+});
 
 export default LazyImage;

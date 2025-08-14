@@ -7,6 +7,7 @@ import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import type { UserCoupon, Point, Product, StoreProduct } from '../../types/common';
 import { ProductCard } from '../../components/product/ProductCard';
 import { useCartStore } from '../../stores/cartStore';
+import { useToast } from '../../hooks/useToast';
 
 interface Profile {
   id: string;
@@ -73,6 +74,7 @@ const CustomerProfile: React.FC = () => {
   });
   
   const { addItem } = useCartStore();
+  const { showWarning, showSuccess, showError } = useToast();
 
   // 프로필 데이터 로드
   const fetchProfile = async () => {
@@ -211,7 +213,7 @@ const CustomerProfile: React.FC = () => {
   // 찜 목록에서 장바구니 담기
   const addWishlistToCart = (product: Product & { store_products: StoreProduct[] }) => {
     if (!product.store_products || product.store_products.length === 0) {
-      alert('현재 판매하지 않는 상품입니다.');
+      showWarning('상품 없음', '현재 판매하지 않는 상품입니다.');
       return;
     }
     
@@ -219,12 +221,12 @@ const CustomerProfile: React.FC = () => {
     const storeProduct = product.store_products[0];
     
     if (storeProduct.stock_quantity <= 0) {
-      alert('재고가 부족합니다.');
+      showWarning('재고 부족', '재고가 부족합니다.');
       return;
     }
     
     addItem(product, storeProduct, 1);
-    alert(`${product.name}을(를) 장바구니에 담았습니다!`);
+    showSuccess('장바구니 담기', `${product.name}을(를) 장바구니에 담았습니다!`);
   };
   
   // 찜 목록에서 제거
@@ -244,7 +246,7 @@ const CustomerProfile: React.FC = () => {
       setWishlistProducts(prev => prev.filter(product => product.id !== productId));
     } catch (error) {
       console.error('찜 목록 제거 오류:', error);
-      alert('찜 목록에서 제거하는 중 오류가 발생했습니다.');
+      showError('삭제 오류', '찜 목록에서 제거하는 중 오류가 발생했습니다.');
     }
   };
 
@@ -270,7 +272,7 @@ const CustomerProfile: React.FC = () => {
 
       if (error) {
         console.error('프로필 업데이트 실패:', error);
-        alert('프로필 업데이트에 실패했습니다.');
+        showError('업데이트 실패', '프로필 업데이트에 실패했습니다.');
         return;
       }
 
@@ -283,10 +285,10 @@ const CustomerProfile: React.FC = () => {
       } : null);
 
       setIsEditing(false);
-      alert('프로필이 성공적으로 업데이트되었습니다.');
+      showSuccess('업데이트 성공', '프로필이 성공적으로 업데이트되었습니다.');
     } catch (err) {
       console.error('프로필 저장 오류:', err);
-      alert('프로필 저장에 실패했습니다.');
+      showError('저장 실패', '프로필 저장에 실패했습니다.');
     } finally {
       setIsSaving(false);
     }

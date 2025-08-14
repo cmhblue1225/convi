@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOrderStore } from '../../stores/orderStore';
 import { useAuthStore } from '../../stores/common/authStore';
@@ -173,11 +173,8 @@ const StoreDashboard: React.FC = () => {
     monthlyGrowth: 0
   });
 
-  const [recentOrders, setRecentOrders] = useState(orders.slice(0, 5));
-  const [salesData, setSalesData] = useState<SalesData[]>([]);
-
-  // 통계 데이터 계산
-  useEffect(() => {
+  // 통계 데이터 계산 (메모이제이션)
+  const calculatedStats = useMemo(() => {
     // 기본 통계 데이터 설정 (데이터가 없어도 기본값으로 설정)
     const today = new Date().toDateString();
     const todayOrders = orders.filter(order => 
@@ -237,19 +234,22 @@ const StoreDashboard: React.FC = () => {
       ? ((thisMonthSales - lastMonthSales) / lastMonthSales) * 100 
       : 0;
 
-    setStats({
+    return {
       todaySales,
       todayOrders: todayOrders.length,
       pendingOrders,
       lowStockItems,
       weeklyGrowth: Math.round(weeklyGrowth * 10) / 10, // 소수점 첫째 자리까지
       monthlyGrowth: Math.round(monthlyGrowth * 10) / 10
-    });
+    };
+  }, [orders, storeProducts]);
 
-    setRecentOrders(orders.slice(0, 5));
+  // 최근 주문 (메모이제이션)
+  const recentOrders = useMemo(() => orders.slice(0, 5), [orders]);
 
-    // 최근 7일 매출 데이터 생성
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
+  // 매출 데이터 (메모이제이션)
+  const salesData = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const dateStr = date.toDateString();
@@ -264,14 +264,17 @@ const StoreDashboard: React.FC = () => {
         orders: dayOrders.length
       };
     }).reverse();
+  }, [orders]);
 
-    setSalesData(last7Days);
+  // 스탯 업데이트 및 로딩 상태 관리
+  useEffect(() => {
+    setStats(calculatedStats);
     
     // 로딩 상태 해제 - 지점 정보가 로드되었으면 대시보드 표시
     if (storeName) {
       setLoading(false);
     }
-  }, [orders, storeProducts, storeName]);
+  }, [calculatedStats, storeName]);
 
   const getStatusBadge = (status: string) => {
     const badges = {
@@ -299,7 +302,7 @@ const StoreDashboard: React.FC = () => {
     );
   };
 
-  const maxSales = Math.max(...salesData.map(d => d.sales));
+  const maxSales = useMemo(() => Math.max(...salesData.map(d => d.sales)), [salesData]);
 
   if (loading) {
     return (

@@ -28,12 +28,11 @@ export interface Order {
   orderType: 'pickup' | 'delivery';
   items: OrderItem[];
   deliveryAddress?: DeliveryAddress;
-  paymentMethod: 'card' | 'cash' | 'mobile' | 'toss' | 'kakao' | 'naver' | 'payco';
+  paymentMethod: 'card' | 'cash' | 'mobile' | 'toss' | 'naver' | 'payco';
   paymentStatus?: 'pending' | 'paid' | 'failed' | 'refunded';
   subtotal: number;
   taxAmount: number;
   deliveryFee: number;
-  couponDiscount?: number;
   totalAmount: number;
   // 포인트 정보 추가
   pointsUsed?: number;
@@ -74,6 +73,7 @@ export const useOrderStore = create<OrderState>()(
           console.log('📝 Supabase에 주문 저장 중...', orderData);
           console.log('🔍 paymentMethod 값:', orderData.paymentMethod);
           console.log('🔍 paymentMethod 타입:', typeof orderData.paymentMethod);
+          console.log('🔍 orderData 전체 구조:', JSON.stringify(orderData, null, 2));
 
           // 현재 로그인한 사용자 ID 가져오기
           const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -92,7 +92,6 @@ export const useOrderStore = create<OrderState>()(
               'card': 'card',
               'cash': 'cash',
               'toss': 'toss_pay',
-              'kakao': 'kakao_pay',
               'naver': 'card', // 네이버페이는 카드로 매핑
               'payco': 'card', // 페이코는 카드로 매핑
               'mobile': 'card', // 휴대폰 결제는 카드로 매핑
@@ -112,14 +111,13 @@ export const useOrderStore = create<OrderState>()(
             subtotal: orderData.subtotal,
             tax_amount: orderData.taxAmount,
             delivery_fee: orderData.deliveryFee,
-            coupon_discount: (orderData as any).couponDiscount || 0,
             total_amount: orderData.totalAmount,
             // 포인트 정보 추가
             points_used: (orderData as any).pointsUsed || 0,
             points_discount_amount: (orderData as any).pointsDiscountAmount || 0,
             status: orderData.status,
             payment_status: 'paid', // 결제 성공 페이지에서 호출되므로 paid로 설정
-            payment_data: orderData.paymentResult ? JSON.stringify(orderData.paymentResult) : null,
+            payment_data: null, // paymentResult 필드 제거됨
           };
 
           console.log('📦 Supabase에 삽입할 데이터:', insertData);
@@ -219,23 +217,35 @@ export const useOrderStore = create<OrderState>()(
 
                 // 재고 변동 이력 기록 (선택적)
                 try {
-                  const { error: logError } = await supabase
-                    .from('inventory_transactions')
-                    .insert({
-                      store_product_id: currentStock.id,
-                      transaction_type: 'out',
-                      quantity: item.quantity,
-                      previous_quantity: currentStock.stock_quantity,
-                      new_quantity: Math.max(0, newStockQuantity),
-                      reference_type: 'order',
-                      reference_id: data.id,
-                      reason: `주문 #${orderData.orderNumber}로 인한 재고 차감`,
-                      created_by: user.id
-                    });
+                  // store_products에서 ID를 먼저 조회
+                  const { data: storeProductData, error: storeProductError } = await supabase
+                    .from('store_products')
+                    .select('id')
+                    .eq('store_id', orderData.storeId)
+                    .eq('product_id', item.productId)
+                    .single();
 
-                  if (logError) {
-                    console.error(`❌ 재고 이력 기록 실패 (상품: ${item.productName}):`, logError);
-                    // 이력 기록 실패는 주문 진행에 영향을 주지 않음
+                  if (storeProductError || !storeProductData) {
+                    console.error(`❌ store_product ID 조회 실패 (상품: ${item.productName}):`, storeProductError);
+                  } else {
+                    const { error: logError } = await supabase
+                      .from('inventory_transactions')
+                      .insert({
+                        store_product_id: storeProductData.id,
+                        transaction_type: 'out',
+                        quantity: item.quantity,
+                        previous_quantity: currentStock.stock_quantity,
+                        new_quantity: Math.max(0, newStockQuantity),
+                        reference_type: 'order',
+                        reference_id: data.id,
+                        reason: `주문 #${orderData.orderNumber}로 인한 재고 차감`,
+                        created_by: user.id
+                      });
+
+                    if (logError) {
+                      console.error(`❌ 재고 이력 기록 실패 (상품: ${item.productName}):`, logError);
+                      // 이력 기록 실패는 주문 진행에 영향을 주지 않음
+                    }
                   }
                 } catch (logError) {
                   console.error(`❌ 재고 이력 기록 중 예외 발생 (상품: ${item.productName}):`, logError);
@@ -325,7 +335,6 @@ export const useOrderStore = create<OrderState>()(
             subtotal: data.subtotal,
             taxAmount: data.tax_amount,
             deliveryFee: data.delivery_fee,
-            couponDiscount: data.coupon_discount || 0,
             totalAmount: data.total_amount,
             // 포인트 정보 추가
             pointsUsed: data.points_used || 0,
@@ -340,6 +349,15 @@ export const useOrderStore = create<OrderState>()(
             orders: [newOrder, ...state.orders],
             isLoading: false
           }));
+
+          console.log('🎉 주문 생성 완료 - 새로운 주문이 추가되었습니다:', newOrder.id);
+          console.log('📊 현재 총 주문 수:', get().orders.length);
+
+          // 주문 생성 후 즉시 주문 목록 새로고침 (실시간 동기화)
+          setTimeout(() => {
+            console.log('🔄 주문 목록 새로고침 시작...');
+            get().fetchOrders();
+          }, 1000);
 
           return newOrder;
         } catch (error) {
@@ -460,23 +478,34 @@ export const useOrderStore = create<OrderState>()(
                         console.log(`✅ 재고 복구 완료 (상품 ID: ${item.product_id}): ${currentStock.stock_quantity} → ${newStockQuantity}`);
                       }
 
-                      // 재고 변동 이력 기록
-                      const { error: logError } = await supabase
-                        .from('inventory_transactions')
-                        .insert({
-                          store_product_id: currentStock.id,
-                          transaction_type: 'in',
-                          quantity: item.quantity,
-                          previous_quantity: currentStock.stock_quantity,
-                          new_quantity: newStockQuantity,
-                          reference_type: 'order',
-                          reference_id: orderId,
-                          reason: `주문 취소로 인한 재고 복구`,
-                          created_by: user.id
-                        });
+                      // 재고 변동 이력 기록 - store_product ID 먼저 조회
+                      const { data: storeProductData, error: storeProductError } = await supabase
+                        .from('store_products')
+                        .select('id')
+                        .eq('store_id', orderInfo.store_id)
+                        .eq('product_id', item.product_id)
+                        .single();
 
-                      if (logError) {
-                        console.error(`❌ 재고 이력 기록 실패 (상품 ID: ${item.product_id}):`, logError);
+                      if (storeProductError || !storeProductData) {
+                        console.error(`❌ store_product ID 조회 실패 (상품 ID: ${item.product_id}):`, storeProductError);
+                      } else {
+                        const { error: logError } = await supabase
+                          .from('inventory_transactions')
+                          .insert({
+                            store_product_id: storeProductData.id,
+                            transaction_type: 'in',
+                            quantity: item.quantity,
+                            previous_quantity: currentStock.stock_quantity,
+                            new_quantity: newStockQuantity,
+                            reference_type: 'order',
+                            reference_id: orderId,
+                            reason: `주문 취소로 인한 재고 복구`,
+                            created_by: user.id
+                          });
+
+                        if (logError) {
+                          console.error(`❌ 재고 이력 기록 실패 (상품 ID: ${item.product_id}):`, logError);
+                        }
                       }
                     } catch (error) {
                       console.error(`❌ 재고 복구 처리 중 오류 (상품 ID: ${item.product_id}):`, error);
@@ -627,7 +656,6 @@ export const useOrderStore = create<OrderState>()(
             subtotal: item.subtotal,
             taxAmount: item.tax_amount,
             deliveryFee: item.delivery_fee,
-            couponDiscount: item.coupon_discount || 0,
             totalAmount: item.total_amount,
             // 포인트 정보 추가
             pointsUsed: item.points_used || 0,

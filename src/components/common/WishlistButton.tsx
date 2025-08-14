@@ -4,6 +4,7 @@ import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 import { useAuthStore } from '../../stores/common/authStore';
 import { supabase } from '../../lib/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../../hooks/useToast';
 
 interface WishlistButtonProps {
   productId: string;
@@ -11,13 +12,14 @@ interface WishlistButtonProps {
   onToggle: (newState: boolean) => void;
 }
 
-export const WishlistButton: React.FC<WishlistButtonProps> = ({
+export const WishlistButton: React.FC<WishlistButtonProps> = React.memo(({
   productId,
   isWishlisted,
   onToggle
 }) => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const { showError } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
 
   const handleClick = async (e: React.MouseEvent) => {
@@ -52,7 +54,7 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
       }
     } catch (error) {
       console.error('찜하기 토글 중 오류:', error);
-      alert('찜하기 처리 중 오류가 발생했습니다.');
+      showError('찜하기 오류', '찜하기 처리 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -77,4 +79,4 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
       </span>
     </button>
   );
-};
+});

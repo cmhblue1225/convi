@@ -338,13 +338,92 @@ export const getOptimizedImageUrl = (
     format?: 'webp' | 'avif';
   } = {}
 ): string => {
-  // Supabase는 기본적으로 이미지 변형을 지원하지 않으므로
-  // 향후 Cloudinary나 다른 이미지 CDN 연동 시 사용
+  if (!originalUrl) return originalUrl;
+  
   const { width, height, quality = 80, format } = options;
   
-  // 현재는 원본 URL 반환
-  // TODO: 이미지 CDN 연동 시 변형 URL 생성 로직 추가
+  // 환경 변수에서 CDN 설정 확인
+  const cdnProvider = import.meta.env.VITE_IMAGE_CDN_PROVIDER;
+  const cloudinaryCloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  
+  // Cloudinary CDN 변형 URL 생성
+  if (cdnProvider === 'cloudinary' && cloudinaryCloudName) {
+    return generateCloudinaryUrl(originalUrl, { width, height, quality, format }, cloudinaryCloudName);
+  }
+  
+  // 기본 Supabase 이미지 변형 시도 (Transform 기능 사용 - 유료 플랜)
+  if (originalUrl.includes('supabase.co') && (width || height)) {
+    return generateSupabaseTransformUrl(originalUrl, { width, height, quality });
+  }
+  
+  // 변형이 필요없거나 지원되지 않는 경우 원본 URL 반환
   return originalUrl;
+};
+
+/**
+ * Cloudinary URL 생성
+ */
+const generateCloudinaryUrl = (
+  originalUrl: string,
+  options: { width?: number; height?: number; quality?: number; format?: string },
+  cloudName: string
+): string => {
+  const { width, height, quality, format } = options;
+  
+  // 원본 이미지의 public_id 추출 (Supabase URL에서는 파일명 사용)
+  const urlParts = originalUrl.split('/');
+  const fileName = urlParts[urlParts.length - 1];
+  const publicId = fileName.split('.')[0];
+  
+  // 변형 파라미터 구성
+  const transformations = [];
+  
+  if (width && height) {
+    transformations.push(`w_${width},h_${height},c_fill`);
+  } else if (width) {
+    transformations.push(`w_${width}`);
+  } else if (height) {
+    transformations.push(`h_${height}`);
+  }
+  
+  if (quality) {
+    transformations.push(`q_${quality}`);
+  }
+  
+  if (format) {
+    transformations.push(`f_${format}`);
+  }
+  
+  const transformString = transformations.join(',');
+  
+  return `https://res.cloudinary.com/${cloudName}/image/upload/${transformString}/${publicId}`;
+};
+
+/**
+ * Supabase Transform URL 생성 (Pro 플랜 이상)
+ */
+const generateSupabaseTransformUrl = (
+  originalUrl: string,
+  options: { width?: number; height?: number; quality?: number }
+): string => {
+  const { width, height, quality } = options;
+  
+  try {
+    const url = new URL(originalUrl);
+    const params = new URLSearchParams();
+    
+    if (width) params.set('width', width.toString());
+    if (height) params.set('height', height.toString());
+    if (quality) params.set('quality', quality.toString());
+    
+    // Supabase Transform API 사용
+    url.searchParams.forEach((value, key) => params.set(key, value));
+    
+    return `${url.origin}${url.pathname}?${params.toString()}`;
+  } catch (error) {
+    console.warn('Failed to generate Supabase transform URL:', error);
+    return originalUrl;
+  }
 };
 
 /**

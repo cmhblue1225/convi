@@ -707,26 +707,37 @@ export const useAuthStore = create<AuthState>()(
       try {
         console.log('📧 이메일 중복 확인:', email);
         
-        // Supabase Auth API를 통해 이메일 존재 여부 확인
-        // 실제로는 회원가입을 시도해보고 오류를 확인하는 방식을 사용
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password: 'temp_password_for_check', // 임시 비밀번호
-        });
+        // 1. 먼저 profiles 테이블에서 이메일 존재 여부 확인 (더 안전한 방법)
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', email)
+          .maybeSingle(); // single() 대신 maybeSingle() 사용하여 에러 방지
         
-        if (error) {
-          if (error.message.includes('User already registered')) {
-            console.log('✅ 이메일 중복 확인 완료: 이미 존재함');
-            return { exists: true };
-          } else {
-            console.log('✅ 이메일 중복 확인 완료: 사용 가능');
-            return { exists: false };
-          }
+        if (profileError) {
+          console.error('프로필 조회 중 오류:', profileError);
+          // 프로필 테이블 조회가 실패해도 계속 진행
         }
         
-        // 임시로 생성된 사용자가 있다면 삭제 (실제로는 이 방법은 권장하지 않음)
-        console.log('✅ 이메일 중복 확인 완료: 사용 가능');
-        return { exists: false };
+        // 프로필 테이블에 이메일이 있으면 중복
+        if (profileData) {
+          console.log('✅ 이메일 중복 확인 완료: profiles 테이블에 존재함');
+          return { exists: true };
+        }
+        
+        // 2. auth.users 테이블도 확인 (RLS 때문에 직접 확인하기 어려우므로 함수 사용)
+        const { data: functionData, error: functionError } = await supabase
+          .rpc('check_email_exists', { check_email: email });
+        
+        if (functionError) {
+          console.warn('이메일 확인 함수 호출 실패:', functionError);
+          // 함수가 없거나 실행 실패 시 기본값으로 false 반환
+          return { exists: false };
+        }
+        
+        const exists = functionData === true;
+        console.log(`✅ 이메일 중복 확인 완료: ${exists ? '이미 존재함' : '사용 가능'}`);
+        return { exists };
         
       } catch (error) {
         console.error('❌ 이메일 중복 확인 실패:', error);

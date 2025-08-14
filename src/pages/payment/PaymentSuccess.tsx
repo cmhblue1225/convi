@@ -172,15 +172,7 @@ const PaymentSuccess: React.FC = () => {
           pointsUsed: checkoutData.pointsUsed || 0,
           pointsDiscountAmount: checkoutData.pointsUsed || 0,
           status: 'pending' as const,
-          createdAt: new Date().toISOString(),
-          paymentResult: {
-            paymentKey: finalPaymentKey, // 토스페이먼츠에서 받은 실제 paymentKey 사용
-            method: method,
-            amount: paymentAmount,
-            status: 'paid',
-            originalOrderId: orderId, // 원본 주문번호 보관
-            tossPaymentKey: paymentKey || null // 토스페이먼츠에서 받은 원본 paymentKey 보관
-          }
+          createdAt: new Date().toISOString()
         };
 
         console.log('📦 주문 데이터:', orderData);
@@ -189,6 +181,7 @@ const PaymentSuccess: React.FC = () => {
         try {
           const newOrder = await addOrder(orderData);
           console.log('✅ 주문 저장 성공:', newOrder);
+          console.log('🎯 주문 ID:', newOrder.id, '주문번호:', newOrder.orderNumber);
         } catch (orderError) {
           console.error('❌ 주문 저장 실패:', orderError);
           
@@ -206,9 +199,11 @@ const PaymentSuccess: React.FC = () => {
             } catch (retryError) {
               console.error('❌ 재시도 주문 저장도 실패:', retryError);
               // 재시도 실패해도 결제는 성공으로 처리
+              throw retryError; // 재시도도 실패한 경우 에러를 다시 throw
             }
           } else {
-            // 주문 저장 실패해도 결제는 성공으로 처리 (나중에 수동으로 주문 생성 가능)
+            // 다른 에러의 경우 에러를 다시 throw
+            throw orderError;
           }
         }
 

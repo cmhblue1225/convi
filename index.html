@@ -4,22 +4,68 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="편의점 종합 관리 솔루션 - 고객, 점주, 본사를 위한 통합 플랫폼" />
+    
+    <!-- Primary Meta Tags -->
+    <title>편의점 솔루션 - ConviStore</title>
+    <meta name="title" content="편의점 솔루션 - ConviStore" />
+    <meta name="description" content="편의점 종합 관리 솔루션 - 고객, 점주, 본사를 위한 통합 플랫폼. 주문 관리, 재고 관리, 매출 분석을 한번에!" />
+    <meta name="keywords" content="편의점, 관리 솔루션, 주문 관리, 재고 관리, 매출 분석, POS, 편의점 솔루션" />
+    <meta name="author" content="ConviStore Team" />
+    <meta name="robots" content="index, follow" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://convistore.com/" />
+    <meta property="og:title" content="편의점 솔루션 - ConviStore" />
+    <meta property="og:description" content="편의점 종합 관리 솔루션 - 고객, 점주, 본사를 위한 통합 플랫폼" />
+    <meta property="og:image" content="/og-image.jpg" />
+    <meta property="og:site_name" content="ConviStore" />
+    <meta property="og:locale" content="ko_KR" />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://convistore.com/" />
+    <meta property="twitter:title" content="편의점 솔루션 - ConviStore" />
+    <meta property="twitter:description" content="편의점 종합 관리 솔루션 - 고객, 점주, 본사를 위한 통합 플랫폼" />
+    <meta property="twitter:image" content="/twitter-image.jpg" />
+    
+    <!-- Mobile App Meta -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="ConviStore" />
+    
+    <!-- Theme -->
+    <meta name="theme-color" content="#3B82F6" />
+    <meta name="msapplication-TileColor" content="#3B82F6" />
+    
+    <!-- Preconnect to external domains for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
     <!-- Cache prevention for SPA routing -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    <title>편의점 솔루션 - ConviStore</title>
   </head>
   <body>
     <div id="root">
-      <div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: system-ui, -apple-system, sans-serif;">
+      <div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: system-ui, -apple-system, sans-serif;" role="main" aria-live="polite">
         <div style="text-align: center;">
-          <h1>편의점 솔루션 로딩 중...</h1>
-          <p>잠시만 기다려주세요.</p>
+          <h1 style="color: #1f2937; margin-bottom: 1rem;">편의점 솔루션 로딩 중...</h1>
+          <p style="color: #6b7280;">잠시만 기다려주세요.</p>
+          <div style="margin-top: 2rem; display: inline-block;">
+            <div style="width: 40px; height: 40px; border: 4px solid #e5e7eb; border-left-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite;" aria-label="로딩 중"></div>
+          </div>
         </div>
       </div>
     </div>
+    <style>
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

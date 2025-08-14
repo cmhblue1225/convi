@@ -25,6 +25,10 @@
     "postinstall": "npm run setup:excel || true",
     "serve:prod": "node server-spa.js",
     "serve:local": "PORT=3001 node server-spa.js",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:prod": "npm run build && npm run serve:local",
     "start": "node server-spa.js",
     "production": "npm run build && npm run start"

@@ -3,6 +3,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { initializeAuth, useAuthStore } from './stores/common/authStore';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
+import { ToastProvider } from './contexts/ToastContext';
+import ErrorBoundary from './components/common/ErrorBoundary';
+import { enhanceFocusVisibility, checkAccessibility } from './utils/accessibility';
 
 // Pages
 import LandingPage from './pages/LandingPage';
@@ -89,7 +92,24 @@ function App() {
       }
     };
 
+    // 접근성 초기화
+    const initAccessibility = () => {
+      console.log('♿ 접근성 기능 초기화 중...');
+      enhanceFocusVisibility();
+      
+      // 개발 모드에서만 접근성 검사
+      if (process.env.NODE_ENV === 'development') {
+        // 페이지 로드 후 1초 뒤에 접근성 검사
+        setTimeout(() => {
+          checkAccessibility();
+        }, 1000);
+      }
+      
+      console.log('✅ 접근성 기능 초기화 완료');
+    };
+
     initAuth();
+    initAccessibility();
   }, []);
 
   console.log('🎯 App.tsx 렌더링 - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated, 'user:', user?.role, 'isInitialized:', isInitialized);
@@ -107,10 +127,13 @@ function App() {
   console.log('✅ App.tsx - 초기화 완료, 라우터 렌더링');
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Router>
-        <div className="min-h-screen bg-gray-50">
-          <Routes>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>
+          <Router>
+            <div className="min-h-screen bg-gray-50">
+              <main id="main-content">
+                <Routes>
             {/* Public Routes */}
             <Route path="/" element={<LandingPage />} />
             <Route path="/auth" element={<AuthPage />} />
@@ -196,10 +219,13 @@ function App() {
 
             {/* 404 Page */}
             <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </div>
-      </Router>
-    </QueryClientProvider>
+                </Routes>
+              </main>
+            </div>
+          </Router>
+        </ToastProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

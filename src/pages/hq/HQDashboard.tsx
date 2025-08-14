@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase/client';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
@@ -73,6 +73,7 @@ const HQDashboard: React.FC = () => {
     active_points: 0,
     total_members: 0
   });
+  const [pointsData, setPointsData] = useState<Point[]>([]);
   const [selectedStore, setSelectedStore] = useState<string | null>(null);
 
   useEffect(() => {
@@ -323,6 +324,19 @@ const HQDashboard: React.FC = () => {
     }
   };
 
+  // 포인트 통계 계산 (메모이제이션)
+  const calculatedPointStats = useMemo(() => {
+    const totalIssued = pointsData.filter(p => p.type === 'earned' || p.type === 'bonus').reduce((sum, p) => sum + p.amount, 0);
+    const totalUsed = pointsData.filter(p => p.type === 'used').reduce((sum, p) => sum + p.amount, 0);
+
+    return {
+      total_points_issued: totalIssued,
+      total_points_used: totalUsed,
+      active_points: totalIssued - totalUsed,
+      total_members: pointStats.total_members // 이 값은 API에서 가져옴
+    };
+  }, [pointsData, pointStats.total_members]);
+
   const fetchPointStats = async () => {
     try {
       console.log('💰 포인트 통계 조회 시작...');
@@ -342,22 +356,33 @@ const HQDashboard: React.FC = () => {
 
       if (profileError) throw profileError;
 
-      const totalIssued = points?.filter(p => p.type === 'earned' || p.type === 'bonus').reduce((sum, p) => sum + p.amount, 0) || 0;
-      const totalUsed = points?.filter(p => p.type === 'used').reduce((sum, p) => sum + p.amount, 0) || 0;
-
-      const stats = {
-        total_points_issued: totalIssued,
-        total_points_used: totalUsed,
-        active_points: totalIssued - totalUsed,
+      // 포인트 데이터 저장
+      setPointsData(points || []);
+      
+      // 회원 수만 별도로 업데이트
+      setPointStats(prev => ({
+        ...prev,
         total_members: profiles?.length || 0
-      };
+      }));
 
-      console.log('✅ 포인트 통계 조회 성공:', stats);
-      setPointStats(stats);
+      console.log('✅ 포인트 통계 조회 성공');
     } catch (error) {
       console.error('❌ 포인트 통계 조회 실패:', error);
     }
   };
+
+  // 계산된 포인트 통계를 실제 상태에 반영
+  useEffect(() => {
+    setPointStats(calculatedPointStats);
+  }, [calculatedPointStats]);
+
+  // Store 매핑 (메모이제이션)
+  const storeMap = useMemo(() => {
+    return stores.reduce((map, store) => {
+      map[store.id] = store;
+      return map;
+    }, {} as Record<string, Store>);
+  }, [stores]);
 
   const getStoreStatusColor = (stats: StoreStats) => {
     if (stats.supply_requests_pending > 0 || stats.low_stock_products > 0) {
@@ -578,7 +603,7 @@ const HQDashboard: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
           {storeStats.map((stats) => {
-            const store = stores.find(s => s.id === stats.store_id);
+            const store = storeMap[stats.store_id];
             return (
               <div
                 key={stats.store_id}

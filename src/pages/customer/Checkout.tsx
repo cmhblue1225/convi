@@ -11,7 +11,7 @@ import { usePointsValidation } from '../../hooks/usePointsValidation';
 import type { UserCoupon, CouponValidation } from '../../types/common';
 
 // 결제 방법 타입 정의 (orderStore와 통일)
-type PaymentMethod = 'card' | 'cash' | 'mobile' | 'toss' | 'kakao' | 'naver' | 'payco';
+type PaymentMethod = 'card' | 'cash' | 'mobile' | 'toss' | 'naver' | 'payco';
 
 // DeliveryAddress는 orderStore에서 import
 
@@ -89,10 +89,9 @@ const Checkout: React.FC = () => {
       }
     }
 
-    // 쿠폰/포인트 정보 로드
+    // 쿠폰 정보 로드
     if (user) {
       fetchUserCoupons();
-      fetchTotalPoints();
     }
   }, [items, selectedStore, navigate, user, orderType]);
 
@@ -121,20 +120,6 @@ const Checkout: React.FC = () => {
     }
   };
 
-  const fetchTotalPoints = async () => {
-    if (!user?.id) return;
-    
-    try {
-      const { data, error } = await supabase.rpc('get_user_total_points', {
-        user_uuid: user.id
-      });
-
-      if (error) throw error;
-      setTotalPoints(data || 0);
-    } catch (error) {
-      console.error('포인트 조회 오류:', error);
-    }
-  };
 
   const validateCoupon = async (couponCode: string) => {
     if (!user?.id) return null;
@@ -537,16 +522,6 @@ const Checkout: React.FC = () => {
                 <label className="flex items-center">
                   <input
                     type="radio"
-                    value="kakao"
-                    checked={paymentMethod === 'kakao'}
-                    onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-                    className="mr-3"
-                  />
-                  <span>💛 카카오페이</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
                     value="naver"
                     checked={paymentMethod === 'naver'}
                     onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
@@ -801,7 +776,6 @@ const Checkout: React.FC = () => {
                   >
                     {paymentMethod === 'card' && '💳 카드로 결제하기'}
                     {paymentMethod === 'toss' && '💚 토스페이로 결제하기'}
-                    {paymentMethod === 'kakao' && '💛 카카오페이로 결제하기'}
                     {paymentMethod === 'naver' && '🟢 네이버페이로 결제하기'}
                     {paymentMethod === 'payco' && '🔵 페이코로 결제하기'}
                   </button>
