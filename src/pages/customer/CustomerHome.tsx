@@ -50,6 +50,7 @@ const CustomerHome: React.FC = () => {
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [promotionProducts, setPromotionProducts] = useState<PromotionProduct[]>([]);
   const [promotionBanners, setPromotionBanners] = useState<PromotionBanner[]>([]);
+  const [selectedPromotionFilter, setSelectedPromotionFilter] = useState<'all' | 'buy_one_get_one' | 'buy_two_get_one'>('all');
 
   const getCategoryIcon = (slug?: string, name?: string) => {
     const key = (slug || name || '').toLowerCase();
@@ -379,6 +380,12 @@ const CustomerHome: React.FC = () => {
 
     const selectedStore = JSON.parse(storeData);
 
+    // 재고 확인
+    if (product.stockQuantity <= 0) {
+      alert('재고가 없습니다!');
+      return;
+    }
+
     try {
       // Product 객체 생성
       const productObj: Product = {
@@ -457,6 +464,12 @@ const CustomerHome: React.FC = () => {
     const choice = confirm(`${item.subtitle} 상품을 장바구니에 추가하시겠습니까?\n\n확인: 장바구니 추가\n취소: 상품 상세 보기`);
     
     if (choice) {
+      // 재고 확인
+      if (item.product.stockQuantity <= 0) {
+        alert('재고가 없습니다!');
+        return;
+      }
+
       // 장바구니에 추가
       try {
         // Product 객체 생성
@@ -575,7 +588,11 @@ const CustomerHome: React.FC = () => {
             <h2 className="text-lg font-semibold text-gray-900">🎉 행사 상품</h2>
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500">
-                {promotionProducts.length}개 상품
+                {promotionProducts
+                  .filter(product => 
+                    selectedPromotionFilter === 'all' || 
+                    product.promotionType === selectedPromotionFilter
+                  ).length}개 상품
               </span>
               <button
                 onClick={() => navigate('/customer/promotions')}
@@ -585,26 +602,55 @@ const CustomerHome: React.FC = () => {
               </button>
             </div>
           </div>
-          {promotionProducts.length > 0 ? (
+          {promotionProducts.filter(product => 
+            selectedPromotionFilter === 'all' || 
+            product.promotionType === selectedPromotionFilter
+          ).length > 0 ? (
             <div className="bg-white rounded-lg border border-gray-200 max-h-64 overflow-hidden">
               <div className="h-64 overflow-y-auto">
                 <div className="p-4 space-y-4">
                   {/* 필터 버튼 */}
                   <div className="flex gap-2 overflow-x-auto pb-2">
-                    <button className="flex-shrink-0 px-3 py-1 bg-blue-500 text-white text-sm rounded-full hover:bg-blue-600">
+                    <button 
+                      onClick={() => setSelectedPromotionFilter('all')}
+                      className={`flex-shrink-0 px-3 py-1 text-sm rounded-full ${
+                        selectedPromotionFilter === 'all'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
                       전체
                     </button>
-                    <button className="flex-shrink-0 px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded-full hover:bg-gray-300">
+                    <button 
+                      onClick={() => setSelectedPromotionFilter('buy_one_get_one')}
+                      className={`flex-shrink-0 px-3 py-1 text-sm rounded-full ${
+                        selectedPromotionFilter === 'buy_one_get_one'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
                       1+1 행사
                     </button>
-                    <button className="flex-shrink-0 px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded-full hover:bg-gray-300">
+                    <button 
+                      onClick={() => setSelectedPromotionFilter('buy_two_get_one')}
+                      className={`flex-shrink-0 px-3 py-1 text-sm rounded-full ${
+                        selectedPromotionFilter === 'buy_two_get_one'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
                       2+1 행사
                     </button>
                   </div>
                   
                   {/* 상품 그리드 */}
                   <div className="grid grid-cols-2 gap-3">
-                    {promotionProducts.map((product) => (
+                    {promotionProducts
+                      .filter(product => 
+                        selectedPromotionFilter === 'all' || 
+                        product.promotionType === selectedPromotionFilter
+                      )
+                      .map((product) => (
                       <div key={product.id} className="bg-gray-50 rounded-lg p-3 shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
                         <div className="flex items-center justify-between mb-2">
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -649,7 +695,14 @@ const CustomerHome: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
                 </svg>
               </div>
-              <p className="text-gray-500 text-sm mb-3">현재 진행 중인 행사 상품이 없습니다.</p>
+              <p className="text-gray-500 text-sm mb-3">
+                {selectedPromotionFilter === 'all' 
+                  ? '현재 진행 중인 행사 상품이 없습니다.'
+                  : selectedPromotionFilter === 'buy_one_get_one'
+                    ? '현재 진행 중인 1+1 행사 상품이 없습니다.'
+                    : '현재 진행 중인 2+1 행사 상품이 없습니다.'
+                }
+              </p>
               <button
                 onClick={() => navigate('/customer/products')}
                 className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 text-sm"
