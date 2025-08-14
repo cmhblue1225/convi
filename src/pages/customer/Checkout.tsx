@@ -5,10 +5,14 @@ import type { DeliveryAddress } from '../../stores/orderStore';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { supabase } from '../../lib/supabase/client';
 import { useAuthStore } from '../../stores/common/authStore';
-import PaymentMethodSelector, { type PaymentMethod } from '../../components/payment/PaymentMethodSelector';
+import PaymentMethodSelector from '../../components/payment/PaymentMethodSelector';
 import PaymentProcessor from '../../components/payment/PaymentProcessor';
 import { usePointsValidation } from '../../hooks/usePointsValidation';
+import { usePointStore } from '../../stores/pointStore';
 import type { UserCoupon, CouponValidation } from '../../types/common';
+
+// 결제 방법 타입 정의 (orderStore와 통일)
+type PaymentMethod = 'card' | 'cash' | 'mobile' | 'toss' | 'naver' | 'payco';
 
 // DeliveryAddress는 orderStore에서 import
 
@@ -41,7 +45,6 @@ const Checkout: React.FC = () => {
   // 쿠폰/포인트 관련 상태 (최소한으로 추가)
   const [userCoupons, setUserCoupons] = useState<UserCoupon[]>([]);
   const [selectedCoupon, setSelectedCoupon] = useState<string>('');
-  const [selectedCouponData, setSelectedCouponData] = useState<UserCoupon | null>(null);
   const [couponValidation, setCouponValidation] = useState<CouponValidation | null>(null);
   const [pointsToUse, setPointsToUse] = useState<number>(0);
   const [finalAmount, setFinalAmount] = useState(totalAmount);
@@ -87,7 +90,7 @@ const Checkout: React.FC = () => {
       }
     }
 
-    // 쿠폰/포인트 정보 로드
+    // 쿠폰 정보 로드
     if (user) {
       fetchUserCoupons();
     }
@@ -106,7 +109,7 @@ const Checkout: React.FC = () => {
         .from('user_coupons')
         .select(`
           *,
-          coupon:coupons (*)
+          coupon:coupons(*)
         `)
         .eq('user_id', user.id)
         .eq('is_used', false);
@@ -118,100 +121,21 @@ const Checkout: React.FC = () => {
     }
   };
 
-  // fetchTotalPoints 함수 제거 - usePointsValidation 훅에서 처리
 
   const validateCoupon = async (couponCode: string) => {
-    if (!user?.id) {
-      return null;
-    }
+    if (!user?.id) return null;
     
     try {
-      // 먼저 사용자 쿠폰에서 해당 쿠폰 찾기
-      const userCoupon = userCoupons.find(uc => uc.coupon.code === couponCode);
-      if (!userCoupon) {
-        return null;
-      }
-      
-      // RPC 함수 호출 시도
-      try {
-        const { data, error } = await supabase.rpc('validate_coupon', {
-          coupon_code: couponCode,
-          user_uuid: user.id,
-          order_amount: totalAmount
-        });
+      const { data, error } = await supabase.rpc('validate_coupon', {
+        coupon_code: couponCode,
+        user_uuid: user.id,
+        order_amount: totalAmount
+      });
 
-        if (error) {
-          console.warn('⚠️ RPC validate_coupon 오류, 로컬 검증으로 대체:', error);
-          throw error;
-        }
-        
-        console.log('✅ RPC 쿠폰 검증 성공:', data);
-        return data[0] || null;
-        
-      } catch (rpcError) {
-        console.log('🔄 RPC 실패, 로컬 쿠폰 검증으로 대체');
-        
-        // 로컬 쿠폰 검증 로직
-        const coupon = userCoupon.coupon;
-        const now = new Date();
-        const validFrom = new Date(coupon.valid_from);
-        const validUntil = coupon.valid_until ? new Date(coupon.valid_until) : null;
-        
-        // 유효기간 검증
-        if (now < validFrom) {
-          console.log('❌ 쿠폰 유효기간 시작 전');
-          return {
-            is_valid: false,
-            discount_amount: 0,
-            message: '쿠폰 유효기간이 시작되지 않았습니다.'
-          };
-        }
-        
-        if (validUntil && now > validUntil) {
-          console.log('❌ 쿠폰 유효기간 만료');
-          return {
-            is_valid: false,
-            discount_amount: 0,
-            message: '쿠폰 유효기간이 만료되었습니다.'
-          };
-        }
-        
-        // 최소 주문 금액 검증
-        if (totalAmount < coupon.min_order_amount) {
-          console.log('❌ 최소 주문 금액 미달:', totalAmount, '<', coupon.min_order_amount);
-          return {
-            is_valid: false,
-            discount_amount: 0,
-            message: `최소 주문 금액 ${coupon.min_order_amount.toLocaleString()}원 이상 구매 시 사용 가능합니다.`
-          };
-        }
-        
-        // 할인 금액 계산
-        let discountAmount = 0;
-        if (coupon.discount_type === 'percentage') {
-          discountAmount = Math.floor(totalAmount * (coupon.discount_value / 100));
-          if (coupon.max_discount_amount) {
-            discountAmount = Math.min(discountAmount, coupon.max_discount_amount);
-          }
-        } else if (coupon.discount_type === 'fixed_amount') {
-          discountAmount = coupon.discount_value;
-        }
-        
-        console.log('✅ 로컬 쿠폰 검증 성공:', {
-          discountAmount,
-          discountType: coupon.discount_type,
-          discountValue: coupon.discount_value
-        });
-        
-        return {
-          is_valid: true,
-          discount_amount: discountAmount,
-          message: `쿠폰 적용 완료! ${discountAmount.toLocaleString()}원 할인`
-        };
-      }
-      
+      if (error) throw error;
+      return data[0] || null;
     } catch (error) {
-      console.error('❌ 쿠폰 검증 중 오류:', error);
+      console.error('쿠폰 검증 오류:', error);
       return null;
     }
   };
@@ -229,45 +153,10 @@ const Checkout: React.FC = () => {
   };
 
   const handleCouponApply = async () => {
-    if (!selectedCoupon) {
-      console.log('❌ 쿠폰 적용 실패: 선택된 쿠폰 없음');
-      return;
-    }
+    if (!selectedCoupon) return;
     
-    console.log('🎫 쿠폰 적용 시작:', { selectedCoupon, userCouponsCount: userCoupons.length });
-    
-    // 선택된 쿠폰 데이터 찾기
-    const selectedUserCoupon = userCoupons.find(uc => uc.coupon.code === selectedCoupon);
-    if (selectedUserCoupon) {
-      console.log('✅ 선택된 쿠폰 데이터 찾음:', selectedUserCoupon);
-      setSelectedCouponData(selectedUserCoupon);
-    } else {
-      console.log('❌ 선택된 쿠폰 데이터를 찾을 수 없음');
-      return;
-    }
-    
-    console.log('🔍 쿠폰 검증 시작...');
     const validation = await validateCoupon(selectedCoupon);
-    console.log('📋 쿠폰 검증 결과:', validation);
-    
-    if (validation) {
-      setCouponValidation(validation);
-      console.log('✅ 쿠폰 검증 완료, 상태 업데이트됨');
-      
-      // 할인 금액 재계산
-      calculateFinalAmount();
-      console.log('💰 할인 금액 재계산 완료');
-    } else {
-      console.log('❌ 쿠폰 검증 실패');
-      alert('쿠폰 검증에 실패했습니다. 다시 시도해주세요.');
-    }
-  };
-
-  // 쿠폰 선택 해제
-  const handleCouponRemove = () => {
-    setSelectedCoupon('');
-    setSelectedCouponData(null);
-    setCouponValidation(null);
+    setCouponValidation(validation);
   };
 
   const handlePointsChange = (points: number) => {
@@ -369,18 +258,11 @@ const Checkout: React.FC = () => {
       totalAmount: finalAmount, // 할인 적용된 최종 금액
       originalAmount: totalAmount, // 원래 금액
       paymentMethod: paymentMethod,
-      // 쿠폰/포인트 정보 추가 (수정됨)
-      selectedCoupon: selectedCouponData ? {
-        id: selectedCouponData.id,
-        code: selectedCouponData.coupon.code,
-        name: selectedCouponData.coupon.name,
-        discount_amount: couponValidation?.discount_amount || 0
-      } : null,
+      // 쿠폰/포인트 정보 추가
+      selectedCoupon: selectedCoupon,
       couponDiscount: couponValidation?.discount_amount || 0,
       pointsUsed: pointsToUse,
-      orderNumber: orderNumber || generateOrderNumber(),
-      // 포인트 적립을 위한 사용자 ID 추가
-      userId: user?.id || null
+      orderNumber: orderNumber || generateOrderNumber()
     };
     
     localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
@@ -399,12 +281,12 @@ const Checkout: React.FC = () => {
   // 전액 포인트 결제 처리
   const handleZeroAmountPayment = async () => {
     try {
-      const existingCheckoutData = JSON.parse(localStorage.getItem('checkoutData') || '{}');
+      const checkoutData = JSON.parse(localStorage.getItem('checkoutData') || '{}');
       
       // PaymentSuccess 페이지로 리다이렉트하면서 필요한 파라미터 전달
       const params = new URLSearchParams({
         paymentKey: `point_${Date.now()}`, // 포인트 결제용 고유 키
-        orderId: existingCheckoutData.orderNumber,
+        orderId: checkoutData.orderNumber,
         amount: '0', // 전액 포인트 결제이므로 0원
         method: 'point' // 포인트 결제임을 표시
       });
@@ -618,38 +500,65 @@ const Checkout: React.FC = () => {
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-lg font-semibold mb-4">결제 방법</h2>
               <div className="space-y-3">
-                <label className="flex items-center space-x-2 cursor-pointer">
+                <label className="flex items-center">
                   <input
                     type="radio"
-                    name="paymentMethod"
+                    value="card"
+                    checked={paymentMethod === 'card'}
+                    onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                    className="mr-3"
+                  />
+                  <span>💳 신용카드</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
                     value="toss"
                     checked={paymentMethod === 'toss'}
-                    onChange={() => setPaymentMethod('toss')}
-                    className="text-blue-600"
+                    onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                    className="mr-3"
                   />
-                  <span>토스페이</span>
+                  <span>🏦 토스페이</span>
                 </label>
-                <label className="flex items-center space-x-2 cursor-pointer">
+                <label className="flex items-center">
                   <input
                     type="radio"
-                    name="paymentMethod"
                     value="naver"
                     checked={paymentMethod === 'naver'}
-                    onChange={() => setPaymentMethod('naver')}
-                    className="text-blue-600"
+                    onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                    className="mr-3"
                   />
-                  <span>네이버페이</span>
+                  <span>🟢 네이버페이</span>
                 </label>
-                <label className="flex items-center space-x-2 cursor-pointer">
+                <label className="flex items-center">
                   <input
                     type="radio"
-                    name="paymentMethod"
                     value="payco"
                     checked={paymentMethod === 'payco'}
-                    onChange={() => setPaymentMethod('payco')}
-                    className="text-blue-600"
+                    onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                    className="mr-3"
                   />
-                  <span>PAYCO</span>
+                  <span>🔴 페이코</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    value="mobile"
+                    checked={paymentMethod === 'mobile'}
+                    onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                    className="mr-3"
+                  />
+                  <span>📱 휴대폰 결제</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    value="cash"
+                    checked={paymentMethod === 'cash'}
+                    onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                    className="mr-3"
+                  />
+                  <span>💵 현금 ({orderType === 'pickup' ? '매장결제' : '선불결제'})</span>
                 </label>
               </div>
             </div>
@@ -706,36 +615,14 @@ const Checkout: React.FC = () => {
                       >
                         적용
                       </button>
-                      {selectedCoupon && (
-                        <button
-                          onClick={handleCouponRemove}
-                          className="px-3 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700"
-                        >
-                          해제
-                        </button>
-                      )}
                     </div>
                     {couponValidation && (
-                      <div className={`text-sm mt-2 p-2 rounded-lg ${
-                        couponValidation.is_valid 
-                          ? 'bg-green-50 border border-green-200 text-green-700' 
-                          : 'bg-red-50 border border-red-200 text-red-700'
+                      <p className={`text-sm mt-1 ${
+                        couponValidation.is_valid ? 'text-green-600' : 'text-red-600'
                       }`}>
-                        <div className="font-medium">
-                          {couponValidation.is_valid ? '✅ 쿠폰 적용됨' : '❌ 쿠폰 적용 불가'}
-                        </div>
-                        <div className="text-xs mt-1">
-                          {couponValidation.message}
-                        </div>
-                        {couponValidation.is_valid && (
-                          <div className="text-xs mt-1 font-bold">
-                            할인 금액: -{couponValidation.discount_amount.toLocaleString()}원
-                          </div>
-                        )}
-                      </div>
+                        {couponValidation.message}
+                      </p>
                     )}
-                    
-
                   </div>
                 )}
 
@@ -892,8 +779,6 @@ const Checkout: React.FC = () => {
                     {paymentMethod === 'toss' && '💚 토스페이로 결제하기'}
                     {paymentMethod === 'naver' && '🟢 네이버페이로 결제하기'}
                     {paymentMethod === 'payco' && '🔵 페이코로 결제하기'}
-                    {paymentMethod === 'mobile' && '📱 휴대폰으로 결제하기'}
-                    {paymentMethod === 'cash' && '💵 현금으로 결제하기'}
                   </button>
                 </div>
               </div>

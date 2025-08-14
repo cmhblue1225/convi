@@ -57,7 +57,25 @@ export const geocodeAddress = async (address: string): Promise<GeocodingResult> 
     try {
       console.log('🌐 프록시 서버를 통한 Geocoding API 호출 시도...');
       
-      const response = await fetch(`http://localhost:3001/api/geocode?query=${encodeURIComponent(normalizedAddress)}`);
+      // 환경에 따른 API URL 설정 - 더 명확한 방식
+      const hostname = window.location.hostname;
+      const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+      const isProduction = import.meta.env.PROD || hostname.includes('onrender.com');
+      
+      const baseURL = isLocalhost 
+        ? 'http://localhost:3001'  // 로컬 개발환경
+        : window.location.origin; // 프로덕션 환경 (Render 등)
+      
+      console.log('🔧 환경 정보:', {
+        hostname,
+        isLocalhost,
+        isProduction,
+        baseURL,
+        'import.meta.env.PROD': import.meta.env.PROD,
+        'import.meta.env.DEV': import.meta.env.DEV
+      });
+      
+      const response = await fetch(`${baseURL}/api/geocode?query=${encodeURIComponent(normalizedAddress)}`);
       
       if (response.ok) {
         const data = await response.json();

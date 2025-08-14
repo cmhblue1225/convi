@@ -447,7 +447,10 @@ const StoreDashboard: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg font-semibold text-gray-900">최근 주문</h2>
-            <button className="text-sm text-blue-600 hover:text-blue-800">
+            <button 
+              className="text-sm text-blue-600 hover:text-blue-800"
+              onClick={() => navigate('/store/orders?tab=all')}
+            >
               전체 보기
             </button>
           </div>

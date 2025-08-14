@@ -21,7 +21,6 @@ const PaymentSuccess: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isProcessed, setIsProcessed] = useState(false); // 중복 처리 방지
   const [countdown, setCountdown] = useState(5); // 카운트다운 추가
-  const [pointEarned, setPointEarned] = useState(0); // 포인트 적립 상태 추가
   const { clearCart } = useCartStore();
   const { addOrder } = useOrderStore();
 
@@ -173,30 +172,18 @@ const PaymentSuccess: React.FC = () => {
           // 포인트 정보 추가
           pointsUsed: checkoutData.pointsUsed || 0,
           pointsDiscountAmount: checkoutData.pointsUsed || 0,
-          // 쿠폰 정보 추가
-          appliedCoupons: checkoutData.selectedCoupon ? [checkoutData.selectedCoupon.id] : [],
-          couponDiscountAmount: checkoutData.couponDiscount || 0,
           status: 'pending' as const,
-          createdAt: new Date().toISOString(),
-          paymentResult: {
-            paymentKey: finalPaymentKey, // 토스페이먼츠에서 받은 실제 paymentKey 사용
-            method: method,
-            amount: paymentAmount,
-            status: 'paid',
-            originalOrderId: orderId, // 원본 주문번호 보관
-            tossPaymentKey: paymentKey || null // 토스페이먼츠에서 받은 원본 paymentKey 보관
-          }
+          createdAt: new Date().toISOString()
         };
 
         console.log('📦 주문 데이터:', orderData);
 
         // Supabase에 주문 저장 (재고 조회 실패해도 주문은 생성)
-        let savedOrder = null;
+        let newOrder: any = null;
         try {
-          const newOrder = await addOrder(orderData);
+          newOrder = await addOrder(orderData);
           console.log('✅ 주문 저장 성공:', newOrder);
           console.log('🎯 주문 ID:', newOrder.id, '주문번호:', newOrder.orderNumber);
-          savedOrder = newOrder;
         } catch (orderError) {
           console.error('❌ 주문 저장 실패:', orderError);
           
@@ -209,9 +196,8 @@ const PaymentSuccess: React.FC = () => {
             };
             
             try {
-              const retryOrder = await addOrder(retryOrderData);
-              console.log('✅ 재시도 주문 저장 성공:', retryOrder);
-              savedOrder = retryOrder;
+              newOrder = await addOrder(retryOrderData);
+              console.log('✅ 재시도 주문 저장 성공:', newOrder);
             } catch (retryError) {
               console.error('❌ 재시도 주문 저장도 실패:', retryError);
               // 재시도 실패해도 결제는 성공으로 처리
@@ -223,72 +209,70 @@ const PaymentSuccess: React.FC = () => {
           }
         }
 
-        // 주문 저장 성공 시 포인트 적립 처리
-        if (savedOrder && orderData.totalAmount > 0 && checkoutData.userId) {
-          try {
-            console.log('🎉 포인트 적립 시작:', {
-              userId: checkoutData.userId,
-              orderId: savedOrder.id,
-              orderAmount: orderData.totalAmount
-            });
-
-            // 포인트 적립 (주문 금액의 1%)
-            const pointResult = await usePointStore.getState().earnOrderPoints(
-              checkoutData.userId,
-              savedOrder.id,
-              orderData.totalAmount
-            );
-
-            if (pointResult.success) {
-              console.log(`✅ 포인트 적립 성공: ${pointResult.pointsEarned}포인트`);
-              setPointEarned(pointResult.pointsEarned || 0);
-            } else {
-              console.warn('⚠️ 포인트 적립 실패:', pointResult.error);
-              // 포인트 적립 실패는 주문 완료에 영향을 주지 않음
-            }
-          } catch (pointError) {
-            console.error('❌ 포인트 적립 처리 중 오류:', pointError);
-            // 포인트 적립 오류는 주문 완료에 영향을 주지 않음
-          }
-        } else if (savedOrder && orderData.totalAmount > 0 && !checkoutData.userId) {
-          console.log('ℹ️ 로그인되지 않은 사용자 - 포인트 적립 건너뜀');
-        }
-
-        // 주문 완료 시 사용된 쿠폰 소비 처리
-        if (savedOrder && checkoutData.selectedCoupon && checkoutData.userId) {
-          try {
-            console.log('🎫 쿠폰 사용 처리 시작:', {
-              userId: checkoutData.userId,
-              orderId: savedOrder.id,
-              userCouponId: checkoutData.selectedCoupon.id
-            });
-
-            // 쿠폰 사용 처리 - user_coupons 테이블의 id를 사용
-            const { error: couponError } = await supabase
-              .from('user_coupons')
-              .update({
-                is_used: true,
-                used_at: new Date().toISOString(),
-                used_order_id: savedOrder.id
-              })
-              .eq('id', checkoutData.selectedCoupon.id)  // user_coupons.id 사용
-              .eq('is_used', false);
-
-            if (couponError) {
-              console.error('❌ 쿠폰 사용 처리 실패:', couponError);
-            } else {
-              console.log('✅ 쿠폰 사용 처리 완료:', checkoutData.selectedCoupon.code);
-            }
-          } catch (couponError) {
-            console.error('❌ 쿠폰 사용 처리 중 오류:', couponError);
-            // 쿠폰 사용 처리 오류는 주문 완료에 영향을 주지 않음
-          }
-        }
-
         // 결제 성공 시 장바구니 비우기 및 localStorage 정리
         clearCart();
         localStorage.removeItem('checkoutData');
         console.log('🛒 장바구니 비우기 및 결제 정보 정리 완료');
+
+        // 포인트 적립 및 쿠폰 소비 처리
+        if (newOrder) {
+          try {
+            // checkoutData에서 사용자 ID 및 쿠폰 정보 가져오기
+            const checkoutDataStr = localStorage.getItem('checkoutData');
+            if (checkoutDataStr) {
+              const checkoutData = JSON.parse(checkoutDataStr);
+              
+              // 포인트 적립
+              if (checkoutData.userId && orderData.totalAmount > 0) {
+                console.log('🎉 포인트 적립 시작:', {
+                  userId: checkoutData.userId,
+                  orderId: newOrder.id,
+                  orderAmount: orderData.totalAmount
+                });
+
+                const pointResult = await usePointStore.getState().earnOrderPoints(
+                  checkoutData.userId,
+                  newOrder.id,
+                  orderData.totalAmount
+                );
+
+                if (pointResult.success) {
+                  console.log(`✅ 포인트 적립 성공: ${pointResult.pointsEarned}포인트`);
+                } else {
+                  console.warn('⚠️ 포인트 적립 실패:', pointResult.error);
+                }
+              }
+
+              // 쿠폰 소비
+              if (checkoutData.selectedCoupon && checkoutData.userId) {
+                console.log('🎫 쿠폰 사용 처리 시작:', {
+                  userId: checkoutData.userId,
+                  orderId: newOrder.id,
+                  userCouponId: checkoutData.selectedCoupon.id
+                });
+
+                const { error: couponError } = await supabase
+                  .from('user_coupons')
+                  .update({
+                    is_used: true,
+                    used_at: new Date().toISOString(),
+                    used_order_id: newOrder.id
+                  })
+                  .eq('id', checkoutData.selectedCoupon.id)
+                  .eq('is_used', false);
+
+                if (couponError) {
+                  console.error('❌ 쿠폰 사용 처리 실패:', couponError);
+                } else {
+                  console.log('✅ 쿠폰 사용 처리 완료:', checkoutData.selectedCoupon.code);
+                }
+              }
+            }
+          } catch (pointCouponError) {
+            console.error('❌ 포인트/쿠폰 처리 중 오류:', pointCouponError);
+            // 포인트/쿠폰 처리 실패해도 주문은 성공으로 처리
+          }
+        }
 
         // 카운트다운 시작
         const countdownInterval = setInterval(() => {
@@ -427,21 +411,6 @@ const PaymentSuccess: React.FC = () => {
             주문 정보가 저장되었으며, 장바구니가 비워졌습니다.
           </p>
         </div>
-
-        {/* 포인트 적립 성공 메시지 */}
-        {pointEarned > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-center">
-            <p className="text-blue-800 font-medium mb-2">
-              🎁 포인트 적립 완료!
-            </p>
-            <p className="text-blue-700 text-sm">
-              주문 완료로 <span className="font-bold text-blue-800">{pointEarned.toLocaleString()}포인트</span>가 적립되었습니다.
-            </p>
-            <p className="text-blue-600 text-xs mt-1">
-              적립된 포인트는 1년 후 만료됩니다.
-            </p>
-          </div>
-        )}
 
         {paymentData && (
           <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">

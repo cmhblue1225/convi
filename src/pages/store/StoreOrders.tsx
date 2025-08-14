@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useOrderStore } from '../../stores/orderStore';
 import { useAuthStore } from '../../stores/common/authStore';
-import { usePointStore } from '../../stores/pointStore';
 import { supabase } from '../../lib/supabase/client';
 import ReceiptModal from '../../components/store/ReceiptModal';
 import RefundReceiptModal from '../../components/store/RefundReceiptModal';
-import type { Order, RefundRequest } from '../../types/common';
+import type { Order } from '../../stores/orderStore';
 
 const StoreOrders: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const { orders, isLoading, fetchOrders, subscribeToOrders, unsubscribeFromOrders, updateOrderStatus } = useOrderStore();
   const { user } = useAuthStore();
   const [storeInfo, setStoreInfo] = useState<any>(null);
@@ -57,11 +58,23 @@ const StoreOrders: React.FC = () => {
   const [selectedRefundStatus, setSelectedRefundStatus] = useState<string>('');
   const [refundProcessNotes, setRefundProcessNotes] = useState('');
 
-  const [selectedTab, setSelectedTab] = useState<'all' | 'pending' | 'processing' | 'completed' | 'refunds'>('pending');
+  // URL 파라미터에서 탭 정보 읽기
+  const tabParam = searchParams.get('tab') as 'all' | 'pending' | 'processing' | 'completed' | 'refunds' | null;
+  const [selectedTab, setSelectedTab] = useState<'all' | 'pending' | 'processing' | 'completed' | 'refunds'>(
+    tabParam && ['all', 'pending', 'processing', 'completed', 'refunds'].includes(tabParam) ? tabParam : 'pending'
+  );
   const [filteredOrders, setFilteredOrders] = useState(orders);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [receiptModalOpen, setReceiptModalOpen] = useState(false);
   const [selectedOrderForReceipt, setSelectedOrderForReceipt] = useState<Order | null>(null);
+
+  // URL 파라미터 변경 시 탭 업데이트
+  useEffect(() => {
+    const tabParam = searchParams.get('tab') as 'all' | 'pending' | 'processing' | 'completed' | 'refunds' | null;
+    if (tabParam && ['all', 'pending', 'processing', 'completed', 'refunds'].includes(tabParam)) {
+      setSelectedTab(tabParam);
+    }
+  }, [searchParams]);
 
   // 탭 변경 시 환불 요청 조회
   useEffect(() => {
@@ -272,7 +285,7 @@ const StoreOrders: React.FC = () => {
         return;
       }
 
-      // 데이터베이스 함수 호출 (기존 쿠폰 회수 로직)
+      // 데이터베이스 함수 호출
       const { data, error } = await supabase.rpc('restore_coupons_and_points' as any, {
         p_refund_request_id: refundRequestId,
         p_processed_by: user.id

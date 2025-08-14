@@ -4,7 +4,7 @@ import type { Product, Category, Coupon, PointSettings } from '../../types/commo
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ImageUpload from '../../components/common/ImageUpload';
 import LazyImage from '../../components/common/LazyImage';
-import { PencilIcon, TrashIcon, PlusIcon, EyeIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon, PlusIcon, EyeIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../stores/common/authStore';
 
 interface PromotionProduct {
@@ -49,16 +49,45 @@ const HQProducts: React.FC = () => {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [promotionProducts, setPromotionProducts] = useState<PromotionProduct[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<{[key: string]: 'buy_one_get_one' | 'buy_two_get_one' | null}>({});
+  
+  // 검색 및 필터 관련 상태
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedPromotion, setSelectedPromotion] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   useEffect(() => {
     fetchData();
+  }, [activeTab]);
+
+  // 키보드 단축키 처리
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Ctrl/Cmd + K로 검색창 포커스
+      if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+        event.preventDefault();
+        const searchInput = document.querySelector('input[placeholder*="검색"]') as HTMLInputElement;
+        if (searchInput) {
+          searchInput.focus();
+          searchInput.select();
+        }
+      }
+      // Escape으로 검색 초기화
+      if (event.key === 'Escape' && activeTab === 'products') {
+        setSearchTerm('');
+        setSelectedCategory('all');
+        setSelectedPromotion('all');
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [activeTab]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
       if (activeTab === 'products') {
-        await Promise.all([fetchProducts(), fetchPromotions(), fetchPromotionProducts()]);
+        await Promise.all([fetchProducts(), fetchCategories(), fetchPromotions(), fetchPromotionProducts()]);
       } else if (activeTab === 'categories') {
         await fetchCategories();
       } else if (activeTab === 'coupons') {
@@ -364,21 +393,143 @@ const HQProducts: React.FC = () => {
     return promotion ? promotion.promotion_type : null;
   };
 
-  const renderProductsTab = () => (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold">상품 및 행사 관리</h2>
-        <button
-          onClick={() => {
-            setEditingProduct({} as Product);
-            setShowProductModal(true);
-          }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
-        >
-          <PlusIcon className="w-5 h-5" />
-          <span>새 상품 추가</span>
-        </button>
-      </div>
+  // 필터링된 상품 목록을 반환하는 함수
+  const getFilteredProducts = () => {
+    return products.filter(product => {
+      // 검색어 필터링
+      const matchesSearch = searchTerm === '' || 
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (product.brand && product.brand.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      // 카테고리 필터링
+      const matchesCategory = selectedCategory === 'all' || product.category_id === selectedCategory;
+
+      // 행사 필터링
+      const productPromotionType = getProductPromotionType(product.id);
+      const matchesPromotion = selectedPromotion === 'all' || 
+        (selectedPromotion === 'none' && productPromotionType === null) ||
+        (selectedPromotion === 'buy_one_get_one' && productPromotionType === 'buy_one_get_one') ||
+        (selectedPromotion === 'buy_two_get_one' && productPromotionType === 'buy_two_get_one');
+
+      return matchesSearch && matchesCategory && matchesPromotion;
+    });
+  };
+
+  const renderProductsTab = () => {
+    const filteredProducts = getFilteredProducts();
+    
+    return (
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-semibold">상품 및 행사 관리</h2>
+          <button
+            onClick={() => {
+              setEditingProduct({} as Product);
+              setShowProductModal(true);
+            }}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+          >
+            <PlusIcon className="w-5 h-5" />
+            <span>새 상품 추가</span>
+          </button>
+        </div>
+
+        {/* 검색 및 필터 영역 */}
+        <div className="mb-6 space-y-4">
+          {/* 검색창 */}
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="상품명, 설명, 브랜드로 검색... (Ctrl+K)"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-20 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            {searchTerm && (
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* 필터 드롭다운 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all">전체 카테고리</option>
+                {categories.map(category => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">행사 유형</label>
+              <select
+                value={selectedPromotion}
+                onChange={(e) => setSelectedPromotion(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all">전체 행사</option>
+                <option value="none">행사 없음</option>
+                <option value="buy_one_get_one">1+1 행사</option>
+                <option value="buy_two_get_one">2+1 행사</option>
+              </select>
+            </div>
+
+            <div className="flex items-end">
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedCategory('all');
+                  setSelectedPromotion('all');
+                }}
+                className="w-full px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                필터 초기화
+              </button>
+            </div>
+          </div>
+
+          {/* 결과 요약 및 빠른 통계 */}
+          <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-gray-600">
+            <div>
+              총 {products.length}개 상품 중 {filteredProducts.length}개 표시
+            </div>
+            <div className="flex space-x-4">
+              <span className="flex items-center">
+                <span className="w-2 h-2 bg-blue-500 rounded-full mr-1"></span>
+                1+1 행사: {filteredProducts.filter(p => getProductPromotionType(p.id) === 'buy_one_get_one').length}개
+              </span>
+              <span className="flex items-center">
+                <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+                2+1 행사: {filteredProducts.filter(p => getProductPromotionType(p.id) === 'buy_two_get_one').length}개
+              </span>
+              <span className="flex items-center">
+                <span className="w-2 h-2 bg-gray-400 rounded-full mr-1"></span>
+                행사 없음: {filteredProducts.filter(p => getProductPromotionType(p.id) === null).length}개
+              </span>
+            </div>
+          </div>
+        </div>
             <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -393,7 +544,7 @@ const HQProducts: React.FC = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {products.map((product) => {
+            {filteredProducts.map((product) => {
               const currentPromotion = getProductPromotionType(product.id);
               return (
                 <tr key={product.id} className="hover:bg-gray-50">
@@ -492,8 +643,27 @@ const HQProducts: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      {/* 검색 결과가 없을 때 표시 */}
+      {filteredProducts.length === 0 && (
+        <div className="text-center py-8">
+          <div className="text-gray-500 text-lg mb-2">🔍</div>
+          <p className="text-gray-500">검색 조건에 맞는 상품이 없습니다.</p>
+          <button
+            onClick={() => {
+              setSearchTerm('');
+              setSelectedCategory('all');
+              setSelectedPromotion('all');
+            }}
+            className="mt-2 text-blue-600 hover:text-blue-800 text-sm"
+          >
+            모든 필터 초기화
+          </button>
+        </div>
+      )}
     </div>
-  );
+    );
+  };
 
   const renderCategoriesTab = () => (
     <div className="bg-white rounded-lg shadow p-6">
