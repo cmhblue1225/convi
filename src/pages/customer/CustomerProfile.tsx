@@ -8,7 +8,6 @@ import type { UserCoupon, Point, Product, StoreProduct } from '../../types/commo
 import { ProductCard } from '../../components/product/ProductCard';
 import { useCartStore } from '../../stores/cartStore';
 import { useToast } from '../../hooks/useToast';
-import { usePointStore } from '../../stores/pointStore';
 
 interface Profile {
   id: string;
@@ -51,14 +50,14 @@ const CustomerProfile: React.FC = () => {
   
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userCoupons, setUserCoupons] = useState<UserCoupon[]>([]);
+  const [points, setPoints] = useState<Point[]>([]);
+  const [totalPoints, setTotalPoints] = useState(0);
   const [wishlistProducts, setWishlistProducts] = useState<(Product & { store_products: StoreProduct[] })[]>([]);
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
-  // 포인트 스토어 사용
-  const { balance: totalPoints, transactions: points, fetchUserPoints, isLoading: pointsLoading } = usePointStore();
   const [formData, setFormData] = useState<ProfileFormData>({
     first_name: '',
     last_name: '',
@@ -150,10 +149,22 @@ const CustomerProfile: React.FC = () => {
 
   const fetchPoints = async () => {
     if (!user?.id) return;
-    
+
     try {
-      // 포인트 스토어에서 데이터 가져오기
-      await fetchUserPoints(user.id);
+      const { data, error } = await supabase
+        .from('points')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setPoints(data as Point[] || []);
+
+      // 총 포인트 계산 (amount가 이미 양수/음수로 저장되어 있으므로 그대로 합산)
+      const total = (data || []).reduce((sum, point) => {
+        return sum + point.amount;
+      }, 0);
+      setTotalPoints(total);
     } catch (error) {
       console.error('포인트 조회 오류:', error);
     }
