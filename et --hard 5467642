@@ -1,0 +1,10 @@
+[33m889f6c1[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature/customer-profile[m[33m)[m Merge remote-tracking branch 'origin/develop' into feature/customer-profile
+[33m5467642[m Save current changes before merging develop
+[33m1384d91[m[33m ([m[1;31morigin/feature/hq-dashboard[m[33m, [m[1;31morigin/feature/customer-home[m[33m, [m[1;31morigin/develop[m[33m)[m 찜 기능 완성
+[33mecbe217[m Merge branch 'feature/hq-dashboard' into develop
+[33mb1392ee[m google map
+[33m9c50cc7[m Merge branch 'feature/customer-dashboard' into develop 고객 프로필 : 회수된 포인트 및 쿠폰 구현
+[33mfd98af8[m[33m ([m[1;31morigin/feature/customer-dashboard[m[33m)[m 고객 프로필 : 회수된 포인트 및 쿠폰 구현
+[33m50b5fc2[m 결제방법 주문내역 반영
+[33m6ffc3bd[m Merge feature/store-inventory into develop - Added return request functionality and cleaned up unnecessary files
+[33m1964639[m[33m ([m[1;31morigin/feature/store-inventory[m[33m)[m feat(hq):지점별 물류 확인 가능
