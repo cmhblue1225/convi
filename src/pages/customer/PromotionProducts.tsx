@@ -121,6 +121,12 @@ const PromotionProducts: React.FC = () => {
   }, []);
 
   const handleAddToCart = (product: PromotionProduct) => {
+    // 재고 확인
+    if (product.stockQuantity <= 0) {
+      alert('재고가 없습니다!');
+      return;
+    }
+
     // Product 객체 생성
     const productObj = {
       id: product.id,
@@ -315,9 +321,9 @@ const PromotionProducts: React.FC = () => {
           <div className="max-w-4xl mx-auto">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4">
               {filteredProducts.map((product) => (
-                <div key={product.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
+                <div key={product.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200 flex flex-col">
                   {/* 상품 이미지 */}
-                  <div className="aspect-square bg-gray-100 flex items-center justify-center">
+                  <div className="aspect-square bg-gray-100 flex items-center justify-center flex-shrink-0">
                     {product.imageUrl ? (
                       <img
                         src={product.imageUrl}
@@ -334,7 +340,7 @@ const PromotionProducts: React.FC = () => {
                   </div>
 
                   {/* 상품 정보 */}
-                  <div className="p-3">
+                  <div className="p-3 flex-1 flex flex-col">
                     {/* 행사 배지 */}
                     <div className="flex items-center justify-between mb-2">
                       {getPromotionBadge(product.promotionType)}
@@ -355,15 +361,40 @@ const PromotionProducts: React.FC = () => {
                       <span className="text-base font-bold text-red-600">
                         {product.price.toLocaleString()}원
                       </span>
-                      <span className="text-sm text-gray-500">{product.unit}</span>
+                    </div>
+
+                    {/* 재고 정보 */}
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`text-xs ${
+                        product.stockQuantity > 0 
+                          ? product.stockQuantity <= 5 
+                            ? 'text-orange-600' 
+                            : 'text-green-600'
+                          : 'text-red-600'
+                      }`}>
+                        {product.stockQuantity > 0 
+                          ? `재고: ${product.stockQuantity}개`
+                          : '품절'
+                        }
+                      </span>
+                      {product.stockQuantity > 0 && product.stockQuantity <= 5 && (
+                        <span className="text-xs text-orange-600 font-medium">
+                          마감임박
+                        </span>
+                      )}
                     </div>
 
                     {/* 장바구니 버튼 */}
                     <button
                       onClick={() => handleAddToCart(product)}
-                      className="w-full bg-blue-600 text-white py-1.5 px-3 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                      disabled={product.stockQuantity <= 0}
+                      className={`w-full py-1.5 px-3 rounded-lg transition-colors text-sm font-medium mt-auto ${
+                        product.stockQuantity > 0
+                          ? 'bg-blue-600 text-white hover:bg-blue-700'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
                     >
-                      담기
+                      {product.stockQuantity > 0 ? '담기' : '품절'}
                     </button>
                   </div>
                 </div>
