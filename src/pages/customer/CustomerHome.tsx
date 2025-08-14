@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/common/authStore';
 import { useCartStore } from '../../stores/cartStore';
+import { usePointStore } from '../../stores/pointStore';
 import { supabase } from '../../lib/supabase/client';
 import type { Product, StoreProduct } from '../../types/common';
 
@@ -45,6 +46,7 @@ const CustomerHome: React.FC = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuthStore();
   const { getItemCount, addItem } = useCartStore();
+  const { balance: totalPoints, fetchUserPoints } = usePointStore();
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [quickCategories, setQuickCategories] = useState<QuickCategory[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
@@ -300,6 +302,11 @@ const CustomerHome: React.FC = () => {
 
     // 최근 주문 내역 로드
     fetchRecentOrders();
+    
+    // 포인트 데이터 로드
+    if (user?.id) {
+      fetchUserPoints(user.id);
+    }
   }, [user]);
 
   const getGreeting = () => {
@@ -538,6 +545,31 @@ const CustomerHome: React.FC = () => {
           <p className="text-gray-600">
             편리한 편의점 쇼핑을 시작해보세요
           </p>
+        </div>
+
+        {/* 포인트 잔액 카드 */}
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-4 mb-6 shadow-sm text-white">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center mr-3">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm text-blue-100">보유 포인트</p>
+                <p className="text-2xl font-bold">
+                  {totalPoints.toLocaleString()}P
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/customer/profile')}
+              className="text-blue-100 text-sm font-medium hover:text-white transition-colors"
+            >
+              상세보기 →
+            </button>
+          </div>
         </div>
 
         {/* 현재 선택된 지점 */}

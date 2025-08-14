@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { useCartStore } from '../../stores/cartStore';
 import { useOrderStore } from '../../stores/orderStore';
+import { usePointStore } from '../../stores/pointStore';
 import { supabase } from '../../lib/supabase/client';
 
 interface PaymentSuccessData {
@@ -20,8 +21,10 @@ const PaymentSuccess: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isProcessed, setIsProcessed] = useState(false); // 중복 처리 방지
   const [countdown, setCountdown] = useState(5); // 카운트다운 추가
+  const [pointEarned, setPointEarned] = useState<number | null>(null); // 적립된 포인트
   const { clearCart } = useCartStore();
   const { addOrder } = useOrderStore();
+  const { earnPoints } = usePointStore();
 
   // 디버깅을 위한 로그
   console.log('🎯 PaymentSuccess 컴포넌트 로드됨', window.location.href);
@@ -186,9 +189,11 @@ const PaymentSuccess: React.FC = () => {
         console.log('📦 주문 데이터:', orderData);
 
         // Supabase에 주문 저장 (재고 조회 실패해도 주문은 생성)
+        let savedOrder = null;
         try {
           const newOrder = await addOrder(orderData);
           console.log('✅ 주문 저장 성공:', newOrder);
+          savedOrder = newOrder;
         } catch (orderError) {
           console.error('❌ 주문 저장 실패:', orderError);
           
@@ -203,6 +208,7 @@ const PaymentSuccess: React.FC = () => {
             try {
               const retryOrder = await addOrder(retryOrderData);
               console.log('✅ 재시도 주문 저장 성공:', retryOrder);
+              savedOrder = retryOrder;
             } catch (retryError) {
               console.error('❌ 재시도 주문 저장도 실패:', retryError);
               // 재시도 실패해도 결제는 성공으로 처리
@@ -210,6 +216,32 @@ const PaymentSuccess: React.FC = () => {
           } else {
             // 주문 저장 실패해도 결제는 성공으로 처리 (나중에 수동으로 주문 생성 가능)
           }
+        }
+
+        // 주문 저장 성공 시 포인트 적립 처리
+        if (savedOrder && orderData.totalAmount > 0 && checkoutData.userId) {
+          try {
+            // 포인트 적립 (주문 금액의 1%)
+            const pointResult = await earnPoints(
+              checkoutData.userId,
+              orderData.totalAmount,
+              savedOrder.id || uniqueOrderNumber,
+              `${storeData.name} 주문 완료 포인트 적립`
+            );
+
+            if (pointResult.success) {
+              console.log(`🎉 포인트 적립 성공: ${pointResult.pointsEarned}포인트`);
+              setPointEarned(pointResult.pointsEarned || 0);
+            } else {
+              console.warn('⚠️ 포인트 적립 실패:', pointResult.error);
+              // 포인트 적립 실패는 주문 완료에 영향을 주지 않음
+            }
+          } catch (pointError) {
+            console.error('❌ 포인트 적립 처리 중 오류:', pointError);
+            // 포인트 적립 오류는 주문 완료에 영향을 주지 않음
+          }
+        } else if (savedOrder && orderData.totalAmount > 0 && !checkoutData.userId) {
+          console.log('ℹ️ 로그인되지 않은 사용자 - 포인트 적립 건너뜀');
         }
 
         // 결제 성공 시 장바구니 비우기 및 localStorage 정리
@@ -223,7 +255,10 @@ const PaymentSuccess: React.FC = () => {
             if (prev <= 1) {
               clearInterval(countdownInterval);
               console.log('⏰ 카운트다운 완료, 주문 내역 페이지로 이동');
-              navigate('/customer/orders');
+              // setTimeout으로 감싸서 렌더링 중 navigate 호출 방지
+              setTimeout(() => {
+                navigate('/customer/orders');
+              }, 0);
               return 0;
             }
             return prev - 1;
@@ -353,6 +388,18 @@ const PaymentSuccess: React.FC = () => {
           <p className="text-green-700 text-sm">
             주문 정보가 저장되었으며, 장바구니가 비워졌습니다.
           </p>
+          
+          {/* 포인트 적립 결과 표시 */}
+          {pointEarned && pointEarned > 0 && (
+            <div className="mt-3 pt-3 border-t border-green-200">
+              <p className="text-green-800 font-semibold">
+                🎁 포인트 적립 완료!
+              </p>
+              <p className="text-green-700 text-sm">
+                주문 금액의 1%인 <span className="font-bold text-green-800">{pointEarned.toLocaleString()}포인트</span>가 적립되었습니다.
+              </p>
+            </div>
+          )}
         </div>
 
         {paymentData && (

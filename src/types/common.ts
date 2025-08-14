@@ -56,7 +56,7 @@ export interface Order {
   subtotal?: number;
   tax_amount?: number;
   delivery_fee?: number;
-  coupon_discount?: number;
+  coupon_discount_amount?: number;
   points_used?: number;
   payment_method?: string;
   payment_status?: string;

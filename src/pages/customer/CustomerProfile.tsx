@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/common/authStore';
 import { useOrderStore } from '../../stores/orderStore';
+import { usePointStore } from '../../stores/pointStore';
 import { supabase } from '../../lib/supabase/client';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import type { UserCoupon, Point } from '../../types/common';
@@ -47,11 +48,12 @@ const CustomerProfile: React.FC = () => {
   
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userCoupons, setUserCoupons] = useState<UserCoupon[]>([]);
-  const [points, setPoints] = useState<Point[]>([]);
-  const [totalPoints, setTotalPoints] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // 포인트 스토어 사용
+  const { balance: totalPoints, transactions: points, fetchUserPoints, isLoading: pointsLoading } = usePointStore();
   const [formData, setFormData] = useState<ProfileFormData>({
     first_name: '',
     last_name: '',
@@ -137,26 +139,21 @@ const CustomerProfile: React.FC = () => {
     }
   };
 
+  // 포인트 데이터 로드 (포인트 스토어 사용)
   const fetchPoints = async () => {
     if (!user?.id) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('points')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+    await fetchUserPoints(user.id);
+  };
 
-      if (error) throw error;
-      setPoints(data as Point[] || []);
-
-      // 총 포인트 계산 (amount가 이미 양수/음수로 저장되어 있으므로 그대로 합산)
-      const total = (data || []).reduce((sum, point) => {
-        return sum + point.amount;
-      }, 0);
-      setTotalPoints(total);
-    } catch (error) {
-      console.error('포인트 조회 오류:', error);
+  // 포인트 타입을 한글로 변환
+  const getPointTypeText = (type: string) => {
+    switch (type) {
+      case 'earned': return '적립';
+      case 'used': return '사용';
+      case 'expired': return '만료';
+      case 'bonus': return '보너스';
+      case 'refund': return '환불';
+      default: return type;
     }
   };
 
@@ -562,8 +559,11 @@ const CustomerProfile: React.FC = () => {
                         <div key={point.id} className="flex justify-between items-center text-sm py-2 px-3 bg-gray-50 rounded-lg">
                           <div>
                             <span className="text-gray-700 font-medium">{point.description || '포인트'}</span>
-                            <div className="text-xs text-gray-400 mt-1">
-                              {new Date(point.created_at).toLocaleDateString()}
+                            <div className="text-xs text-gray-400 mt-1 flex items-center space-x-2">
+                              <span>{new Date(point.created_at).toLocaleDateString()}</span>
+                              <span className="px-2 py-1 bg-gray-200 rounded-full text-xs">
+                                {getPointTypeText(point.type)}
+                              </span>
                             </div>
                           </div>
                           <span className={`font-bold ${
@@ -576,6 +576,33 @@ const CustomerProfile: React.FC = () => {
                           </span>
                         </div>
                       ))}
+                    </div>
+                    
+                    {/* 포인트 통계 요약 */}
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <div className="grid grid-cols-3 gap-4 text-center text-xs">
+                        <div>
+                          <div className="text-gray-500">총 적립</div>
+                          <div className="font-semibold text-green-600">
+                            {points.filter(p => p.type === 'earned' || p.type === 'bonus' || p.type === 'refund')
+                              .reduce((sum, p) => sum + p.amount, 0).toLocaleString()}P
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-gray-500">총 사용</div>
+                          <div className="font-semibold text-red-600">
+                            {Math.abs(points.filter(p => p.type === 'used')
+                              .reduce((sum, p) => sum + p.amount, 0)).toLocaleString()}P
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-gray-500">만료</div>
+                          <div className="font-semibold text-gray-600">
+                            {Math.abs(points.filter(p => p.type === 'expired')
+                              .reduce((sum, p) => sum + p.amount, 0)).toLocaleString()}P
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}

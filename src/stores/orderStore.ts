@@ -112,7 +112,7 @@ export const useOrderStore = create<OrderState>()(
             subtotal: orderData.subtotal,
             tax_amount: orderData.taxAmount,
             delivery_fee: orderData.deliveryFee,
-            coupon_discount: (orderData as any).couponDiscount || 0,
+            coupon_discount_amount: (orderData as any).couponDiscount || 0,
             total_amount: orderData.totalAmount,
             // 포인트 정보 추가
             points_used: (orderData as any).pointsUsed || 0,
@@ -325,7 +325,7 @@ export const useOrderStore = create<OrderState>()(
             subtotal: data.subtotal,
             taxAmount: data.tax_amount,
             deliveryFee: data.delivery_fee,
-            couponDiscount: data.coupon_discount || 0,
+            couponDiscount: data.coupon_discount_amount || 0,
             totalAmount: data.total_amount,
             // 포인트 정보 추가
             pointsUsed: data.points_used || 0,
@@ -627,7 +627,7 @@ export const useOrderStore = create<OrderState>()(
             subtotal: item.subtotal,
             taxAmount: item.tax_amount,
             deliveryFee: item.delivery_fee,
-            couponDiscount: item.coupon_discount || 0,
+            couponDiscount: item.coupon_discount_amount || 0,
             totalAmount: item.total_amount,
             // 포인트 정보 추가
             pointsUsed: item.points_used || 0,
