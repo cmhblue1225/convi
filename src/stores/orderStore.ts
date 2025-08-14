@@ -264,33 +264,7 @@ export const useOrderStore = create<OrderState>()(
           const pointsUsed = (orderData as any).pointsUsed || 0;
           if (pointsUsed > 0) {
             console.log('💰 포인트 차감 시작:', pointsUsed, '포인트');
-            
-            // 포인트 사용 검증
             try {
-              // 현재 사용자의 총 포인트 조회
-              const { data: currentPoints, error: pointsError } = await supabase
-                .from('points')
-                .select('amount')
-                .eq('user_id', user.id);
-
-              if (pointsError) {
-                console.error('❌ 포인트 조회 실패:', pointsError);
-                throw new Error('포인트 조회에 실패했습니다.');
-              }
-
-              // 총 포인트 계산
-              const totalUserPoints = (currentPoints || []).reduce((sum, point) => sum + point.amount, 0);
-              
-              // 보유 포인트보다 많이 사용하려는 경우
-              if (pointsUsed > totalUserPoints) {
-                console.error('❌ 포인트 부족:', {
-                  requested: pointsUsed,
-                  available: totalUserPoints,
-                  shortage: pointsUsed - totalUserPoints
-                });
-                throw new Error(`보유 포인트(${totalUserPoints.toLocaleString()}P)보다 많이 사용할 수 없습니다.`);
-              }
-
               // 포인트 차감 레코드 생성
               const { error: pointError } = await supabase
                 .from('points')
@@ -310,14 +284,13 @@ export const useOrderStore = create<OrderState>()(
                   hint: pointError.hint,
                   code: pointError.code
                 });
-                throw new Error('포인트 차감에 실패했습니다.');
+                // 포인트 차감 실패해도 주문은 계속 진행 (이미 결제 완료됨)
               } else {
                 console.log('✅ 포인트 차감 완료:', pointsUsed, '포인트');
               }
             } catch (error) {
               console.error('❌ 포인트 차감 중 예외 발생:', error);
-              // 포인트 차감 실패 시 주문도 실패 처리
-              throw error;
+              // 포인트 차감 실패해도 주문은 계속 진행
             }
           }
 

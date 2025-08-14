@@ -18,6 +18,7 @@ interface Profile {
   email?: string;
   phone?: string;
   avatar_url?: string;
+  profile_image?: string;
   address?: any;
   birth_date?: string;
   gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
@@ -41,6 +42,7 @@ interface ProfileFormData {
   phone: string;
   birth_date: string;
   gender: 'male' | 'female' | 'other' | 'prefer_not_to_say';
+  profile_image?: string;
 }
 
 const CustomerProfile: React.FC = () => {
@@ -63,7 +65,8 @@ const CustomerProfile: React.FC = () => {
     email: '',
     phone: '',
     birth_date: '',
-    gender: 'prefer_not_to_say'
+    gender: 'prefer_not_to_say',
+    profile_image: ''
   });
   const [notificationSettings, setNotificationSettings] = useState({
     email_notifications: true,
@@ -100,7 +103,8 @@ const CustomerProfile: React.FC = () => {
         email: data.email || '',
         phone: data.phone || '',
         birth_date: data.birth_date || '',
-        gender: (data.gender as any) || 'prefer_not_to_say'
+        gender: (data.gender as any) || 'prefer_not_to_say',
+        profile_image: (data as any).profile_image || ''
       });
       setNotificationSettings((data.notification_settings as any) || {
         email_notifications: true,
@@ -265,6 +269,7 @@ const CustomerProfile: React.FC = () => {
           phone: formData.phone || null,
           birth_date: formData.birth_date || null,
           gender: formData.gender,
+          profile_image: formData.profile_image || null,
           notification_settings: notificationSettings,
           updated_at: new Date().toISOString()
         })
@@ -291,6 +296,40 @@ const CustomerProfile: React.FC = () => {
       showError('저장 실패', '프로필 저장에 실패했습니다.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // 프로필 이미지 변경
+  const handleProfileImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // 파일 크기 검증 (5MB 이하)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('파일 크기는 5MB 이하여야 합니다.');
+      return;
+    }
+
+    // 파일 타입 검증
+    if (!file.type.startsWith('image/')) {
+      alert('이미지 파일만 업로드할 수 있습니다.');
+      return;
+    }
+
+    try {
+      // 파일을 Base64로 변환
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setFormData(prev => ({
+          ...prev,
+          profile_image: result
+        }));
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('이미지 처리 오류:', error);
+      alert('이미지 처리 중 오류가 발생했습니다.');
     }
   };
 
@@ -339,25 +378,7 @@ const CustomerProfile: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 헤더 */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">프로필</h1>
-              <p className="text-gray-600 mt-2">개인 정보 및 설정을 관리하세요</p>
-            </div>
-            <button
-              onClick={() => navigate('/customer/home')}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
+      
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="grid gap-8 lg:grid-cols-3">
@@ -367,12 +388,34 @@ const CustomerProfile: React.FC = () => {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-                    <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    기본 정보
-                  </h2>
+                  <div className="flex items-center space-x-4">
+                    {/* 프로필 이미지 */}
+                    <div className="relative">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 border-2 border-white shadow-md overflow-hidden">
+                        {profile.profile_image ? (
+                          <img
+                            src={profile.profile_image}
+                            alt="프로필 이미지"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* 이름만 표시 */}
+                    <div className="flex flex-col">
+                      <p className="text-lg font-semibold text-gray-900">
+                        {profile.first_name} {profile.last_name || ''}
+                      </p>
+                    </div>
+                  </div>
+                  
                   <button
                     onClick={() => setIsEditing(!isEditing)}
                     className="text-blue-600 hover:text-blue-700 text-sm font-medium px-3 py-1 rounded-lg hover:bg-blue-50 transition-colors"
@@ -384,78 +427,123 @@ const CustomerProfile: React.FC = () => {
 
               <div className="p-6">
                 {isEditing ? (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="space-y-6">
+                    {/* 프로필 이미지 섹션 */}
+                    <div className="flex flex-col items-center space-y-4 pb-6 border-b border-gray-100">
+                      <div className="relative">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 border-4 border-white shadow-lg overflow-hidden">
+                          {formData.profile_image ? (
+                            <img
+                              src={formData.profile_image}
+                              alt="프로필 이미지"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => document.getElementById('profile-image-input')?.click()}
+                          className="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors shadow-lg"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                          </svg>
+                        </button>
+                        <input
+                          id="profile-image-input"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleProfileImageChange}
+                          className="hidden"
+                        />
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm text-gray-600">프로필 이미지를 클릭하여 변경하세요</p>
+                        <p className="text-xs text-gray-400 mt-1">JPG, PNG 파일만 지원됩니다</p>
+                      </div>
+                    </div>
+
+                    {/* 개인정보 입력 폼 */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
                           이름 *
                         </label>
                         <input
                           type="text"
                           value={formData.first_name}
                           onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
                           required
+                          placeholder="이름을 입력하세요"
                         />
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
                           성
                         </label>
                         <input
                           type="text"
                           value={formData.last_name}
                           onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
+                          placeholder="성을 입력하세요"
                         />
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">
                         이메일
                       </label>
                       <input
                         type="email"
                         value={formData.email}
                         onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
+                        placeholder="이메일을 입력하세요"
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">
                         전화번호
                       </label>
                       <input
                         type="tel"
                         value={formData.phone}
                         onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
                         placeholder="010-1234-5678"
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
                           생년월일
                         </label>
                         <input
                           type="date"
                           value={formData.birth_date}
                           onChange={(e) => setFormData(prev => ({ ...prev, birth_date: e.target.value }))}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
                         />
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
                           성별
                         </label>
                         <select
                           value={formData.gender}
                           onChange={(e) => setFormData(prev => ({ ...prev, gender: e.target.value as any }))}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
                         >
                           <option value="prefer_not_to_say">선택하지 않음</option>
                           <option value="male">남성</option>
