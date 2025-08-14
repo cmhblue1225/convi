@@ -73,7 +73,6 @@ const HQDashboard: React.FC = () => {
     total_members: 0
   });
   const [pointsData, setPointsData] = useState<Point[]>([]);
-  const [selectedStore, setSelectedStore] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'coupons' | 'points'>('coupons');
 
   useEffect(() => {
@@ -486,8 +485,7 @@ const HQDashboard: React.FC = () => {
             return (
               <div
                 key={stats.store_id}
-                className={`border-2 rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${getStoreStatusColor(stats)}`}
-                onClick={() => setSelectedStore(selectedStore === stats.store_id ? null : stats.store_id)}
+                className={`border-2 rounded-lg p-4 transition-all hover:shadow-md ${getStoreStatusColor(stats)}`}
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center">
@@ -499,7 +497,7 @@ const HQDashboard: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                   <div>
                     <p className="text-gray-600">총 주문</p>
                     <p className="font-semibold text-gray-900">{stats.total_orders}건</p>
@@ -523,42 +521,41 @@ const HQDashboard: React.FC = () => {
                 </div>
 
                 {stats.supply_requests_pending > 0 && (
-                  <div className="mt-3 p-2 bg-red-100 rounded-lg">
+                  <div className="mb-3 p-2 bg-red-100 rounded-lg">
                     <p className="text-sm text-red-800 font-medium">
                       🚨 물류 요청 대기: {stats.supply_requests_pending}건
                     </p>
                   </div>
                 )}
 
-                {selectedStore === stats.store_id && (
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">지점장:</span>
-                        <span className="font-medium">{store?.profiles?.full_name || '미등록'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">연락처:</span>
-                        <span className="font-medium">{store?.phone || '미등록'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">최근 주문:</span>
-                        <span className="font-medium">
-                          {stats.last_order_date 
-                            ? new Date(stats.last_order_date).toLocaleDateString()
-                            : '주문 없음'
-                          }
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">개점일:</span>
-                        <span className="font-medium">
-                          {store && store.created_at ? new Date(store.created_at).toLocaleDateString() : '-'}
-                        </span>
-                      </div>
+                {/* 상세 정보 - 항상 표시 */}
+                <div className="pt-4 border-t border-gray-200">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">지점장:</span>
+                      <span className="font-medium">{store?.profiles?.full_name || '미등록'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">연락처:</span>
+                      <span className="font-medium">{store?.phone || '미등록'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">최근 주문:</span>
+                      <span className="font-medium">
+                        {stats.last_order_date 
+                          ? new Date(stats.last_order_date).toLocaleDateString()
+                          : '주문 없음'
+                        }
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">개점일:</span>
+                      <span className="font-medium">
+                        {store && store.created_at ? new Date(store.created_at).toLocaleDateString() : '-'}
+                      </span>
                     </div>
                   </div>
-                )}
+                </div>
               </div>
             );
           })}
