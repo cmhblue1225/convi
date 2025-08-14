@@ -57,7 +57,17 @@ export const geocodeAddress = async (address: string): Promise<GeocodingResult> 
     try {
       console.log('🌐 프록시 서버를 통한 Geocoding API 호출 시도...');
       
-      const response = await fetch(`http://localhost:3001/api/geocode?query=${encodeURIComponent(normalizedAddress)}`);
+      // 환경에 따른 API URL 설정
+      const isDevelopment = import.meta.env.DEV || window.location.hostname === 'localhost';
+      const envBaseURL = import.meta.env.VITE_API_BASE_URL;
+      
+      const baseURL = envBaseURL || (isDevelopment 
+        ? 'http://localhost:3001' 
+        : window.location.origin); // 프로덕션에서는 현재 도메인 사용
+      
+      console.log('🔧 API Base URL:', baseURL, '(환경:', isDevelopment ? 'development' : 'production', ')');
+      
+      const response = await fetch(`${baseURL}/api/geocode?query=${encodeURIComponent(normalizedAddress)}`);
       
       if (response.ok) {
         const data = await response.json();
