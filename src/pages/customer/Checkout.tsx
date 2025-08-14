@@ -8,6 +8,7 @@ import { useAuthStore } from '../../stores/common/authStore';
 import PaymentMethodSelector from '../../components/payment/PaymentMethodSelector';
 import PaymentProcessor from '../../components/payment/PaymentProcessor';
 import { usePointsValidation } from '../../hooks/usePointsValidation';
+import { usePointStore } from '../../stores/pointStore';
 import type { UserCoupon, CouponValidation } from '../../types/common';
 
 // 결제 방법 타입 정의 (orderStore와 통일)

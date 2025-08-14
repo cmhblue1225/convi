@@ -527,7 +527,7 @@ export interface Point {
   id: string;
   user_id: string;
   amount: number;
-  type: 'earned' | 'used' | 'expired' | 'bonus';
+  type: 'earned' | 'used' | 'expired' | 'bonus' | 'refund';
   description?: string | null;
   order_id?: string | null;
   expires_at?: string | null;

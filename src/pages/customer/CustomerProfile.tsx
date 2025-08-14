@@ -57,6 +57,7 @@ const CustomerProfile: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
   const [formData, setFormData] = useState<ProfileFormData>({
     first_name: '',
     last_name: '',
@@ -148,7 +149,7 @@ const CustomerProfile: React.FC = () => {
 
   const fetchPoints = async () => {
     if (!user?.id) return;
-    
+
     try {
       const { data, error } = await supabase
         .from('points')
