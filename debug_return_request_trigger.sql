@@ -104,3 +104,4 @@ SELECT
 FROM pg_proc 
 WHERE proname = 'handle_return_request_approval';
 
+
