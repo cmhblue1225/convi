@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../lib/supabase/client';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { useAuthStore } from '../../stores/common/authStore';
@@ -101,6 +101,7 @@ const StoreInventory: React.FC = () => {
   const [viewMode, setViewMode] = useState<'current' | 'all'>('current');
   const [expiryFilter, setExpiryFilter] = useState<'all' | 'normal' | 'warning' | 'danger' | 'expired'>('all');
   const [promotionFilter, setPromotionFilter] = useState<'all' | 'buy_one_get_one' | 'buy_two_get_one'>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const { user } = useAuthStore();
 
   // 폐기 처리 함수
@@ -217,6 +218,26 @@ const StoreInventory: React.FC = () => {
       fetchData();
     }
   }, [fetchData, user?.id]);
+
+  // 키보드 단축키 설정
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Ctrl+K 또는 Cmd+K로 검색창 포커스
+      if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+        event.preventDefault();
+        const searchInput = document.querySelector('input[placeholder*="검색"]') as HTMLInputElement;
+        if (searchInput) {
+          searchInput.focus();
+          searchInput.select();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   // 유통기한별 재고 정보 조회
   const fetchInventoryWithExpiry = async (storeId: string) => {
@@ -564,35 +585,78 @@ const StoreInventory: React.FC = () => {
     return { color: 'bg-green-100 text-green-800', text: '충분' };
   };
 
-  const filteredProducts = inventoryWithExpiry
-    .filter(product => {
-      if (filterStock === 'all') return true;
-      if (filterStock === 'low' && product.stock_quantity <= product.safety_stock) return true;
-      if (filterStock === 'out' && product.stock_quantity <= 0) return true;
-      return false;
-    })
-    .filter((product) => {
-      if (expiryFilter === 'all') return true;
-      const status = product.expiryInfo?.status || null;
-      if (!status) return expiryFilter === 'normal';
-      return status === expiryFilter;
-    })
-    .filter((product) => {
-      if (promotionFilter === 'all') return true;
-      return product.promotionInfo.promotion_type === promotionFilter;
-    });
+  // useMemo를 사용하여 필터링 성능 최적화
+  const filteredProducts = useMemo(() => {
+    let filtered = inventoryWithExpiry;
+
+    // 재고 상태 필터
+    if (filterStock !== 'all') {
+      filtered = filtered.filter(product => {
+        if (filterStock === 'low') return product.stock_quantity <= product.safety_stock;
+        if (filterStock === 'out') return product.stock_quantity <= 0;
+        return true;
+      });
+    }
+
+    // 유통기한 필터
+    if (expiryFilter !== 'all') {
+      filtered = filtered.filter((product) => {
+        const status = product.expiryInfo?.status || null;
+        if (!status) return expiryFilter === 'normal';
+        return status === expiryFilter;
+      });
+    }
+
+    // 프로모션 필터
+    if (promotionFilter !== 'all') {
+      filtered = filtered.filter((product) => {
+        return product.promotionInfo.promotion_type === promotionFilter;
+      });
+    }
+
+    // 검색 필터 (상품명, 단위, 바코드 등)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter((product) => {
+        return product.product.name.toLowerCase().includes(query) ||
+               product.product.unit.toLowerCase().includes(query);
+      });
+    }
+
+    return filtered;
+  }, [inventoryWithExpiry, filterStock, expiryFilter, promotionFilter, searchQuery]);
 
   // viewMode에 따라 표시할 데이터 결정
-  const filteredAllProducts = allInventoryItems.filter(product => {
-    if (filterStock === 'all') return true;
-    if (filterStock === 'low' && product.total_stock_quantity <= product.safety_stock) return true;
-    if (filterStock === 'out' && product.total_stock_quantity <= 0) return true;
-    return false;
-  })
-  .filter((product) => {
-    if (promotionFilter === 'all') return true;
-    return product.promotionInfo.promotion_type === promotionFilter;
-  });
+  const filteredAllProducts = useMemo(() => {
+    let filtered = allInventoryItems;
+
+    // 재고 상태 필터
+    if (filterStock !== 'all') {
+      filtered = filtered.filter(product => {
+        if (filterStock === 'low') return product.total_stock_quantity <= product.safety_stock;
+        if (filterStock === 'out') return product.total_stock_quantity <= 0;
+        return true;
+      });
+    }
+
+    // 프로모션 필터
+    if (promotionFilter !== 'all') {
+      filtered = filtered.filter((product) => {
+        return product.promotionInfo.promotion_type === promotionFilter;
+      });
+    }
+
+    // 검색 필터
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter((product) => {
+        return product.product.name.toLowerCase().includes(query) ||
+               product.product.unit.toLowerCase().includes(query);
+      });
+    }
+
+    return filtered;
+  }, [allInventoryItems, filterStock, promotionFilter, searchQuery]);
 
   const finalDisplayData = viewMode === 'current' ? filteredProducts : filteredAllProducts;
 
@@ -726,12 +790,12 @@ const StoreInventory: React.FC = () => {
       };
 
       // 단순한 오름차순/내림차순 정렬을 위한 데이터 준비
-      let sortedData = [...finalDisplayData];
+      const sortedData = [...finalDisplayData];
       
       // 기본 정렬: 상품명 오름차순
       sortedData.sort((a, b) => {
-        const aName = (a as any).product?.name || '';
-        const bName = (b as any).product?.name || '';
+        const aName = (a as InventoryWithExpiry | AllInventoryItem).product?.name || '';
+        const bName = (b as InventoryWithExpiry | AllInventoryItem).product?.name || '';
         return aName.localeCompare(bName);
       });
 
@@ -741,8 +805,8 @@ const StoreInventory: React.FC = () => {
           const row = inventoryStartRow + 1 + index;
           
           if (viewMode === 'current') {
-            const currentItem = item as any;
-            worksheet.getCell(row, 1).value = currentItem.product?.category?.name || '기타';
+            const currentItem = item as InventoryWithExpiry;
+            worksheet.getCell(row, 1).value = '기타'; // category 정보가 없으므로 기본값
             worksheet.getCell(row, 2).value = currentItem.product?.name || '';
             worksheet.getCell(row, 3).value = currentItem.batchQuantity || 0;
             worksheet.getCell(row, 3).numFmt = '#,##0';
@@ -759,8 +823,8 @@ const StoreInventory: React.FC = () => {
             worksheet.getCell(row, 9).numFmt = '#,##0';
             worksheet.getCell(row, 10).value = currentItem.product?.unit || '';
           } else {
-            const allItem = item as any;
-            worksheet.getCell(row, 1).value = allItem.product?.category?.name || '기타';
+            const allItem = item as AllInventoryItem;
+            worksheet.getCell(row, 1).value = '기타'; // category 정보가 없으므로 기본값
             worksheet.getCell(row, 2).value = allItem.product?.name || '';
             worksheet.getCell(row, 3).value = allItem.total_stock_quantity || 0;
             worksheet.getCell(row, 3).numFmt = '#,##0';
@@ -844,9 +908,9 @@ const StoreInventory: React.FC = () => {
       worksheet.getCell(`A${summaryStartRow + 1}`).value = '총 재고 수량';
       worksheet.getCell(`B${summaryStartRow + 1}`).value = sortedData?.reduce((sum, item) => {
         if (viewMode === 'current') {
-          return sum + ((item as any).batchQuantity || 0);
+          return sum + ((item as InventoryWithExpiry).batchQuantity || 0);
         } else {
-          return sum + ((item as any).total_stock_quantity || 0);
+          return sum + ((item as AllInventoryItem).total_stock_quantity || 0);
         }
       }, 0) || 0;
       worksheet.getCell(`B${summaryStartRow + 1}`).numFmt = '#,##0';
@@ -1022,13 +1086,85 @@ const StoreInventory: React.FC = () => {
 
       {/* 재고 현황 */}
       <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-gray-900">재고 현황</h2>
-          <div className="flex flex-wrap gap-2">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">재고 현황</h2>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setViewMode('current')}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                  viewMode === 'current'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                현재 재고
+              </button>
+              <button
+                onClick={() => setViewMode('all')}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                  viewMode === 'all'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                모든 재고
+              </button>
+            </div>
+          </div>
+          
+          {/* 검색창과 필터 */}
+          <div className="flex flex-wrap gap-3 items-center">
+            {/* 검색창 */}
+            <div className="flex-1 min-w-[250px] max-w-[400px] relative">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  placeholder="상품명 또는 단위로 검색... (Ctrl+K)"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      setSearchQuery('');
+                    }
+                  }}
+                  className="block w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  autoComplete="off"
+                  spellCheck="false"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  >
+                    <svg className="h-4 w-4 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            {/* 필터들 */}
+            <select
+              value={filterStock}
+              onChange={(e) => setFilterStock(e.target.value)}
+              className="min-w-[90px] px-3 py-2 border border-gray-300 rounded-md text-sm bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">전체</option>
+              <option value="low">재고 부족</option>
+              <option value="out">품절</option>
+            </select>
+            
             <select
               value={expiryFilter}
               onChange={(e) => setExpiryFilter(e.target.value as 'all' | 'normal' | 'warning' | 'danger' | 'expired')}
-              className="min-w-[120px] px-3 py-2 border border-gray-300 rounded-md text-sm bg-white"
+              className="min-w-[120px] px-3 py-2 border border-gray-300 rounded-md text-sm bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               title="유통기한 상태 필터"
             >
               <option value="all">유통기한 전체</option>
@@ -1037,46 +1173,35 @@ const StoreInventory: React.FC = () => {
               <option value="expired">만료</option>
               <option value="normal">정상</option>
             </select>
+            
             <select
               value={promotionFilter}
               onChange={(e) => setPromotionFilter(e.target.value as 'all' | 'buy_one_get_one' | 'buy_two_get_one')}
-              className="min-w-[100px] px-3 py-2 border border-gray-300 rounded-md text-sm bg-white"
+              className="min-w-[100px] px-3 py-2 border border-gray-300 rounded-md text-sm bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               title="행사 필터"
             >
               <option value="all">행사 전체</option>
               <option value="buy_one_get_one">1+1 행사</option>
               <option value="buy_two_get_one">2+1 행사</option>
             </select>
-            <button
-              onClick={() => setViewMode('current')}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                viewMode === 'current'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              현재 재고
-            </button>
-            <button
-              onClick={() => setViewMode('all')}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                viewMode === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              모든 재고
-            </button>
-            <select
-              value={filterStock}
-              onChange={(e) => setFilterStock(e.target.value)}
-              className="min-w-[90px] px-3 py-2 border border-gray-300 rounded-md text-sm bg-white"
-            >
-              <option value="all">전체</option>
-              <option value="low">재고 부족</option>
-              <option value="out">품절</option>
-            </select>
           </div>
+          
+          {/* 검색 결과 요약 */}
+          {searchQuery && (
+            <div className="mt-3 flex items-center justify-between text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <svg className="h-4 w-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>
+                  <strong>"{searchQuery}"</strong> 검색 결과: {finalDisplayData.length}개 상품
+                </span>
+              </div>
+              {finalDisplayData.length === 0 && (
+                <span className="text-orange-600">검색 결과가 없습니다.</span>
+              )}
+            </div>
+          )}
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -1146,7 +1271,18 @@ const StoreInventory: React.FC = () => {
                   return (
                     <tr key={`${currentProduct.id}_${currentProduct.expiryGroup}_${currentProduct.batchId}`} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{currentProduct.product.name}</div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {searchQuery ? (
+                            <span dangerouslySetInnerHTML={{
+                              __html: currentProduct.product.name.replace(
+                                new RegExp(`(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
+                                '<mark className="bg-yellow-200 px-1 rounded">$1</mark>'
+                              )
+                            }} />
+                          ) : (
+                            currentProduct.product.name
+                          )}
+                        </div>
                         <div className="text-xs text-gray-500">
                           {currentProduct.expiryInfo?.expiresAt 
                             ? `유통기한: ${new Date(currentProduct.expiryInfo.expiresAt).toLocaleDateString()}`
@@ -1225,7 +1361,18 @@ const StoreInventory: React.FC = () => {
                   return (
                     <tr key={allProduct.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{allProduct.product.name}</div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {searchQuery ? (
+                            <span dangerouslySetInnerHTML={{
+                              __html: allProduct.product.name.replace(
+                                new RegExp(`(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
+                                '<mark className="bg-yellow-200 px-1 rounded">$1</mark>'
+                              )
+                            }} />
+                          ) : (
+                            allProduct.product.name
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{allProduct.total_stock_quantity}</div>
@@ -1271,6 +1418,34 @@ const StoreInventory: React.FC = () => {
               })}
             </tbody>
           </table>
+          
+          {/* 빈 상태 메시지 */}
+          {finalDisplayData.length === 0 && (
+            <div className="text-center py-12">
+              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-2M4 13h2m0 0V9a2 2 0 012-2h2m0 0V6a2 2 0 012-2h2.01" />
+              </svg>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">
+                {searchQuery ? '검색 결과가 없습니다' : '재고가 없습니다'}
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                {searchQuery 
+                  ? `"${searchQuery}"와 일치하는 상품을 찾을 수 없습니다. 다른 검색어를 시도해보세요.`
+                  : '아직 등록된 재고가 없습니다. 상품을 입고하여 재고를 등록해보세요.'
+                }
+              </p>
+              {searchQuery && (
+                <div className="mt-4">
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    검색 초기화
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../lib/supabase/client';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { useAuthStore } from '../../stores/common/authStore';
@@ -66,6 +66,7 @@ const StoreSupply: React.FC = () => {
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [returnRefreshTrigger, setReturnRefreshTrigger] = useState(0);
   const [activeTab, setActiveTab] = useState<'supply' | 'return'>('supply');
+  const [productSearchQuery, setProductSearchQuery] = useState<string>('');
   const { user } = useAuthStore();
 
   const fetchData = useCallback(async () => {
@@ -789,6 +790,28 @@ const StoreSupply: React.FC = () => {
     };
   }, [fetchData]);
 
+  // 키보드 단축키 설정 (물류 요청 모달에서만)
+  useEffect(() => {
+    if (!showCreateModal) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Ctrl+K 또는 Cmd+K로 검색창 포커스
+      if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+        event.preventDefault();
+        const searchInput = document.querySelector('input[placeholder*="상품명 또는 단위로 검색"]') as HTMLInputElement;
+        if (searchInput) {
+          searchInput.focus();
+          searchInput.select();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showCreateModal]);
+
   const handleViewDetail = (request: SupplyRequest) => {
     setSelectedRequest(request);
     setShowDetailModal(true);
@@ -796,8 +819,22 @@ const StoreSupply: React.FC = () => {
 
   const handleCreateRequest = async () => {
     setModalProducts(storeProducts);
+    setProductSearchQuery(''); // 검색어 초기화
     setShowCreateModal(true);
   };
+
+  // 상품 검색 필터링 로직 (useMemo로 성능 최적화)
+  const filteredModalProducts = useMemo(() => {
+    if (!productSearchQuery.trim()) {
+      return modalProducts;
+    }
+
+    const query = productSearchQuery.toLowerCase().trim();
+    return modalProducts.filter((product) => {
+      return product.product.name.toLowerCase().includes(query) ||
+             product.product.unit.toLowerCase().includes(query);
+    });
+  }, [modalProducts, productSearchQuery]);
 
   const createSupplyRequest = async (formData: FormData) => {
     try {
@@ -1271,6 +1308,59 @@ const StoreSupply: React.FC = () => {
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">요청 상품</label>
+                    
+                    {/* 상품 검색창 */}
+                    <div className="mb-4">
+                      <div className="relative max-w-md">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="상품명 또는 단위로 검색... (Ctrl+K)"
+                          value={productSearchQuery}
+                          onChange={(e) => setProductSearchQuery(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Escape') {
+                              setProductSearchQuery('');
+                            }
+                          }}
+                          className="block w-full pl-9 pr-4 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                          autoComplete="off"
+                          spellCheck="false"
+                        />
+                        {productSearchQuery && (
+                          <button
+                            onClick={() => setProductSearchQuery('')}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                          >
+                            <svg className="h-4 w-4 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                      
+                      {/* 검색 결과 요약 */}
+                      {productSearchQuery && (
+                        <div className="mt-2 flex items-center justify-between text-sm text-gray-600">
+                          <div className="flex items-center gap-2">
+                            <svg className="h-4 w-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>
+                              <strong>"{productSearchQuery}"</strong> 검색 결과: {filteredModalProducts.length}개 상품
+                            </span>
+                          </div>
+                          {filteredModalProducts.length === 0 && (
+                            <span className="text-orange-600">검색 결과가 없습니다.</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    
                     <div className="overflow-x-auto">
                       <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
@@ -1283,9 +1373,21 @@ const StoreSupply: React.FC = () => {
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {modalProducts.map((product) => (
+                          {filteredModalProducts.map((product) => (
                             <tr key={product.id}>
-                              <td className="px-3 py-2 text-sm text-gray-900">{product.product.name}</td>
+                              <td className="px-3 py-2 text-sm text-gray-900">
+                                {productSearchQuery ? (
+                                  <span dangerouslySetInnerHTML={{
+                                    __html: product.product.name.replace(
+                                      new RegExp(`(${productSearchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
+                                      '<mark className="bg-yellow-200 px-1 rounded">$1</mark>'
+                                    )
+                                  }} />
+                                ) : (
+                                  product.product.name
+                                )}
+                                <div className="text-xs text-gray-500">{product.product.unit}</div>
+                              </td>
                               <td className="px-3 py-2 text-sm text-gray-900">{product.stock_quantity}</td>
                               <td className="px-3 py-2 text-sm text-gray-900">{product.safety_stock}</td>
                               <td className="px-3 py-2">
@@ -1309,6 +1411,34 @@ const StoreSupply: React.FC = () => {
                           ))}
                         </tbody>
                       </table>
+                      
+                      {/* 빈 상태 메시지 */}
+                      {filteredModalProducts.length === 0 && (
+                        <div className="text-center py-8">
+                          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-2M4 13h2m0 0V9a2 2 0 012-2h2m0 0V6a2 2 0 012-2h2.01" />
+                          </svg>
+                          <h3 className="mt-2 text-sm font-medium text-gray-900">
+                            {productSearchQuery ? '검색 결과가 없습니다' : '요청 가능한 상품이 없습니다'}
+                          </h3>
+                          <p className="mt-1 text-sm text-gray-500">
+                            {productSearchQuery 
+                              ? `"${productSearchQuery}"와 일치하는 상품을 찾을 수 없습니다. 다른 검색어를 시도해보세요.`
+                              : '물류 요청이 가능한 상품이 없습니다.'
+                            }
+                          </p>
+                          {productSearchQuery && (
+                            <div className="mt-4">
+                              <button
+                                onClick={() => setProductSearchQuery('')}
+                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                              >
+                                검색 초기화
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                   
