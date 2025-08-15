@@ -47,7 +47,21 @@ const CustomerOrders: React.FC = () => {
       const orderIds = orders.map(order => order.id);
       const { data, error } = await supabase
         .from('refund_requests' as any)
-        .select('order_id, status, created_at, processed_at, admin_notes')
+        .select(`
+          id,
+          order_id, 
+          status, 
+          reason,
+          description,
+          requested_refund_amount,
+          approved_refund_amount,
+          refund_items,
+          created_at, 
+          processed_at, 
+          admin_notes,
+          rejection_reason,
+          refund_method
+        `)
         .in('order_id', orderIds)
         .eq('customer_id', user.id);
 
@@ -769,7 +783,11 @@ const CustomerOrders: React.FC = () => {
           onClose={() => setShowRefundReceiptModal(false)}
           refund={selectedRefundForReceipt}
           order={orders.find(o => o.id === selectedRefundForReceipt.order_id)}
-          storeInfo={{ name: '매장명', address: '매장 주소', phone: '전화번호' }}
+          storeInfo={{ 
+            name: orders.find(o => o.id === selectedRefundForReceipt.order_id)?.storeName || '매장명', 
+            address: '매장 주소', 
+            phone: '전화번호' 
+          }}
         />
       )}
     </div>
