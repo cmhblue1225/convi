@@ -124,19 +124,30 @@ export async function atomicInventoryDeduction(
     }
 
     // 2. PostgreSQL RPC 함수를 통한 원자적 재고 차감
+    const rpcParams = {
+      p_store_id: storeId,
+      p_items: items.map(item => ({
+        product_id: item.productId,
+        quantity: item.quantity,
+        product_name: item.productName
+      })),
+      p_reference_type: referenceType,
+      p_reference_id: referenceId,
+      p_order_number: orderNumber,
+      p_user_id: userId
+    };
+
+    console.log('🔍 RPC 호출 파라미터:', JSON.stringify(rpcParams, null, 2));
+    console.log('🔍 Store ID 타입:', typeof storeId, storeId);
+    console.log('🔍 Items 상세:', items.map(item => ({
+      productId: item.productId,
+      productIdType: typeof item.productId,
+      productName: item.productName,
+      quantity: item.quantity
+    })));
+
     const { data: result, error: rpcError } = await supabase
-      .rpc('atomic_inventory_deduction', {
-        p_store_id: storeId,
-        p_items: items.map(item => ({
-          product_id: item.productId,
-          quantity: item.quantity,
-          product_name: item.productName
-        })),
-        p_reference_type: referenceType,
-        p_reference_id: referenceId,
-        p_order_number: orderNumber,
-        p_user_id: userId
-      });
+      .rpc('atomic_inventory_deduction', rpcParams);
 
     if (rpcError) {
       console.error('❌ 원자적 재고 차감 실패:', rpcError);
