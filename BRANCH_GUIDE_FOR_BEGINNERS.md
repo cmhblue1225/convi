@@ -122,7 +122,7 @@ git push origin feature/auth-login
 git checkout develop
 git pull origin develop  # 최신 상태 확인
 git merge feature/auth-login  # 내 작업 merge
-git push origin develop
+git push origin develop # merge 작업 결과 push
 
 # 8. 내 브랜치로 복귀 및 다음 작업 준비
 git checkout feature/auth-login
