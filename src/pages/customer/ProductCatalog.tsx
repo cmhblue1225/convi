@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { supabase } from '../../lib/supabase/client';
+import { validateInventoryAvailability, getRealTimeStock, type InventoryItem } from '../../lib/inventory/inventoryManager';
 import type { Product, Category, StoreProduct } from '../../types/common';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import Cart from '../../components/customer/Cart';
@@ -194,40 +195,62 @@ const ProductCatalog: React.FC = () => {
     );
   }, [products, searchTerm]);
 
-  const addToCart = useCallback((product: ProductWithStock) => {
+  const addToCart = useCallback(async (product: ProductWithStock) => {
     const storeProduct = product.store_products[0];
     
-    // 현재 장바구니에 담긴 수량 확인
-    const cartItem = items.find(item => item.product.id === product.id);
-    const cartQuantity = cartItem ? cartItem.quantity : 0;
-    const realTimeStock = storeProduct.stock_quantity - cartQuantity;
-    
-    if (realTimeStock <= 0) {
-      showWarning('재고 부족', `${product.name}은(는) 재고가 부족합니다. (남은 재고: ${realTimeStock}개)`);
-      return;
-    }
-    
-    // 행사 정보가 있으면 StoreProduct에 추가
-    const storeProductWithPromotion = {
-      ...storeProduct,
-      promotionType: product.promotionInfo?.promotion_type || null,
-      promotionName: product.promotionInfo?.promotion_name || null
-    };
-    
-    console.log(`🛒 장바구니 추가: ${product.name} (재고: ${storeProduct.stock_quantity} → ${realTimeStock - 1})`);
-    addItem(product, storeProductWithPromotion, 1);
-    
-    // 행사 상품인 경우 알림
-    if (product.promotionInfo?.promotion_type) {
-      const isOneOnePromotion = product.promotionInfo.promotion_type === 'buy_one_get_one';
-      const promotionTitle = isOneOnePromotion ? '1+1 행사!' : '2+1 행사!';
-      const promotionMessage = isOneOnePromotion 
-        ? '2개 담으면 1개 가격! 🎉'
-        : '3개 담으면 2개 가격! 🎉';
+    try {
+      // 1. 실시간 재고 확인
+      const realTimeStock = await getRealTimeStock(selectedStore.id, [product.id]);
+      const currentStock = realTimeStock[product.id] || 0;
       
-      showSuccess(promotionTitle, promotionMessage);
+      // 2. 현재 장바구니에 담긴 수량 확인
+      const cartItem = items.find(item => item.product.id === product.id);
+      const cartQuantity = cartItem ? cartItem.quantity : 0;
+      const availableStock = currentStock - cartQuantity;
+      
+      if (availableStock <= 0) {
+        showWarning('재고 부족', `${product.name}은(는) 재고가 부족합니다. (현재 재고: ${currentStock}개, 장바구니: ${cartQuantity}개)`);
+        return;
+      }
+      
+      // 3. 재고 가용성 검증 (추가로 1개 담을 수 있는지)
+      const inventoryValidation = await validateInventoryAvailability(
+        selectedStore.id,
+        [{ productId: product.id, productName: product.name, quantity: cartQuantity + 1 }]
+      );
+      
+      if (!inventoryValidation.isValid) {
+        showWarning('재고 부족', inventoryValidation.errors.join(', '));
+        return;
+      }
+      
+      // 4. 장바구니에 추가
+      const storeProductWithPromotion = {
+        ...storeProduct,
+        stock_quantity: currentStock, // 실시간 재고로 업데이트
+        promotionType: product.promotionInfo?.promotion_type || null,
+        promotionName: product.promotionInfo?.promotion_name || null
+      };
+      
+      console.log(`🛒 장바구니 추가: ${product.name} (실시간 재고: ${currentStock}개, 장바구니: ${cartQuantity} → ${cartQuantity + 1})`);
+      addItem(product, storeProductWithPromotion, 1);
+      
+      // 5. 행사 상품인 경우 알림
+      if (product.promotionInfo?.promotion_type) {
+        const isOneOnePromotion = product.promotionInfo.promotion_type === 'buy_one_get_one';
+        const promotionTitle = isOneOnePromotion ? '1+1 행사!' : '2+1 행사!';
+        const promotionMessage = isOneOnePromotion 
+          ? '2개 담으면 1개 가격! 🎉'
+          : '3개 담으면 2개 가격! 🎉';
+        
+        showSuccess(promotionTitle, promotionMessage);
+      }
+      
+    } catch (error) {
+      console.error('❌ 실시간 재고 확인 실패:', error);
+      showWarning('재고 확인 실패', '재고 정보를 확인할 수 없습니다. 잠시 후 다시 시도해주세요.');
     }
-  }, [items, addItem, showWarning, showSuccess]);
+  }, [items, addItem, showWarning, showSuccess, selectedStore.id]);
 
   const goBackToStoreSelection = () => {
     console.log('🔄 지점 변경 버튼 클릭');

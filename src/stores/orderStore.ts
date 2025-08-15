@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '../lib/supabase/client';
+import { atomicInventoryDeduction, atomicInventoryRestoration, type InventoryItem } from '../lib/inventory/inventoryManager';
 import type { Product, StoreProduct } from '../types/common';
 
 export interface OrderItem {
@@ -173,91 +174,49 @@ export const useOrderStore = create<OrderState>()(
               console.log('✅ 주문 아이템 저장 성공:', orderItems.length, '개');
             }
 
-            // 재고 차감 처리
-            console.log('📦 재고 차감 시작...');
-            for (const item of orderData.items) {
+            // 원자적 재고 차감 처리
+            console.log('⚛️ 원자적 재고 차감 시작...');
+            if (orderData.items && orderData.items.length > 0) {
               try {
-                // 현재 재고 확인
-                const { data: currentStock, error: stockError } = await supabase
-                  .from('store_products')
-                  .select('stock_quantity')
-                  .eq('store_id', orderData.storeId)
-                  .eq('product_id', item.productId)
-                  .single();
+                // 주문 아이템을 InventoryItem 형식으로 변환
+                const inventoryItems: InventoryItem[] = orderData.items.map(item => ({
+                  productId: item.productId,
+                  productName: item.productName,
+                  quantity: item.quantity
+                }));
 
-                if (stockError) {
-                  console.error(`❌ 재고 조회 실패 (상품: ${item.productName}):`, stockError);
-                  console.log(`⚠️ 재고 조회 실패로 인해 재고 차감을 건너뜁니다. (상품: ${item.productName})`);
-                  continue; // 재고 조회 실패해도 주문은 계속 진행
+                // 원자적 재고 차감 실행
+                const inventoryResult = await atomicInventoryDeduction(
+                  orderData.storeId,
+                  inventoryItems,
+                  'order',
+                  data.id,
+                  orderData.orderNumber,
+                  user.id
+                );
+
+                if (!inventoryResult.success) {
+                  // 재고 차감 실패 시 주문도 실패로 처리
+                  console.error('❌ 재고 차감 실패:', inventoryResult.message);
+                  console.error('❌ 재고 차감 오류 목록:', inventoryResult.errors);
+                  
+                  // 주문 데이터 삭제 (이미 저장된 주문을 롤백)
+                  await supabase.from('orders').delete().eq('id', data.id);
+                  await supabase.from('order_items').delete().eq('order_id', data.id);
+                  
+                  throw new Error(`재고 부족으로 주문을 처리할 수 없습니다: ${inventoryResult.message}`);
                 }
 
-                const newStockQuantity = currentStock.stock_quantity - item.quantity;
-                
-                if (newStockQuantity < 0) {
-                  console.warn(`⚠️ 재고 부족 (상품: ${item.productName}): 현재 ${currentStock.stock_quantity}, 요청 ${item.quantity}`);
-                  // 재고가 부족해도 주문은 진행 (실제로는 재고 확인을 먼저 해야 함)
-                }
+                console.log('✅ 원자적 재고 차감 성공:', {
+                  transactionCount: inventoryResult.transactionIds.length,
+                  message: inventoryResult.message
+                });
 
-                // 재고 업데이트
-                const { error: updateError } = await supabase
-                  .from('store_products')
-                  .update({ 
-                    stock_quantity: Math.max(0, newStockQuantity),
-                    updated_at: new Date().toISOString()
-                  })
-                  .eq('store_id', orderData.storeId)
-                  .eq('product_id', item.productId);
-
-                if (updateError) {
-                  console.error(`❌ 재고 업데이트 실패 (상품: ${item.productName}):`, updateError);
-                  console.log(`⚠️ 재고 업데이트 실패로 인해 재고 차감을 건너뜁니다. (상품: ${item.productName})`);
-                } else {
-                  console.log(`✅ 재고 차감 완료 (상품: ${item.productName}): ${currentStock.stock_quantity} → ${Math.max(0, newStockQuantity)}`);
-                }
-
-                // 재고 변동 이력 기록 (선택적)
-                try {
-                  // store_products에서 ID를 먼저 조회
-                  const { data: storeProductData, error: storeProductError } = await supabase
-                    .from('store_products')
-                    .select('id')
-                    .eq('store_id', orderData.storeId)
-                    .eq('product_id', item.productId)
-                    .single();
-
-                  if (storeProductError || !storeProductData) {
-                    console.error(`❌ store_product ID 조회 실패 (상품: ${item.productName}):`, storeProductError);
-                  } else {
-                    const { error: logError } = await supabase
-                      .from('inventory_transactions')
-                      .insert({
-                        store_product_id: storeProductData.id,
-                        transaction_type: 'out',
-                        quantity: item.quantity,
-                        previous_quantity: currentStock.stock_quantity,
-                        new_quantity: Math.max(0, newStockQuantity),
-                        reference_type: 'order',
-                        reference_id: data.id,
-                        reason: `주문 #${orderData.orderNumber}로 인한 재고 차감`,
-                        created_by: user.id
-                      });
-
-                    if (logError) {
-                      console.error(`❌ 재고 이력 기록 실패 (상품: ${item.productName}):`, logError);
-                      // 이력 기록 실패는 주문 진행에 영향을 주지 않음
-                    }
-                  }
-                } catch (logError) {
-                  console.error(`❌ 재고 이력 기록 중 예외 발생 (상품: ${item.productName}):`, logError);
-                  // 이력 기록 실패는 주문 진행에 영향을 주지 않음
-                }
-              } catch (error) {
-                console.error(`❌ 재고 처리 중 오류 (상품: ${item.productName}):`, error);
-                console.log(`⚠️ 재고 처리 오류로 인해 재고 차감을 건너뜁니다. (상품: ${item.productName})`);
-                // 재고 처리 실패해도 주문은 계속 진행
+              } catch (inventoryError) {
+                console.error('❌ 재고 차감 중 예외 발생:', inventoryError);
+                throw inventoryError; // 재고 차감 실패 시 전체 주문 실패
               }
             }
-            console.log('📦 재고 차감 완료');
           }
 
           // 포인트 차감 처리
@@ -420,102 +379,28 @@ export const useOrderStore = create<OrderState>()(
             }
           }
 
-          // 주문 취소 시 재고 복구
+          // 주문 취소 시 원자적 재고 복구
           if (status === 'cancelled') {
-            console.log('🔄 주문 취소로 인한 재고 복구 시작...');
+            console.log('⚛️ 원자적 재고 복구 시작...');
             
             try {
-              // 주문 아이템 조회
-              const { data: orderItems, error: itemsError } = await supabase
-                .from('order_items')
-                .select('product_id, quantity')
-                .eq('order_id', orderId);
+              // 원자적 재고 복구 실행
+              const restorationResult = await atomicInventoryRestoration(orderId, user.id);
 
-              if (itemsError) {
-                console.error('❌ 주문 아이템 조회 실패:', itemsError);
-              } else if (orderItems && orderItems.length > 0) {
-                // 주문 정보 조회 (store_id 필요)
-                const { data: orderInfo, error: orderError } = await supabase
-                  .from('orders')
-                  .select('store_id')
-                  .eq('id', orderId)
-                  .single();
-
-                if (orderError) {
-                  console.error('❌ 주문 정보 조회 실패:', orderError);
-                } else {
-                  // 각 상품의 재고 복구
-                  for (const item of orderItems) {
-                    try {
-                      // 현재 재고 확인
-                      const { data: currentStock, error: stockError } = await supabase
-                        .from('store_products')
-                        .select('stock_quantity')
-                        .eq('store_id', orderInfo.store_id)
-                        .eq('product_id', item.product_id)
-                        .single();
-
-                      if (stockError) {
-                        console.error(`❌ 재고 조회 실패 (상품 ID: ${item.product_id}):`, stockError);
-                        continue;
-                      }
-
-                      const newStockQuantity = currentStock.stock_quantity + item.quantity;
-
-                      // 재고 업데이트
-                      const { error: updateError } = await supabase
-                        .from('store_products')
-                        .update({ 
-                          stock_quantity: newStockQuantity,
-                          updated_at: new Date().toISOString()
-                        })
-                        .eq('store_id', orderInfo.store_id)
-                        .eq('product_id', item.product_id);
-
-                      if (updateError) {
-                        console.error(`❌ 재고 복구 실패 (상품 ID: ${item.product_id}):`, updateError);
-                      } else {
-                        console.log(`✅ 재고 복구 완료 (상품 ID: ${item.product_id}): ${currentStock.stock_quantity} → ${newStockQuantity}`);
-                      }
-
-                      // 재고 변동 이력 기록 - store_product ID 먼저 조회
-                      const { data: storeProductData, error: storeProductError } = await supabase
-                        .from('store_products')
-                        .select('id')
-                        .eq('store_id', orderInfo.store_id)
-                        .eq('product_id', item.product_id)
-                        .single();
-
-                      if (storeProductError || !storeProductData) {
-                        console.error(`❌ store_product ID 조회 실패 (상품 ID: ${item.product_id}):`, storeProductError);
-                      } else {
-                        const { error: logError } = await supabase
-                          .from('inventory_transactions')
-                          .insert({
-                            store_product_id: storeProductData.id,
-                            transaction_type: 'in',
-                            quantity: item.quantity,
-                            previous_quantity: currentStock.stock_quantity,
-                            new_quantity: newStockQuantity,
-                            reference_type: 'order',
-                            reference_id: orderId,
-                            reason: `주문 취소로 인한 재고 복구`,
-                            created_by: user.id
-                          });
-
-                        if (logError) {
-                          console.error(`❌ 재고 이력 기록 실패 (상품 ID: ${item.product_id}):`, logError);
-                        }
-                      }
-                    } catch (error) {
-                      console.error(`❌ 재고 복구 처리 중 오류 (상품 ID: ${item.product_id}):`, error);
-                    }
-                  }
-                  console.log('🔄 재고 복구 완료');
-                }
+              if (!restorationResult.success) {
+                console.error('❌ 재고 복구 실패:', restorationResult.message);
+                console.error('❌ 재고 복구 오류 목록:', restorationResult.errors);
+                // 재고 복구 실패해도 주문 상태 업데이트는 계속 진행 (이미 취소됨)
+              } else {
+                console.log('✅ 원자적 재고 복구 성공:', {
+                  transactionCount: restorationResult.transactionIds.length,
+                  message: restorationResult.message
+                });
               }
-            } catch (error) {
-              console.error('❌ 재고 복구 중 오류:', error);
+
+            } catch (restorationError) {
+              console.error('❌ 재고 복구 중 예외 발생:', restorationError);
+              // 재고 복구 실패해도 주문 상태 업데이트는 계속 진행
             }
           }
 
