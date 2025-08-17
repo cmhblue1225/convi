@@ -208,7 +208,7 @@ const StoreRefunds: React.FC = () => {
     if (!user?.id) return;
     
     try {
-      const { error } = await supabase.rpc('process_refund_request', {
+      const { data, error } = await supabase.rpc('process_refund_request', {
         p_refund_request_id: refundId,
         p_new_status: action === 'approve' ? 'approved' : 'rejected',
         p_processed_by: user.id,
@@ -218,7 +218,16 @@ const StoreRefunds: React.FC = () => {
 
       if (error) throw error;
       
-      alert(`환불 요청이 ${action === 'approve' ? '승인' : '거절'}되었습니다.`);
+      // 함수가 JSONB를 반환하므로 결과 확인
+      if (data?.success) {
+        alert(data.message || `환불 요청이 ${action === 'approve' ? '승인' : '거절'}되었습니다.`);
+        if (data.inventory_restored) {
+          console.log('✅ 재고가 성공적으로 복구되었습니다.');
+        }
+      } else {
+        alert('환불 요청 처리에 실패했습니다.');
+      }
+      
       fetchRefunds(); // 목록 새로고침
       setProcessingRefund(null);
     } catch (error) {

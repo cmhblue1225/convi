@@ -279,8 +279,6 @@ const PaymentSuccess: React.FC = () => {
           setCountdown(prev => {
             if (prev <= 1) {
               clearInterval(countdownInterval);
-              console.log('⏰ 카운트다운 완료, 주문 내역 페이지로 이동');
-              navigate('/customer/orders');
               return 0;
             }
             return prev - 1;
@@ -311,6 +309,14 @@ const PaymentSuccess: React.FC = () => {
       console.log('🧹 PaymentSuccess 컴포넌트 정리');
     };
   }, [searchParams, navigate, clearCart, addOrder, isProcessed]);
+
+  // 카운트다운이 0이 되면 자동으로 주문 페이지로 이동
+  useEffect(() => {
+    if (countdown === 0 && !isLoading && !error) {
+      console.log('⏰ 카운트다운 완료, 주문 내역 페이지로 이동');
+      navigate('/customer/orders');
+    }
+  }, [countdown, isLoading, error, navigate]);
 
   if (isLoading) {
     return (
