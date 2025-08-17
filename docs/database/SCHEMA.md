@@ -2,15 +2,18 @@
 
 ## 📊 테이블 개요
 
-편의점 종합 솔루션은 **22개의 테이블**로 구성된 완전한 관계형 데이터베이스를 사용합니다.
+편의점 종합 솔루션은 **36개의 테이블**로 구성된 완전한 관계형 데이터베이스를 사용합니다.
 
 ### 테이블 분류
 - **핵심 테이블 (4개)**: profiles, stores, products, categories
 - **운영 테이블 (4개)**: store_products, orders, order_items, order_status_history  
 - **물류 테이블 (4개)**: supply_requests, supply_request_items, shipments, inventory_transactions
-- **마케팅 테이블 (5개)**: points, coupons, user_coupons, wishlists, product_wishlists
+- **마케팅 테이블 (6개)**: points, point_transactions, coupons, user_coupons, wishlists, product_wishlists
 - **분석 테이블 (2개)**: daily_sales_summary, product_sales_summary
-- **시스템 테이블 (3개)**: notifications, system_settings, point_settings
+- **환불 시스템 (7개)**: refund_requests, refund_history, refund_attachments, refund_notifications, refund_policies, refund_templates, refund_settlements
+- **반품 시스템 (2개)**: return_requests, return_request_items
+- **프로모션 시스템 (2개)**: promotions, promotion_products
+- **기타 시스템 (5개)**: notifications, system_settings, point_settings, product_images, spatial_ref_sys
 
 ## 📋 핵심 테이블 상세
 
@@ -563,4 +566,4 @@ CREATE TRIGGER daily_sales_update
 ```
 
 ---
-**편의점 종합 솔루션 v2.0** | 최신 업데이트: 2025-08-12
+**편의점 종합 솔루션 v2.0** | 최신 업데이트: 2025-08-17

@@ -829,4 +829,4 @@ const subscribeToNotifications = (customerId: string, callback: (notification: a
 ```
 
 ---
-**편의점 종합 솔루션 v2.0** | 최신 업데이트: 2025-08-13
+**편의점 종합 솔루션 v2.0** | 최신 업데이트: 2025-08-17
