@@ -54,11 +54,11 @@ const RefundReceipt = forwardRef<HTMLDivElement, RefundReceiptProps>(({
         </div>
         <div className="flex justify-between mb-1">
           <span className="text-gray-600">환불 요청일:</span>
-          <span className="font-bold">{formatDate(refund?.created_at)}</span>
+          <span className="font-bold">{refund?.created_at ? formatDate(refund.created_at) : 'N/A'}</span>
         </div>
         <div className="flex justify-between mb-1">
           <span className="text-gray-600">처리 완료일:</span>
-          <span className="font-bold">{formatDate(refund?.processed_at)}</span>
+          <span className="font-bold">{refund?.processed_at ? formatDate(refund.processed_at) : '처리 중'}</span>
         </div>
         <div className="mb-1">
           <div className="text-gray-600 mb-1">환불 사유:</div>
@@ -144,9 +144,6 @@ const RefundReceipt = forwardRef<HTMLDivElement, RefundReceiptProps>(({
 
     </div>
   );
-});
-
-RefundReceipt.displayName = 'RefundReceipt';
 });
 
 RefundReceipt.displayName = 'RefundReceipt';
