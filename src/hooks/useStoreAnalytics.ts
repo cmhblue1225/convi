@@ -182,7 +182,7 @@ export function useStoreAnalytics(period: 'week' | 'month' | 'year' = 'month') {
         productMap.set(item.product_name, current);
       });
 
-      // 상품별 데이터 변환 (매출 순으로 정렬)
+      // 상품별 데이터 변환 (판매량 순으로 정렬)
       const formattedProductData: ProductSalesData[] = Array.from(productMap.entries())
         .map(([product_name, data]) => ({
           product_name,
@@ -190,7 +190,7 @@ export function useStoreAnalytics(period: 'week' | 'month' | 'year' = 'month') {
           revenue: data.revenue,
           avg_price: data.order_count > 0 ? data.total_price / data.order_count : 0
         }))
-        .sort((a, b) => b.revenue - a.revenue)
+        .sort((a, b) => b.quantity_sold - a.quantity_sold)
         .slice(0, 10);
 
       // 메트릭 계산

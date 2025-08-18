@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주문 추적 - 와이어프레임</title>
+    <link rel="stylesheet" href="../styles/wireframe.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+    <style>
+        .tracking-header {
+            background: white;
+            border-bottom: 1px solid #dee2e6;
+            padding: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .order-info-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin: 16px;
+            padding: 20px;
+        }
+        
+        .order-number {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        
+        .order-id {
+            font-size: 18px;
+            font-weight: bold;
+            color: #212529;
+        }
+        
+        .order-status {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .order-status.preparing {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+        
+        .order-status.ready {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+        
+        .order-status.completed {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+        
+        .store-info-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+        
+        .store-icon {
+            width: 40px;
+            height: 40px;
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        
+        .progress-section {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin: 16px;
+            padding: 20px;
+        }
+        
+        .progress-timeline {
+            position: relative;
+            padding-left: 40px;
+        }
+        
+        .progress-step {
+            position: relative;
+            padding-bottom: 24px;
+        }
+        
+        .progress-step:last-child {
+            padding-bottom: 0;
+        }
+        
+        .progress-step::before {
+            content: '';
+            position: absolute;
+            left: -28px;
+            top: 8px;
+            width: 16px;
+            height: 16px;
+            background: #dee2e6;
+            border-radius: 50%;
+        }
+        
+        .progress-step.completed::before {
+            background: #28a745;
+        }
+        
+        .progress-step.active::before {
+            background: #007bff;
+            animation: pulse 2s infinite;
+        }
+        
+        .progress-step::after {
+            content: '';
+            position: absolute;
+            left: -20px;
+            top: 24px;
+            width: 2px;
+            height: calc(100% - 8px);
+            background: #dee2e6;
+        }
+        
+        .progress-step:last-child::after {
+            display: none;
+        }
+        
+        .progress-step.completed::after {
+            background: #28a745;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .step-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #212529;
+            margin-bottom: 4px;
+        }
+        
+        .step-time {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 4px;
+        }
+        
+        .step-description {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .order-items {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin: 16px;
+            padding: 20px;
+        }
+        
+        .item-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        
+        .order-item:last-child {
+            border-bottom: none;
+        }
+        
+        .item-name {
+            font-size: 14px;
+            color: #212529;
+        }
+        
+        .item-quantity {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .item-price {
+            font-size: 14px;
+            font-weight: bold;
+            color: #dc3545;
+        }
+        
+        .order-summary {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .summary-row.total {
+            font-size: 16px;
+            font-weight: bold;
+            color: #212529;
+            padding-top: 8px;
+            border-top: 1px solid #dee2e6;
+            margin-top: 8px;
+            margin-bottom: 0;
+        }
+        
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 20px;
+        }
+        
+        .estimated-time {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f8f9fa 100%);
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            margin: 16px;
+        }
+        
+        .time-display {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1976d2;
+            margin-bottom: 4px;
+        }
+        
+        .time-label {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .contact-store {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin: 16px;
+            padding: 16px;
+        }
+        
+        .contact-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        
+        .contact-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            background: white;
+            color: #495057;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .contact-btn:hover {
+            background: #f8f9fa;
+            border-color: #adb5bd;
+        }
+        
+        .live-updates {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin: 16px;
+            padding: 20px;
+        }
+        
+        .update-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        
+        .update-item:last-child {
+            border-bottom: none;
+        }
+        
+        .update-time {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 4px;
+        }
+        
+        .update-message {
+            font-size: 14px;
+            color: #212529;
+        }
+    </style>
+</head>
+<body style="background: #f8f9fa;">
+    <!-- 헤더 -->
+    <div class="tracking-header">
+        <div style="display: flex; align-items: center;">
+            <button onclick="history.back()" style="background: none; border: none; font-size: 20px; cursor: pointer; margin-right: 12px;">←</button>
+            <h1 style="font-size: 18px; font-weight: bold; color: #212529; margin: 0;">주문 추적</h1>
+        </div>
+    </div>
+
+    <!-- 주문 정보 -->
+    <div class="order-info-card">
+        <div class="order-number">
+            <div class="order-id">#2025011501</div>
+            <div class="order-status preparing">준비중</div>
+        </div>
+        
+        <div class="store-info-card">
+            <div class="store-icon">🏪</div>
+            <div>
+                <div style="font-weight: bold; color: #495057;">GS25 강남점</div>
+                <div style="font-size: 12px; color: #6c757d;">서울시 강남구 강남대로 123</div>
+                <div style="font-size: 12px; color: #28a745;">📞 02-1234-5678</div>
+            </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: #6c757d;">
+            <span>주문 시간: 오늘 14:23</span>
+            <span>픽업 방법: 매장 픽업</span>
+        </div>
+    </div>
+
+    <!-- 예상 시간 -->
+    <div class="estimated-time">
+        <div class="time-display" id="countdown">12:30</div>
+        <div class="time-label">예상 완료 시간까지</div>
+    </div>
+
+    <!-- 진행 상태 -->
+    <div class="progress-section">
+        <h3 style="margin-bottom: 20px; font-size: 16px; color: #495057;">📋 주문 진행 상황</h3>
+        <div class="progress-timeline">
+            <div class="progress-step completed">
+                <div class="step-title">주문 접수</div>
+                <div class="step-time">14:23</div>
+                <div class="step-description">주문이 매장에 전달되었습니다</div>
+            </div>
+            
+            <div class="progress-step completed">
+                <div class="step-title">주문 확인</div>
+                <div class="step-time">14:24</div>
+                <div class="step-description">매장에서 주문을 확인했습니다</div>
+            </div>
+            
+            <div class="progress-step active">
+                <div class="step-title">상품 준비중</div>
+                <div class="step-time">진행중</div>
+                <div class="step-description">상품을 준비하고 있습니다</div>
+            </div>
+            
+            <div class="progress-step">
+                <div class="step-title">준비 완료</div>
+                <div class="step-time">예상 15:00</div>
+                <div class="step-description">픽업 가능 알림을 보내드립니다</div>
+            </div>
+            
+            <div class="progress-step">
+                <div class="step-title">픽업 완료</div>
+                <div class="step-time">-</div>
+                <div class="step-description">주문이 완료됩니다</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 실시간 업데이트 -->
+    <div class="live-updates">
+        <h3 style="margin-bottom: 16px; font-size: 16px; color: #495057;">🔔 실시간 업데이트</h3>
+        <div class="update-item">
+            <div class="update-time">14:25</div>
+            <div class="update-message">상품 준비를 시작했습니다</div>
+        </div>
+        <div class="update-item">
+            <div class="update-time">14:24</div>
+            <div class="update-message">매장에서 주문을 확인했습니다</div>
+        </div>
+        <div class="update-item">
+            <div class="update-time">14:23</div>
+            <div class="update-message">주문이 접수되었습니다</div>
+        </div>
+    </div>
+
+    <!-- 주문 상품 -->
+    <div class="order-items">
+        <h3 style="margin-bottom: 16px; font-size: 16px; color: #495057;">🛒 주문 상품</h3>
+        <div class="item-list">
+            <div class="order-item">
+                <div>
+                    <div class="item-name">농심 육개장사발면 86g</div>
+                    <div class="item-quantity">수량: 2개 (1+1 행사)</div>
+                </div>
+                <div class="item-price">3,000원</div>
+            </div>
+            
+            <div class="order-item">
+                <div>
+                    <div class="item-name">코카콜라 355ml</div>
+                    <div class="item-quantity">수량: 1개</div>
+                </div>
+                <div class="item-price">1,800원</div>
+            </div>
+            
+            <div class="order-item">
+                <div>
+                    <div class="item-name">신라면 120g</div>
+                    <div class="item-quantity">수량: 3개 (30% 할인)</div>
+                </div>
+                <div class="item-price">2,940원</div>
+            </div>
+        </div>
+
+        <div class="order-summary">
+            <div class="summary-row">
+                <span>상품 총액</span>
+                <span>9,600원</span>
+            </div>
+            <div class="summary-row">
+                <span>할인 금액</span>
+                <span style="color: #dc3545;">-1,860원</span>
+            </div>
+            <div class="summary-row">
+                <span>배달비</span>
+                <span>0원</span>
+            </div>
+            <div class="summary-row total">
+                <span>최종 결제 금액</span>
+                <span>7,740원</span>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="wireframe-button" onclick="cancelOrder()">주문 취소</button>
+            <button class="wireframe-button primary" onclick="reorder()">같은 상품 재주문</button>
+        </div>
+    </div>
+
+    <!-- 매장 연락 -->
+    <div class="contact-store">
+        <h3 style="margin-bottom: 12px; font-size: 16px; color: #495057;">📞 매장 연락</h3>
+        <div class="contact-buttons">
+            <button class="contact-btn" onclick="callStore()">
+                <span>📞</span>
+                <span>매장 전화</span>
+            </button>
+            <button class="contact-btn" onclick="sendMessage()">
+                <span>💬</span>
+                <span>메시지 보내기</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 와이어프레임 네비게이션 -->
+    <div style="position: fixed; top: 50%; right: 20px; transform: translateY(-50%); background: rgba(0,0,0,0.8); border-radius: 25px; padding: 8px;">
+        <a href="../index.html" style="color: white; text-decoration: none; font-size: 20px; display: block; padding: 8px;">🏠</a>
+    </div>
+
+    <script>
+        let countdownTimer;
+        let remainingMinutes = 37; // 예상 완료까지 남은 시간 (분)
+        
+        // 카운트다운 타이머
+        function startCountdown() {
+            countdownTimer = setInterval(() => {
+                if (remainingMinutes > 0) {
+                    remainingMinutes--;
+                    updateCountdownDisplay();
+                } else {
+                    clearInterval(countdownTimer);
+                    simulateOrderReady();
+                }
+            }, 60000); // 1분마다 업데이트 (실제로는 1초로 하면 빠른 테스트 가능)
+            
+            updateCountdownDisplay();
+        }
+        
+        function updateCountdownDisplay() {
+            const hours = Math.floor(remainingMinutes / 60);
+            const minutes = remainingMinutes % 60;
+            const timeString = hours > 0 ? `${hours}:${minutes.toString().padStart(2, '0')}` : `${minutes}:00`;
+            document.getElementById('countdown').textContent = timeString;
+        }
+        
+        // 주문 상태 업데이트 시뮬레이션
+        function simulateOrderReady() {
+            // 준비 완료 상태로 변경
+            const activeStep = document.querySelector('.progress-step.active');
+            activeStep.classList.remove('active');
+            activeStep.classList.add('completed');
+            activeStep.querySelector('.step-time').textContent = getCurrentTime();
+            
+            // 다음 단계 활성화
+            const nextStep = activeStep.nextElementSibling;
+            if (nextStep) {
+                nextStep.classList.add('active');
+            }
+            
+            // 상태 배지 업데이트
+            const statusBadge = document.querySelector('.order-status');
+            statusBadge.textContent = '픽업 대기';
+            statusBadge.className = 'order-status ready';
+            
+            // 실시간 업데이트 추가
+            addLiveUpdate('상품 준비가 완료되었습니다. 픽업해주세요!');
+            
+            // 알림
+            if (Notification.permission === 'granted') {
+                new Notification('주문 준비 완료!', {
+                    body: '상품 준비가 완료되었습니다. 매장에서 픽업해주세요.',
+                    icon: '🛒'
+                });
+            }
+            
+            alert('🎉 주문 준비 완료!\\n\\n상품 준비가 완료되었습니다.\\n매장에서 픽업해주세요.');
+        }
+        
+        function getCurrentTime() {
+            const now = new Date();
+            return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        }
+        
+        function addLiveUpdate(message) {
+            const updatesContainer = document.querySelector('.live-updates');
+            const newUpdate = document.createElement('div');
+            newUpdate.className = 'update-item';
+            newUpdate.innerHTML = `
+                <div class="update-time">${getCurrentTime()}</div>
+                <div class="update-message">${message}</div>
+            `;
+            
+            // 첫 번째 업데이트 다음에 삽입
+            const firstUpdate = updatesContainer.querySelector('.update-item');
+            firstUpdate.parentNode.insertBefore(newUpdate, firstUpdate);
+        }
+        
+        // 주문 취소
+        function cancelOrder() {
+            if (confirm('정말로 주문을 취소하시겠습니까?\\n\\n취소된 주문은 복구할 수 없습니다.')) {
+                alert('주문이 취소되었습니다.\\n결제 금액은 1-3일 내에 환불됩니다.');
+            }
+        }
+        
+        // 재주문
+        function reorder() {
+            if (confirm('같은 상품으로 재주문하시겠습니까?\\n\\n장바구니에 상품이 추가됩니다.')) {
+                alert('장바구니에 상품이 추가되었습니다.\\n결제 페이지로 이동합니다.');
+            }
+        }
+        
+        // 매장 전화
+        function callStore() {
+            if (confirm('매장에 전화를 걸까요?\\n\\nGS25 강남점\\n📞 02-1234-5678')) {
+                alert('전화 앱이 실행됩니다.\\n\\n(와이어프레임 시뮬레이션)');
+            }
+        }
+        
+        // 메시지 보내기
+        function sendMessage() {
+            const message = prompt('매장에 보낼 메시지를 입력하세요:', '안녕하세요. 주문 관련 문의드립니다.');
+            if (message) {
+                alert(`메시지가 매장에 전송되었습니다:\\n\\n"${message}"\\n\\n매장에서 곧 답변드릴 예정입니다.`);
+                addLiveUpdate(`고객 메시지: ${message}`);
+            }
+        }
+        
+        // 알림 권한 요청
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+        
+        // 페이지 로드 시 카운트다운 시작
+        document.addEventListener('DOMContentLoaded', function() {
+            startCountdown();
+            
+            // 30초 후 상태 업데이트 시뮬레이션 (테스트용)
+            setTimeout(() => {
+                addLiveUpdate('상품을 포장하고 있습니다');
+            }, 30000);
+        });
+        
+        // 페이지 가시성 변경 시 타이머 관리
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                // 페이지가 숨겨졌을 때 타이머 일시 정지
+                clearInterval(countdownTimer);
+            } else {
+                // 페이지가 다시 보일 때 타이머 재시작
+                startCountdown();
+            }
+        });
+    </script>
+</body>
+</html>

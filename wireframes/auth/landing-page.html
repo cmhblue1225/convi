@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>랜딩 페이지 - 와이어프레임</title>
+    <link rel="stylesheet" href="../styles/wireframe.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 48px 24px;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        .hero-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #212529;
+            margin-bottom: 16px;
+        }
+        
+        .hero-subtitle {
+            font-size: 18px;
+            color: #6c757d;
+            margin-bottom: 32px;
+        }
+        
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        .feature-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 24px;
+            text-align: center;
+        }
+        
+        .feature-icon {
+            width: 64px;
+            height: 64px;
+            background: #e9ecef;
+            border: 2px solid #dee2e6;
+            border-radius: 50%;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        .stats-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 32px;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 24px;
+            margin-top: 24px;
+        }
+        
+        .stat-item {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 20px;
+        }
+        
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+        
+        @media (max-width: 767px) {
+            .hero-title {
+                font-size: 24px;
+            }
+            
+            .hero-subtitle {
+                font-size: 16px;
+            }
+            
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .hero-buttons .wireframe-button {
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="wireframe-container">
+        <!-- 네비게이션 헤더 -->
+        <div class="wireframe-header">
+            <div class="flex justify-between items-center">
+                <h1>🏪 편의점 솔루션</h1>
+                <div class="nav-items">
+                    <a href="#features" class="wireframe-button">서비스 소개</a>
+                    <a href="#about" class="wireframe-button">회사 소개</a>
+                    <a href="auth-page.html" class="wireframe-button primary">로그인</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 히어로 섹션 -->
+        <div class="hero-section">
+            <h1 class="hero-title">편의점 운영의 모든 것을<br>하나의 솔루션으로</h1>
+            <p class="hero-subtitle">
+                고객 주문부터 재고 관리, 매출 분석까지<br>
+                스마트한 편의점 통합 관리 시스템
+            </p>
+            <div class="hero-buttons">
+                <a href="auth-page.html" class="wireframe-button primary" style="padding: 12px 32px; font-size: 16px;">
+                    지금 시작하기
+                </a>
+                <a href="#demo" class="wireframe-button" style="padding: 12px 32px; font-size: 16px;">
+                    데모 보기
+                </a>
+            </div>
+        </div>
+
+        <!-- 주요 기능 섹션 -->
+        <div class="wireframe-section">
+            <h2 class="text-center mb-20" style="font-size: 24px; color: #343a40;">🎯 핵심 기능</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">👤</div>
+                    <h3 style="margin-bottom: 12px; color: #495057;">고객 서비스</h3>
+                    <p style="color: #6c757d; font-size: 14px; line-height: 1.6;">
+                        온라인 주문, 픽업 예약, 실시간 주문 추적<br>
+                        간편 결제, 포인트 적립, 쿠폰 혜택
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏪</div>
+                    <h3 style="margin-bottom: 12px; color: #495057;">점주 관리</h3>
+                    <p style="color: #6c757d; font-size: 14px; line-height: 1.6;">
+                        실시간 주문 처리, 스마트 재고 관리<br>
+                        매출 분석, 자동 발주 시스템
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏢</div>
+                    <h3 style="margin-bottom: 12px; color: #495057;">본사 운영</h3>
+                    <p style="color: #6c757d; font-size: 14px; line-height: 1.6;">
+                        가맹점 통합 관리, 물류 최적화<br>
+                        전사 분석, 정책 관리
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 통계 섹션 -->
+        <div class="stats-section">
+            <h2 style="font-size: 24px; color: #343a40; margin-bottom: 8px;">📊 서비스 현황</h2>
+            <p style="color: #6c757d;">많은 편의점이 이미 우리 솔루션을 사용하고 있습니다</p>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number">1,000+</div>
+                    <div class="stat-label">가맹점</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">50,000+</div>
+                    <div class="stat-label">일일 주문</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">99.9%</div>
+                    <div class="stat-label">시스템 안정성</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">4.8★</div>
+                    <div class="stat-label">사용자 만족도</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 서비스 특징 -->
+        <div class="wireframe-section">
+            <h2 class="text-center mb-20" style="font-size: 24px; color: #343a40;">✨ 왜 우리 솔루션인가?</h2>
+            <div class="wireframe-grid cols-2">
+                <div class="wireframe-card">
+                    <div class="wireframe-card-header">🚀 빠른 도입</div>
+                    <div class="wireframe-card-content">
+                        복잡한 설치나 교육 없이<br>
+                        당일 바로 시작 가능
+                    </div>
+                </div>
+                <div class="wireframe-card">
+                    <div class="wireframe-card-header">💡 스마트 기능</div>
+                    <div class="wireframe-card-content">
+                        AI 기반 수요 예측<br>
+                        자동 재고 최적화
+                    </div>
+                </div>
+                <div class="wireframe-card">
+                    <div class="wireframe-card-header">📱 모바일 최적화</div>
+                    <div class="wireframe-card-content">
+                        스마트폰, 태블릿에서<br>
+                        완벽한 사용 경험
+                    </div>
+                </div>
+                <div class="wireframe-card">
+                    <div class="wireframe-card-header">🔒 안전한 보안</div>
+                    <div class="wireframe-card-content">
+                        은행급 보안 시스템<br>
+                        개인정보 완벽 보호
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 고객 후기 섹션 -->
+        <div class="wireframe-section">
+            <h2 class="text-center mb-20" style="font-size: 24px; color: #343a40;">💬 고객 후기</h2>
+            <div class="wireframe-grid cols-3">
+                <div class="wireframe-card">
+                    <div class="wireframe-card-content" style="text-align: center;">
+                        <div style="margin-bottom: 12px; color: #495057;">⭐⭐⭐⭐⭐</div>
+                        <p style="font-style: italic; margin-bottom: 16px; color: #6c757d;">
+                            "재고 관리가 정말 편해졌어요. 자동 발주 기능 덕분에 품절 걱정이 없어졌습니다."
+                        </p>
+                        <div style="font-weight: bold; color: #495057;">김점주님</div>
+                        <div style="font-size: 12px; color: #6c757d;">CU 강남점</div>
+                    </div>
+                </div>
+                <div class="wireframe-card">
+                    <div class="wireframe-card-content" style="text-align: center;">
+                        <div style="margin-bottom: 12px; color: #495057;">⭐⭐⭐⭐⭐</div>
+                        <p style="font-style: italic; margin-bottom: 16px; color: #6c757d;">
+                            "고객들이 미리 주문하고 픽업해가니 대기시간도 줄고 매출도 늘었어요."
+                        </p>
+                        <div style="font-weight: bold; color: #495057;">이사장님</div>
+                        <div style="font-size: 12px; color: #6c757d;">GS25 역삼점</div>
+                    </div>
+                </div>
+                <div class="wireframe-card">
+                    <div class="wireframe-card-content" style="text-align: center;">
+                        <div style="margin-bottom: 12px; color: #495057;">⭐⭐⭐⭐⭐</div>
+                        <p style="font-style: italic; margin-bottom: 16px; color: #6c757d;">
+                            "매출 분석 기능이 정말 상세해요. 어떤 상품이 언제 잘 팔리는지 한눈에 보여요."
+                        </p>
+                        <div style="font-weight: bold; color: #495057;">박대표님</div>
+                        <div style="font-size: 12px; color: #6c757d;">세븐일레븐 신촌점</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CTA 섹션 -->
+        <div class="hero-section" style="margin-top: 48px;">
+            <h2 style="font-size: 28px; color: #212529; margin-bottom: 16px;">
+                지금 바로 시작하세요!
+            </h2>
+            <p style="font-size: 16px; color: #6c757d; margin-bottom: 32px;">
+                무료 체험으로 편의점 운영의 변화를 경험해보세요
+            </p>
+            <div class="hero-buttons">
+                <a href="auth-page.html" class="wireframe-button primary" style="padding: 12px 32px; font-size: 16px;">
+                    무료로 시작하기
+                </a>
+                <a href="#contact" class="wireframe-button" style="padding: 12px 32px; font-size: 16px;">
+                    상담 문의
+                </a>
+            </div>
+        </div>
+
+        <!-- 푸터 -->
+        <div style="margin-top: 48px; padding-top: 32px; border-top: 2px solid #dee2e6; text-align: center;">
+            <div class="wireframe-grid cols-4" style="margin-bottom: 24px;">
+                <div>
+                    <h4 style="color: #495057; margin-bottom: 12px;">서비스</h4>
+                    <div style="color: #6c757d; font-size: 14px; line-height: 1.8;">
+                        고객 앱<br>
+                        점주 관리<br>
+                        본사 시스템
+                    </div>
+                </div>
+                <div>
+                    <h4 style="color: #495057; margin-bottom: 12px;">지원</h4>
+                    <div style="color: #6c757d; font-size: 14px; line-height: 1.8;">
+                        고객센터<br>
+                        사용자 가이드<br>
+                        FAQ
+                    </div>
+                </div>
+                <div>
+                    <h4 style="color: #495057; margin-bottom: 12px;">회사</h4>
+                    <div style="color: #6c757d; font-size: 14px; line-height: 1.8;">
+                        회사 소개<br>
+                        채용 정보<br>
+                        언론 보도
+                    </div>
+                </div>
+                <div>
+                    <h4 style="color: #495057; margin-bottom: 12px;">연락처</h4>
+                    <div style="color: #6c757d; font-size: 14px; line-height: 1.8;">
+                        📞 1588-1234<br>
+                        📧 info@convi.co.kr<br>
+                        🏢 서울시 강남구
+                    </div>
+                </div>
+            </div>
+            <div style="color: #6c757d; font-size: 14px; border-top: 1px solid #dee2e6; padding-top: 16px;">
+                © 2025 편의점 종합 솔루션. All rights reserved.
+            </div>
+        </div>
+
+        <!-- 네비게이션 -->
+        <div style="position: fixed; bottom: 20px; right: 20px; background: #495057; border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+            <a href="../index.html" style="color: white; text-decoration: none; font-size: 24px;">🏠</a>
+        </div>
+    </div>
+
+    <script>
+        // 스크롤 시 헤더 스타일 변경
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.wireframe-header');
+            if (window.scrollY > 50) {
+                header.style.background = '#f8f9fa';
+                header.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+            } else {
+                header.style.background = '#e9ecef';
+                header.style.boxShadow = 'none';
+            }
+        });
+
+        // 통계 카운터 애니메이션
+        function animateCounters() {
+            const counters = document.querySelectorAll('.stat-number');
+            counters.forEach(counter => {
+                const target = counter.textContent;
+                const numTarget = parseInt(target.replace(/[^\d]/g, ''));
+                let current = 0;
+                const increment = numTarget / 100;
+                
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= numTarget) {
+                        counter.textContent = target;
+                        clearInterval(timer);
+                    } else {
+                        const formatted = Math.floor(current).toLocaleString();
+                        if (target.includes('+')) {
+                            counter.textContent = formatted + '+';
+                        } else if (target.includes('%')) {
+                            counter.textContent = formatted + '%';
+                        } else if (target.includes('★')) {
+                            counter.textContent = (current / 10).toFixed(1) + '★';
+                        } else {
+                            counter.textContent = formatted;
+                        }
+                    }
+                }, 20);
+            });
+        }
+
+        // Intersection Observer로 통계 섹션이 보일 때 애니메이션 실행
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    animateCounters();
+                    observer.unobserve(entry.target);
+                }
+            });
+        });
+
+        observer.observe(document.querySelector('.stats-section'));
+    </script>
+</body>
+</html>

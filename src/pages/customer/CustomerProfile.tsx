@@ -59,6 +59,7 @@ const CustomerProfile: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
   const [formData, setFormData] = useState<ProfileFormData>({
     first_name: '',
     last_name: '',
@@ -152,7 +153,7 @@ const CustomerProfile: React.FC = () => {
 
   const fetchPoints = async () => {
     if (!user?.id) return;
-    
+
     try {
       const { data, error } = await supabase
         .from('points')
@@ -954,7 +955,7 @@ const CustomerProfile: React.FC = () => {
                                     title="장바구니 담기"
                                   >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v5a2 2 0 01-2 2H9a2 2 0 01-2-2v-5m6-5V6a2 2 0 00-2-2H9a2 2 0 00-2 2v2" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                                     </svg>
                                   </button>
                                 )}
@@ -1094,6 +1095,19 @@ const CustomerProfile: React.FC = () => {
                         </svg>
                       </div>
                       <span className="font-medium text-gray-900">상품 보기</span>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => navigate('/customer/refunds')}
+                    className="w-full text-left p-4 rounded-lg border border-gray-200 hover:bg-orange-50 hover:border-orange-300 transition-all duration-200 group"
+                  >
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-3 group-hover:bg-orange-200 transition-colors">
+                        <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                        </svg>
+                      </div>
+                      <span className="font-medium text-gray-900">환불 요청 현황</span>
                     </div>
                   </button>
                 </div>

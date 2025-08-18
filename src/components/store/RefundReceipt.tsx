@@ -11,18 +11,33 @@ const RefundReceipt = forwardRef<HTMLDivElement, RefundReceiptProps>(({
   order,
   storeInfo
 }, ref) => {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return 'N/A';
+    try {
+      return new Date(dateString).toLocaleString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return 'N/A';
+    }
   };
 
   const formatCurrency = (amount: number) => {
     return amount?.toLocaleString() || '0';
+  };
+
+  const getRefundAmountDisplay = () => {
+    if (refund?.status === 'approved' && refund?.approved_refund_amount) {
+      return formatCurrency(Math.round(refund.approved_refund_amount));
+    } else if (refund?.status === 'pending') {
+      return '검토중';
+    } else {
+      return '미정';
+    }
   };
 
   return (
@@ -41,10 +56,12 @@ const RefundReceipt = forwardRef<HTMLDivElement, RefundReceiptProps>(({
       </div>
 
       {/* 환불 정보 */}
-      <div className="border-b border-gray-300 pb-3 mb-3">
+      <div className="border-b-2 border-red-300 pb-3 mb-3 bg-red-50 p-3 rounded">
         <div className="flex justify-between mb-1">
           <span className="text-gray-600">환불 번호:</span>
-          <span className="font-bold">{refund?.id?.slice(0, 8) || 'N/A'}</span>
+          <span className="font-bold text-blue-600">
+            {refund?.id ? refund.id.toString().slice(0, 8).toUpperCase() : 'N/A'}
+          </span>
         </div>
         <div className="flex justify-between mb-1">
           <span className="text-gray-600">원주문 번호:</span>
@@ -52,15 +69,17 @@ const RefundReceipt = forwardRef<HTMLDivElement, RefundReceiptProps>(({
         </div>
         <div className="flex justify-between mb-1">
           <span className="text-gray-600">환불 요청일:</span>
-          <span className="font-bold">{formatDate(refund?.created_at)}</span>
+          <span className="font-bold">{formatDate(refund?.created_at || refund?.requested_at)}</span>
         </div>
         <div className="flex justify-between mb-1">
           <span className="text-gray-600">처리 완료일:</span>
           <span className="font-bold">{formatDate(refund?.processed_at)}</span>
         </div>
-        <div className="flex justify-between mb-1">
-          <span className="text-gray-600">환불 사유:</span>
-          <span className="font-bold">{refund?.reason || 'N/A'}</span>
+        <div className="mb-1">
+          <div className="text-gray-600 mb-1">환불 사유:</div>
+          <div className="font-bold text-red-600 bg-white p-2 rounded border border-red-200 text-sm">
+            {refund?.reason || 'N/A'}
+          </div>
         </div>
       </div>
 
@@ -71,12 +90,36 @@ const RefundReceipt = forwardRef<HTMLDivElement, RefundReceiptProps>(({
         </div>
         <div className="flex justify-between mb-1">
           <span className="text-gray-600">원주문 금액:</span>
-          <span className="font-bold">{formatCurrency(order?.totalAmount)}원</span>
+          <span className="font-bold">{formatCurrency(Math.round(order?.totalAmount || 0))}원</span>
         </div>
         <div className="flex justify-between mb-1">
           <span className="text-gray-600">환불 요청 금액:</span>
-          <span className="font-bold text-red-600">{formatCurrency(refund?.requested_refund_amount)}원</span>
+          <span className="font-bold text-red-600">{formatCurrency(Math.round(refund?.requested_refund_amount || 0))}원</span>
         </div>
+        <div className="flex justify-between mb-1">
+          <span className="text-gray-600">승인 금액:</span>
+          <span className="font-bold text-green-600">{getRefundAmountDisplay()}원</span>
+        </div>
+        
+        {/* 원주문 할인 정보 */}
+        {(order?.couponDiscountAmount > 0 || order?.pointsUsed > 0) && (
+          <div className="bg-gray-50 p-2 rounded mt-2">
+            <div className="text-xs text-gray-600 mb-1">원주문 할인 정보:</div>
+            {order?.couponDiscountAmount > 0 && (
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-gray-600">쿠폰 할인:</span>
+                <span className="text-red-600">-{formatCurrency(Math.round(order.couponDiscountAmount))}원</span>
+              </div>
+            )}
+            {order?.pointsUsed > 0 && (
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-gray-600">포인트 사용:</span>
+                <span className="text-red-600">-{formatCurrency(Math.round(order.pointsUsed))}P</span>
+              </div>
+            )}
+          </div>
+        )}
+        
         <div className="flex justify-between mb-1">
           <span className="text-gray-600">처리 상태:</span>
           <span className={`font-bold ${
@@ -98,14 +141,17 @@ const RefundReceipt = forwardRef<HTMLDivElement, RefundReceiptProps>(({
       )}
 
       {/* 환불된 상품 목록 */}
-      <div className="mb-4">
-        <div className="text-gray-600 mb-2">환불된 상품:</div>
+      <div className="mb-4 border-2 border-red-300 bg-red-50 p-3 rounded">
+        <div className="text-red-700 mb-2 font-bold text-center">환불된 상품 목록</div>
         {order?.items?.map((item: any, index: number) => (
-          <div key={index} className="flex justify-between text-sm mb-1">
-            <span>{item.product_name} x{item.quantity}</span>
-            <span>{formatCurrency(item.price * item.quantity)}원</span>
+          <div key={index} className="flex justify-between text-sm mb-1 border-b border-gray-200 pb-1">
+            <span className="font-medium">{item.product_name || item.productName} x{item.quantity}</span>
+            <span className="font-bold text-red-600">{formatCurrency(Math.round(item.price * item.quantity || item.subtotal || 0))}원</span>
           </div>
         ))}
+        {(!order?.items || order.items.length === 0) && (
+          <div className="text-sm text-gray-500 italic">환불 상품 정보가 없습니다.</div>
+        )}
       </div>
 
       {/* 하단 정보 */}

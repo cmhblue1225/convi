@@ -140,11 +140,18 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({
                 )}
                 
                 {/* 재고 상태 */}
-                {isOutOfStock && (
-                  <span className="text-sm text-red-500 font-medium">품절</span>
-                )}
-                {isLowStock && !isOutOfStock && (
-                  <span className="text-sm text-orange-500">재고 부족</span>
+                {product.stock_quantity !== undefined && (
+                  <>
+                    {isOutOfStock && (
+                      <span className="text-sm text-red-500 font-medium">품절</span>
+                    )}
+                    {isLowStock && !isOutOfStock && (
+                      <span className="text-sm text-orange-500">재고 {product.stock_quantity}개 남음</span>
+                    )}
+                    {!isOutOfStock && !isLowStock && (
+                      <span className="text-sm text-green-500">재고 {product.stock_quantity}개</span>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -271,7 +278,9 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({
               <span className="text-orange-500">재고 {product.stock_quantity}개 남음</span>
             )}
             {!isOutOfStock && !isLowStock && (
-              <span className="text-green-500">재고 충분</span>
+              <span className="text-green-500">
+                재고 {product.stock_quantity}개
+              </span>
             )}
           </div>
         )}

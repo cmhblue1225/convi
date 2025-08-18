@@ -324,7 +324,41 @@ const StoreOrders: React.FC = () => {
   };
 
   const handleViewReceipt = (order: Order) => {
-    setSelectedOrderForReceipt(order);
+    console.log('🔍 handleViewReceipt 호출됨:', {
+      원본주문: order,
+      쿠폰할인원본: order.couponDiscountAmount,
+      포인트사용원본: order.pointsUsed,
+      세금원본: order.taxAmount
+    });
+
+    // 주문 데이터를 Receipt 컴포넌트가 기대하는 형식으로 변환
+    const formattedOrder = {
+      ...order,
+      // 이미 camelCase로 되어 있으므로 그대로 사용
+      orderNumber: order.orderNumber,
+      createdAt: order.createdAt,
+      completedAt: order.completedAt,
+      orderType: order.orderType,
+      paymentMethod: order.paymentMethod,
+      deliveryAddress: order.deliveryAddress,
+      deliveryFee: Math.round(Number(order.deliveryFee) || 0),
+      pointsUsed: Math.round(Number(order.pointsUsed) || 0),
+      couponDiscountAmount: Math.round(Number(order.couponDiscountAmount) || 0),
+      appliedCouponId: order.appliedCouponId,
+      taxAmount: Math.round(Number(order.taxAmount) || 0),
+      totalAmount: Math.round(Number(order.totalAmount) || 0),
+      status: order.status
+    };
+
+    console.log('🔍 일반 주문 영수증 데이터 변환:', {
+      원본: order,
+      변환후: formattedOrder,
+      쿠폰할인: formattedOrder.couponDiscountAmount,
+      포인트사용: formattedOrder.pointsUsed,
+      세금: formattedOrder.taxAmount
+    });
+
+    setSelectedOrderForReceipt(formattedOrder as any);
     setReceiptModalOpen(true);
   };
 
@@ -340,6 +374,79 @@ const StoreOrders: React.FC = () => {
   const handleViewRefundReceipt = (refund: any) => {
     setSelectedRefund(refund);
     setShowRefundReceiptModal(true);
+  };
+
+  // 구매 영수증 보기 함수 (환불 요청의 원주문)
+  const handleViewOrderReceipt = async (refund: any) => {
+    try {
+      // 환불 요청의 원주문 정보 조회 (주문 상품 정보 포함)
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          order_items (
+            id,
+            product_id,
+            product_name,
+            quantity,
+            unit_price,
+            discount_amount,
+            subtotal,
+            options
+          )
+        `)
+        .eq('id', refund.order_id)
+        .single();
+
+      if (orderError) {
+        console.error('주문 정보 조회 실패:', orderError);
+        alert('주문 정보를 불러올 수 없습니다.');
+        return;
+      }
+
+      // 데이터베이스 구조 확인을 위한 로그
+      console.log('원주문 데이터:', orderData);
+      console.log('포인트 사용:', orderData.points_used);
+      console.log('쿠폰 할인:', orderData.coupon_discount_amount);
+      console.log('쿠폰 할인 타입:', typeof orderData.coupon_discount_amount);
+      console.log('세금:', orderData.tax_amount);
+      console.log('orders 테이블의 모든 필드:', Object.keys(orderData));
+      
+              // 주문 데이터를 Receipt 컴포넌트가 기대하는 형식으로 변환 (소수점 단위 금액을 반올림으로 처리)
+        const formattedOrder = {
+          ...orderData,
+          items: orderData.order_items?.map((item: any) => ({
+            ...item,
+            productName: item.product_name,
+            price: Math.round(Number(item.unit_price) || 0),
+            discountRate: item.discount_amount > 0 ? (item.discount_amount / item.subtotal) : 0,
+            subtotal: Math.round(Number(item.subtotal) || 0)
+          })) || [],
+          orderNumber: orderData.order_number || orderData.id,
+          createdAt: orderData.created_at,
+          completedAt: orderData.completed_at,
+          orderType: orderData.type || 'pickup',
+          paymentMethod: orderData.payment_method || 'card',
+          deliveryAddress: orderData.delivery_address,
+          deliveryFee: Math.round(Number(orderData.delivery_fee) || 0),
+          pointsUsed: Math.round(Number(orderData.points_used) || 0),
+          couponDiscountAmount: Math.round(Number(orderData.coupon_discount_amount) || 0),
+          appliedCouponId: orderData.applied_coupon_id,
+          taxAmount: Math.round(Number(orderData.tax_amount) || 0),
+          totalAmount: Math.round(Number(orderData.total_amount) || 0),
+          status: orderData.status
+        };
+
+      console.log('변환된 주문 데이터:', formattedOrder);
+      console.log('포인트 사용 (변환 후):', formattedOrder.pointsUsed);
+      console.log('쿠폰 할인 (변환 후):', formattedOrder.couponDiscountAmount);
+      console.log('세금 (변환 후):', formattedOrder.taxAmount);
+      setSelectedOrderForReceipt(formattedOrder as any);
+      setReceiptModalOpen(true);
+    } catch (error) {
+      console.error('구매 영수증 조회 실패:', error);
+      alert('구매 영수증을 불러올 수 없습니다.');
+    }
   };
 
   // 환불 상태 업데이트
@@ -506,6 +613,13 @@ const StoreOrders: React.FC = () => {
                               영수증 보기
                             </button>
                           )}
+                          {/* 모든 환불 요청에 구매 영수증 보기 버튼 추가 */}
+                          <button
+                            onClick={() => handleViewOrderReceipt(refund)}
+                            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                          >
+                            구매 영수증
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -605,8 +719,8 @@ const StoreOrders: React.FC = () => {
                             주문 취소
                           </button>
                         )}
-                        {/* 완료/취소된 주문에 영수증 보기 버튼 추가 */}
-                        {(order.status === 'completed' || order.status === 'cancelled') && (
+                        {/* 처리 중인 주문과 완료/취소된 주문에 영수증 보기 버튼 추가 */}
+                        {(order.status === 'confirmed' || order.status === 'preparing' || order.status === 'ready' || order.status === 'completed' || order.status === 'cancelled') && (
                           <button
                             onClick={() => handleViewReceipt(order)}
                             className="flex items-center px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50"

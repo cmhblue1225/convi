@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { useCartStore } from '../../stores/cartStore';
 import { useOrderStore } from '../../stores/orderStore';
+import { usePointStore } from '../../stores/pointStore';
 import { supabase } from '../../lib/supabase/client';
 
 interface PaymentSuccessData {
@@ -171,6 +172,9 @@ const PaymentSuccess: React.FC = () => {
           // 포인트 정보 추가
           pointsUsed: checkoutData.pointsUsed || 0,
           pointsDiscountAmount: checkoutData.pointsUsed || 0,
+          // 쿠폰 정보 추가
+          selectedCoupon: checkoutData.selectedCoupon || null,
+          couponDiscount: checkoutData.couponDiscount || 0,
           status: 'pending' as const,
           createdAt: new Date().toISOString()
         };
@@ -178,8 +182,9 @@ const PaymentSuccess: React.FC = () => {
         console.log('📦 주문 데이터:', orderData);
 
         // Supabase에 주문 저장 (재고 조회 실패해도 주문은 생성)
+        let newOrder: any = null;
         try {
-          const newOrder = await addOrder(orderData);
+          newOrder = await addOrder(orderData);
           console.log('✅ 주문 저장 성공:', newOrder);
           console.log('🎯 주문 ID:', newOrder.id, '주문번호:', newOrder.orderNumber);
         } catch (orderError) {
@@ -194,8 +199,8 @@ const PaymentSuccess: React.FC = () => {
             };
             
             try {
-              const retryOrder = await addOrder(retryOrderData);
-              console.log('✅ 재시도 주문 저장 성공:', retryOrder);
+              newOrder = await addOrder(retryOrderData);
+              console.log('✅ 재시도 주문 저장 성공:', newOrder);
             } catch (retryError) {
               console.error('❌ 재시도 주문 저장도 실패:', retryError);
               // 재시도 실패해도 결제는 성공으로 처리
@@ -212,13 +217,102 @@ const PaymentSuccess: React.FC = () => {
         localStorage.removeItem('checkoutData');
         console.log('🛒 장바구니 비우기 및 결제 정보 정리 완료');
 
+        // 포인트 적립 및 쿠폰 소비 처리
+        if (newOrder) {
+          try {
+            // checkoutData에서 사용자 ID 및 쿠폰 정보 가져오기
+            const checkoutDataStr = localStorage.getItem('checkoutData');
+            if (checkoutDataStr) {
+              const checkoutData = JSON.parse(checkoutDataStr);
+              
+              // 포인트 적립
+              if (checkoutData.userId && orderData.totalAmount > 0) {
+                console.log('🎉 포인트 적립 시작:', {
+                  userId: checkoutData.userId,
+                  orderId: newOrder.id,
+                  orderAmount: orderData.totalAmount
+                });
+
+                const pointResult = await usePointStore.getState().earnOrderPoints(
+                  checkoutData.userId,
+                  newOrder.id,
+                  orderData.totalAmount
+                );
+
+                if (pointResult.success) {
+                  console.log(`✅ 포인트 적립 성공: ${pointResult.pointsEarned}포인트`);
+                } else {
+                  console.warn('⚠️ 포인트 적립 실패:', pointResult.error);
+                }
+              }
+
+              // 쿠폰 소비
+              if (checkoutData.selectedCoupon && checkoutData.userId) {
+                console.log('🎫 쿠폰 사용 처리 시작:', {
+                  userId: checkoutData.userId,
+                  orderId: newOrder.id,
+                  couponCode: checkoutData.selectedCoupon
+                });
+
+                try {
+                  // 쿠폰 코드로 user_coupons 테이블에서 해당 사용자의 쿠폰 찾기
+                  const { data: userCouponData, error: findError } = await supabase
+                    .from('user_coupons')
+                    .select('id, coupon_id')
+                    .eq('user_id', checkoutData.userId)
+                    .eq('is_used', false)
+                    .eq('coupon_id', (await supabase
+                      .from('coupons')
+                      .select('id')
+                      .eq('code', checkoutData.selectedCoupon)
+                      .single()
+                    ).data?.id)
+                    .single();
+
+                  if (findError) {
+                    console.error('❌ 사용자 쿠폰 찾기 실패:', findError);
+                    return;
+                  }
+
+                  if (userCouponData) {
+                    // 쿠폰 사용 상태 업데이트
+                    const { error: couponError } = await supabase
+                      .from('user_coupons')
+                      .update({
+                        is_used: true,
+                        used_at: new Date().toISOString(),
+                        used_order_id: newOrder.id
+                      })
+                      .eq('id', userCouponData.id)
+                      .eq('is_used', false);
+
+                    if (couponError) {
+                      console.error('❌ 쿠폰 사용 처리 실패:', couponError);
+                    } else {
+                      console.log('✅ 쿠폰 사용 처리 완료:', {
+                        couponCode: checkoutData.selectedCoupon,
+                        userCouponId: userCouponData.id
+                      });
+                    }
+                  } else {
+                    console.warn('⚠️ 사용 가능한 쿠폰을 찾을 수 없음:', checkoutData.selectedCoupon);
+                  }
+                } catch (error) {
+                  console.error('❌ 쿠폰 처리 중 오류:', error);
+                }
+              }
+            }
+          } catch (pointCouponError) {
+            console.error('❌ 포인트/쿠폰 처리 중 오류:', pointCouponError);
+            // 포인트/쿠폰 처리 실패해도 주문은 성공으로 처리
+          }
+        }
+
         // 카운트다운 시작
         const countdownInterval = setInterval(() => {
           setCountdown(prev => {
             if (prev <= 1) {
               clearInterval(countdownInterval);
-              console.log('⏰ 카운트다운 완료, 주문 내역 페이지로 이동');
-              navigate('/customer/orders');
               return 0;
             }
             return prev - 1;
@@ -249,6 +343,14 @@ const PaymentSuccess: React.FC = () => {
       console.log('🧹 PaymentSuccess 컴포넌트 정리');
     };
   }, [searchParams, navigate, clearCart, addOrder, isProcessed]);
+
+  // 카운트다운이 0이 되면 자동으로 주문 페이지로 이동
+  useEffect(() => {
+    if (countdown === 0 && !isLoading && !error) {
+      console.log('⏰ 카운트다운 완료, 주문 내역 페이지로 이동');
+      navigate('/customer/orders');
+    }
+  }, [countdown, isLoading, error, navigate]);
 
   if (isLoading) {
     return (

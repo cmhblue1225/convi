@@ -224,7 +224,7 @@ const PrintAnalytics: React.FC<PrintAnalyticsProps> = ({
 
           {/* 상품별 순위 */}
           <div className="chart-section">
-            <div className="chart-title">📦 상품별 매출 순위 (상위 10개)</div>
+            <div className="chart-title">📦 상품별 판매량 순위 (상위 10개)</div>
             <table className="no-break">
               <thead>
                 <tr>

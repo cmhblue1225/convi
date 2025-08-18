@@ -8,7 +8,9 @@ import { useAuthStore } from '../../stores/common/authStore';
 import PaymentMethodSelector from '../../components/payment/PaymentMethodSelector';
 import PaymentProcessor from '../../components/payment/PaymentProcessor';
 import { usePointsValidation } from '../../hooks/usePointsValidation';
+import { usePointStore } from '../../stores/pointStore';
 import type { UserCoupon, CouponValidation } from '../../types/common';
+import { roundAmount, formatKRW, formatDiscount } from '../../utils/currency';
 
 // 결제 방법 타입 정의 (orderStore와 통일)
 type PaymentMethod = 'card' | 'cash' | 'mobile' | 'toss' | 'naver' | 'payco';
@@ -114,27 +116,33 @@ const Checkout: React.FC = () => {
         .eq('is_used', false);
 
       if (error) throw error;
-      setUserCoupons(data || []);
+      setUserCoupons((data || []) as UserCoupon[]);
     } catch (error) {
       console.error('쿠폰 조회 오류:', error);
     }
   };
 
-
   const validateCoupon = async (couponCode: string) => {
     if (!user?.id) return null;
     
     try {
+      console.log('🔍 쿠폰 검증 시작:', { couponCode, user_id: user.id, order_amount: totalAmount });
+      
       const { data, error } = await supabase.rpc('validate_coupon', {
         coupon_code: couponCode,
         user_uuid: user.id,
         order_amount: totalAmount
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ 쿠폰 검증 오류:', error);
+        throw error;
+      }
+      
+      console.log('✅ 쿠폰 검증 결과:', data);
       return data[0] || null;
     } catch (error) {
-      console.error('쿠폰 검증 오류:', error);
+      console.error('❌ 쿠폰 검증 중 오류:', error);
       return null;
     }
   };
@@ -143,33 +151,59 @@ const Checkout: React.FC = () => {
     let amount = totalAmount;
     
     if (couponValidation?.is_valid) {
-      amount -= couponValidation.discount_amount;
+      // 쿠폰 할인 금액을 정수로 반올림
+      const roundedDiscount = roundAmount(couponValidation.discount_amount);
+      amount -= roundedDiscount;
+      console.log('💰 쿠폰 할인 적용:', { 원래금액: totalAmount, 할인금액: roundedDiscount, 할인후금액: amount });
     }
     
-    amount -= pointsToUse;
+    // 포인트 할인 금액을 정수로 반올림
+    const roundedPoints = roundAmount(pointsToUse);
+    amount -= roundedPoints;
+    console.log('💰 포인트 할인 적용:', { 할인후금액: amount, 포인트사용: roundedPoints, 최종금액: amount });
     
-    setFinalAmount(Math.max(0, amount));
+    // 최종 금액을 정수로 반올림
+    const roundedAmount = roundAmount(amount);
+    setFinalAmount(Math.max(0, roundedAmount));
   };
 
   const handleCouponApply = async () => {
     if (!selectedCoupon) return;
     
+    console.log('🎫 쿠폰 적용 시작:', { selectedCoupon });
+    
     const validation = await validateCoupon(selectedCoupon);
+    
+    // 쿠폰 할인 금액을 정수로 반올림하여 저장
+    if (validation && validation.is_valid) {
+      validation.discount_amount = roundAmount(validation.discount_amount);
+      console.log('✅ 쿠폰 적용 성공:', { 
+        쿠폰코드: selectedCoupon, 
+        할인금액: validation.discount_amount,
+        메시지: validation.message 
+      });
+    } else {
+      console.log('❌ 쿠폰 적용 실패:', validation);
+    }
+    
     setCouponValidation(validation);
   };
 
   const handlePointsChange = (points: number) => {
+    // 포인트 사용 금액을 정수로 반올림
+    const roundedPoints = roundAmount(points);
+    
     // 포인트 사용 유효성 검사
-    if (!isValidPointsUsage(points)) {
-      const message = getValidationMessage(points);
+    if (!isValidPointsUsage(roundedPoints)) {
+      const message = getValidationMessage(roundedPoints);
       alert(message);
       
       // 유효하지 않은 경우 최대 사용 가능한 포인트로 설정
-      setPointsToUse(maxUsablePoints);
+      setPointsToUse(roundAmount(maxUsablePoints));
       return;
     }
     
-    setPointsToUse(points);
+    setPointsToUse(roundedPoints);
   };
 
   const handleAddressChange = (field: keyof DeliveryAddress, value: string) => {
@@ -251,16 +285,17 @@ const Checkout: React.FC = () => {
       storeName: selectedStore.name,
       orderType: orderType,
       deliveryAddress: orderType === 'delivery' ? deliveryAddress : null,
-      subtotal: subtotal,
-      taxAmount: taxAmount,
-      deliveryFee: deliveryFee,
-      totalAmount: finalAmount, // 할인 적용된 최종 금액
-      originalAmount: totalAmount, // 원래 금액
+      subtotal: Math.round(subtotal),
+      taxAmount: Math.round(taxAmount),
+      deliveryFee: Math.round(deliveryFee),
+      totalAmount: Math.round(finalAmount), // 할인 적용된 최종 금액 (반올림)
+      originalAmount: Math.round(totalAmount), // 원래 금액 (반올림)
       paymentMethod: paymentMethod,
-      // 쿠폰/포인트 정보 추가
+      // 쿠폰/포인트 정보 추가 (소수점 단위 금액을 반올림으로 처리)
       selectedCoupon: selectedCoupon,
-      couponDiscount: couponValidation?.discount_amount || 0,
+      couponDiscount: Math.round(couponValidation?.discount_amount || 0),
       pointsUsed: pointsToUse,
+      pointsDiscountAmount: Math.round(pointsToUse), // 포인트 할인 금액 (반올림)
       orderNumber: orderNumber || generateOrderNumber()
     };
     
@@ -598,19 +633,31 @@ const Checkout: React.FC = () => {
                     <div className="flex space-x-2">
                       <select
                         value={selectedCoupon}
-                        onChange={(e) => setSelectedCoupon(e.target.value)}
+                        onChange={(e) => {
+                          console.log('🎫 쿠폰 선택 변경:', { 
+                            이전값: selectedCoupon, 
+                            새값: e.target.value,
+                            전체옵션: e.target.options[e.target.selectedIndex]?.text 
+                          });
+                          setSelectedCoupon(e.target.value);
+                        }}
                         className="flex-1 p-2 border border-gray-300 rounded-lg text-sm"
                       >
                         <option value="">쿠폰 선택</option>
                         {userCoupons.map((userCoupon) => (
                           <option key={userCoupon.id} value={userCoupon.coupon.code}>
-                            {userCoupon.coupon.name}
+                            {userCoupon.coupon.name} ({userCoupon.coupon.code})
                           </option>
                         ))}
                       </select>
                       <button
                         onClick={handleCouponApply}
-                        className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
+                        disabled={!selectedCoupon}
+                        className={`px-3 py-2 rounded-lg text-sm transition-colors ${
+                          selectedCoupon 
+                            ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        }`}
                       >
                         적용
                       </button>
@@ -633,7 +680,7 @@ const Checkout: React.FC = () => {
                       </label>
                       <button
                         type="button"
-                        onClick={() => setPointsToUse(maxUsablePoints)}
+                        onClick={() => setPointsToUse(roundAmount(maxUsablePoints))}
                         className="text-xs text-blue-600 hover:text-blue-700 underline"
                       >
                         최대 사용
@@ -653,7 +700,9 @@ const Checkout: React.FC = () => {
                             setPointsToUse(0);
                             return;
                           }
-                          handlePointsChange(points);
+                          // 포인트 입력 시 자동으로 정수로 반올림
+                          const roundedPoints = roundAmount(points);
+                          handlePointsChange(roundedPoints);
                         }
                       }}
                       max={maxUsablePoints}
@@ -670,9 +719,9 @@ const Checkout: React.FC = () => {
                         if (e.target.value === '') {
                           setPointsToUse(0);
                         }
-                        // 포커스 해제 시 최대값 검증
+                        // 포커스 해제 시 최대값 검증 (정수로 반올림)
                         if (pointsToUse > maxUsablePoints) {
-                          setPointsToUse(maxUsablePoints);
+                          setPointsToUse(Math.round(maxUsablePoints));
                         }
                       }}
                     />
@@ -687,11 +736,11 @@ const Checkout: React.FC = () => {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>상품 금액</span>
-                  <span>{subtotal.toLocaleString()}원</span>
+                  <span>{formatKRW(subtotal)}원</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>부가세</span>
-                  <span>{taxAmount.toLocaleString()}원</span>
+                  <span>부가세 (10%)</span>
+                  <span>{formatKRW(taxAmount)}원</span>
                 </div>
                 {orderType === 'delivery' && (
                   <div className="flex justify-between">
@@ -700,7 +749,7 @@ const Checkout: React.FC = () => {
                       {deliveryFee === 0 ? (
                         <span className="text-green-600">무료</span>
                       ) : (
-                        `${deliveryFee.toLocaleString()}원`
+                        `${formatKRW(deliveryFee)}원`
                       )}
                     </span>
                   </div>
@@ -708,18 +757,18 @@ const Checkout: React.FC = () => {
                 {couponValidation?.is_valid && (
                   <div className="flex justify-between text-red-600">
                     <span>쿠폰 할인</span>
-                    <span>-{couponValidation.discount_amount.toLocaleString()}원</span>
+                    <span>{formatDiscount(couponValidation.discount_amount)}</span>
                   </div>
                 )}
                 {pointsToUse > 0 && (
                   <div className="flex justify-between text-red-600">
                     <span>포인트 할인</span>
-                    <span>-{pointsToUse.toLocaleString()}원</span>
+                    <span>{formatDiscount(pointsToUse)}</span>
                   </div>
                 )}
                 <div className="border-t pt-2 flex justify-between font-semibold text-lg">
                   <span>총 결제 금액</span>
-                  <span className="text-blue-600">{finalAmount.toLocaleString()}원</span>
+                  <span className="text-blue-600">{formatKRW(finalAmount)}원</span>
                 </div>
               </div>
             </div>
@@ -793,7 +842,7 @@ const Checkout: React.FC = () => {
                     <span className="text-gray-700">
                       {item.product.name} x {item.quantity}
                     </span>
-                    <span className="font-medium">₩{item.subtotal.toLocaleString()}</span>
+                    <span className="font-medium">₩{formatKRW(item.subtotal)}</span>
                   </div>
                 ))}
               </div>
@@ -801,33 +850,37 @@ const Checkout: React.FC = () => {
               <div className="border-t pt-4 space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>소계</span>
-                  <span>₩{subtotal.toLocaleString()}</span>
+                  <span>₩{formatKRW(subtotal)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>세금</span>
-                  <span>₩{taxAmount.toLocaleString()}</span>
+                  <span>부가세 (10%)</span>
+                  <span>₩{formatKRW(taxAmount)}</span>
                 </div>
                 {orderType === 'delivery' && (
                   <div className="flex justify-between">
                     <span>배송비</span>
-                    <span>₩{deliveryFee.toLocaleString()}</span>
+                    <span>₩{formatKRW(deliveryFee)}</span>
                   </div>
                 )}
+                <div className="flex justify-between font-medium text-sm border-t border-gray-200 pt-2">
+                  <span>소계 (부가세 포함)</span>
+                  <span>₩{formatKRW(subtotal + taxAmount + deliveryFee)}</span>
+                </div>
                 {couponValidation?.is_valid && (
                   <div className="flex justify-between text-red-600">
                     <span>쿠폰 할인</span>
-                    <span>-₩{couponValidation.discount_amount.toLocaleString()}</span>
+                    <span>{formatDiscount(couponValidation.discount_amount)}</span>
                   </div>
                 )}
                 {pointsToUse > 0 && (
                   <div className="flex justify-between text-red-600">
                     <span>포인트 할인</span>
-                    <span>-₩{pointsToUse.toLocaleString()}</span>
+                    <span>{formatDiscount(pointsToUse)}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-semibold text-lg pt-2 border-t">
                   <span>총 결제금액</span>
-                  <span className="text-primary-color">₩{finalAmount.toLocaleString()}</span>
+                  <span className="text-primary-color">₩{formatKRW(finalAmount)}</span>
                 </div>
               </div>
 

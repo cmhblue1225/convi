@@ -2,15 +2,21 @@ import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// __dirname 설정 (ESM 환경에서 필요)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // CORS 설정
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  origin: ['http://localhost:5173', 'http://localhost:3000', 'https://convi-adx1.onrender.com'],
   credentials: true
 }));
 
@@ -108,6 +114,12 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     service: 'Geocoding Proxy Server'
   });
+});
+
+// --- 정적 파일 서빙 (Vite build 결과) ---
+app.use(express.static(path.join(__dirname, 'dist')));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 app.listen(PORT, () => {

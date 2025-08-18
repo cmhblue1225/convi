@@ -14,6 +14,11 @@ const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(({
   storeAddress = "",
   storePhone = ""
 }, ref) => {
+  // 디버깅을 위한 로그
+  console.log('Receipt 컴포넌트에서 받은 order:', order);
+  console.log('포인트 사용:', order.pointsUsed);
+  console.log('쿠폰 할인:', order.couponDiscountAmount);
+  console.log('세금:', order.taxAmount);
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('ko-KR', {
       year: 'numeric',
@@ -49,7 +54,8 @@ const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(({
   };
 
   const calculateSubtotal = () => {
-    return order.items.reduce((sum, item) => sum + item.subtotal, 0);
+    if (!order.items || order.items.length === 0) return 0;
+    return order.items.reduce((sum, item) => sum + (item.subtotal || 0), 0);
   };
 
   const isCompleted = order.status === 'completed';
@@ -167,39 +173,50 @@ const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(({
           marginBottom: '8px'
         }}>주문 상품</p>
         <div>
-          {order.items.map((item, index) => (
-            <div key={index} style={{ marginBottom: '4px' }}>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start'
-              }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: '500' }}>{item.productName}</div>
+          {order.items && order.items.length > 0 ? (
+            order.items.map((item, index) => (
+              <div key={index} style={{ marginBottom: '4px' }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start'
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: '500' }}>{item.productName}</div>
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#4b5563'
+                    }}>
+                      {(item.price || 0).toLocaleString()}원 × {item.quantity || 0}개
+                      {item.discountRate && item.discountRate > 0 && (
+                        <span style={{
+                          color: '#dc2626',
+                          marginLeft: '4px'
+                        }}>
+                          (-{((item.discountRate || 0) * 100).toFixed(0)}%)
+                        </span>
+                      )}
+                    </div>
+                  </div>
                   <div style={{
-                    fontSize: '12px',
-                    color: '#4b5563'
+                    fontWeight: 'bold',
+                    textAlign: 'right'
                   }}>
-                    {item.price.toLocaleString()}원 × {item.quantity}개
-                    {item.discountRate > 0 && (
-                      <span style={{
-                        color: '#dc2626',
-                        marginLeft: '4px'
-                      }}>
-                        (-{(item.discountRate * 100).toFixed(0)}%)
-                      </span>
-                    )}
+                    {(item.subtotal || 0).toLocaleString()}원
                   </div>
                 </div>
-                <div style={{
-                  fontWeight: 'bold',
-                  textAlign: 'right'
-                }}>
-                  {item.subtotal.toLocaleString()}원
-                </div>
               </div>
+            ))
+          ) : (
+            <div style={{ 
+              textAlign: 'center', 
+              color: '#6b7280', 
+              fontStyle: 'italic',
+              padding: '16px'
+            }}>
+              상품 정보가 없습니다
             </div>
-          ))}
+          )}
         </div>
       </div>
 
@@ -214,29 +231,116 @@ const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(({
           marginBottom: '4px'
         }}>
           <span>상품금액:</span>
-          <span>{calculateSubtotal().toLocaleString()}원</span>
+          <span>{Math.round(calculateSubtotal() || 0).toLocaleString()}원</span>
         </div>
-        {order.deliveryFee > 0 && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginBottom: '4px',
+          color: '#374151',
+          fontWeight: 'bold'
+        }}>
+          <span>부가세 (10%):</span>
+          <span>{Math.round(order.taxAmount || 0).toLocaleString()}원</span>
+        </div>
+        {order.deliveryFee && order.deliveryFee > 0 && (
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             marginBottom: '4px'
           }}>
             <span>배송비:</span>
-            <span>{order.deliveryFee.toLocaleString()}원</span>
+            <span>{Math.round(order.deliveryFee || 0).toLocaleString()}원</span>
           </div>
         )}
-        {order.pointsUsed && order.pointsUsed > 0 && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginBottom: '8px',
+          borderTop: '1px solid #d1d5db',
+          paddingTop: '8px',
+          fontWeight: 'bold',
+          color: '#1f2937'
+        }}>
+          <span>소계 (부가세 포함):</span>
+          <span>{(Math.round(calculateSubtotal() || 0) + Math.round(order.taxAmount || 0) + Math.round(order.deliveryFee || 0)).toLocaleString()}원</span>
+        </div>
+        
+        {/* 할인 정보 섹션 */}
+        <div style={{
+          borderTop: '1px dashed #d1d5db',
+          paddingTop: '8px',
+          marginTop: '8px'
+        }}>
           <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: '4px',
-            color: '#dc2626'
-          }}>
-            <span>포인트 사용:</span>
-            <span>-{order.pointsUsed.toLocaleString()}P</span>
-          </div>
-        )}
+            fontWeight: 'bold',
+            marginBottom: '8px',
+            color: '#374151'
+          }}>할인 정보</div>
+          
+          {/* 포인트 사용 */}
+          {order.pointsUsed && order.pointsUsed > 0 ? (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginBottom: '4px',
+              color: '#dc2626'
+            }}>
+              <span>포인트 사용:</span>
+              <span>-{Math.round(order.pointsUsed || 0).toLocaleString()}P</span>
+            </div>
+          ) : (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginBottom: '4px',
+              color: '#6b7280',
+              fontSize: '12px'
+            }}>
+              <span>포인트 사용:</span>
+              <span>없음</span>
+            </div>
+          )}
+          
+          {/* 쿠폰 할인 */}
+          {order.couponDiscountAmount && order.couponDiscountAmount > 0 ? (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginBottom: '4px',
+              color: '#dc2626'
+            }}>
+              <span>쿠폰 할인:</span>
+              <span>-{Math.round(order.couponDiscountAmount || 0).toLocaleString()}원</span>
+            </div>
+          ) : (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginBottom: '4px',
+              color: '#6b7280',
+              fontSize: '12px'
+            }}>
+              <span>쿠폰 할인:</span>
+              <span>없음</span>
+            </div>
+          )}
+          
+          {/* 쿠폰 정보 (쿠폰이 사용된 경우) */}
+          {order.appliedCouponId && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginBottom: '4px',
+              color: '#6b7280',
+              fontSize: '11px'
+            }}>
+              <span>사용된 쿠폰:</span>
+              <span>ID: {order.appliedCouponId.substring(0, 8)}...</span>
+            </div>
+          )}
+        </div>
+        
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -246,7 +350,7 @@ const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(({
           paddingTop: '4px'
         }}>
           <span>총 결제금액:</span>
-          <span>{order.totalAmount.toLocaleString()}원</span>
+          <span>{Math.round(order.totalAmount || 0).toLocaleString()}원</span>
         </div>
       </div>
 

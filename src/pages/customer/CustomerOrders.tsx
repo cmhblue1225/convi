@@ -47,7 +47,21 @@ const CustomerOrders: React.FC = () => {
       const orderIds = orders.map(order => order.id);
       const { data, error } = await supabase
         .from('refund_requests' as any)
-        .select('order_id, status, created_at, processed_at, admin_notes')
+        .select(`
+          id,
+          order_id, 
+          status, 
+          reason,
+          description,
+          requested_refund_amount,
+          approved_refund_amount,
+          refund_items,
+          created_at, 
+          processed_at, 
+          admin_notes,
+          rejection_reason,
+          refund_method
+        `)
         .in('order_id', orderIds)
         .eq('customer_id', user.id);
 
@@ -476,9 +490,18 @@ const CustomerOrders: React.FC = () => {
                     <div className="text-lg font-bold text-blue-600">
                       {order.totalAmount.toLocaleString()}원
                     </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      상품 {order.subtotal.toLocaleString()}원 + 부가세 {order.taxAmount.toLocaleString()}원
+                      {order.deliveryFee > 0 && ` + 배송비 ${order.deliveryFee.toLocaleString()}원`}
+                    </div>
                     {order.pointsUsed && order.pointsUsed > 0 && (
                       <div className="text-sm text-green-600 mt-1">
                         포인트 {order.pointsUsed.toLocaleString()}P 사용
+                      </div>
+                    )}
+                    {order.couponDiscountAmount && order.couponDiscountAmount > 0 && (
+                      <div className="text-sm text-red-600 mt-1">
+                        쿠폰 할인 -{order.couponDiscountAmount.toLocaleString()}원
                       </div>
                     )}
                   </div>
@@ -769,7 +792,11 @@ const CustomerOrders: React.FC = () => {
           onClose={() => setShowRefundReceiptModal(false)}
           refund={selectedRefundForReceipt}
           order={orders.find(o => o.id === selectedRefundForReceipt.order_id)}
-          storeInfo={{ name: '매장명', address: '매장 주소', phone: '전화번호' }}
+          storeInfo={{ 
+            name: orders.find(o => o.id === selectedRefundForReceipt.order_id)?.storeName || '매장명', 
+            address: '매장 주소', 
+            phone: '전화번호' 
+          }}
         />
       )}
     </div>

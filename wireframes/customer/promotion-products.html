@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>행사 상품 - 와이어프레임</title>
+    <link rel="stylesheet" href="../styles/wireframe.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+    <style>
+        .promotion-header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            color: white;
+            padding: 20px 16px;
+            position: relative;
+        }
+        
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 16px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        
+        .promotion-title {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .promotion-title h1 {
+            font-size: 28px;
+            margin: 0 0 8px 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .promotion-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin: 0;
+        }
+        
+        .promotion-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .event-banner {
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 16px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .event-banner::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+        
+        .event-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .event-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .event-description {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 12px;
+        }
+        
+        .event-countdown {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        .filter-section {
+            background: white;
+            border-bottom: 1px solid #dee2e6;
+            padding: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+        
+        .filter-tab {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .filter-tab.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
+        .sort-options {
+            display: flex;
+            gap: 8px;
+            font-size: 12px;
+        }
+        
+        .sort-btn {
+            background: none;
+            border: 1px solid #dee2e6;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #6c757d;
+            transition: all 0.2s;
+        }
+        
+        .sort-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
+        .products-grid {
+            padding: 16px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        
+        .product-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.2s;
+            position: relative;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .product-image {
+            height: 120px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: 12px;
+            position: relative;
+        }
+        
+        .product-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .badge-1plus1 {
+            background: #007bff;
+        }
+        
+        .badge-2plus1 {
+            background: #28a745;
+        }
+        
+        .badge-discount {
+            background: #dc3545;
+        }
+        
+        .badge-new {
+            background: #17a2b8;
+        }
+        
+        .product-timer {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        
+        .product-info {
+            padding: 12px;
+        }
+        
+        .product-name {
+            font-size: 13px;
+            font-weight: bold;
+            color: #212529;
+            margin-bottom: 6px;
+            line-height: 1.3;
+            height: 32px;
+            overflow: hidden;
+        }
+        
+        .product-price {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+        
+        .current-price {
+            font-size: 14px;
+            font-weight: bold;
+            color: #dc3545;
+        }
+        
+        .original-price {
+            font-size: 11px;
+            color: #6c757d;
+            text-decoration: line-through;
+        }
+        
+        .discount-rate {
+            font-size: 10px;
+            background: #dc3545;
+            color: white;
+            padding: 1px 4px;
+            border-radius: 2px;
+        }
+        
+        .product-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .stock-info {
+            font-size: 10px;
+            color: #6c757d;
+        }
+        
+        .stock-info.low {
+            color: #fd7e14;
+        }
+        
+        .add-cart-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        
+        .floating-cart {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+            cursor: pointer;
+        }
+        
+        .cart-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #dc3545;
+            color: white;
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            min-width: 20px;
+            text-align: center;
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #dee2e6;
+            padding: 8px 0;
+            display: flex;
+            justify-content: space-around;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px;
+            text-decoration: none;
+            color: #6c757d;
+            font-size: 12px;
+        }
+        
+        .nav-item.active {
+            color: #007bff;
+        }
+        
+        .content-wrapper {
+            padding-bottom: 80px;
+        }
+        
+        .promo-category {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin: 0 16px 16px;
+            overflow: hidden;
+        }
+        
+        .category-header {
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .category-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .category-count {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .category-products {
+            display: flex;
+            gap: 12px;
+            padding: 16px;
+            overflow-x: auto;
+        }
+        
+        .category-product {
+            min-width: 140px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .category-product:hover {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .special-event {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 16px;
+            color: white;
+            text-align: center;
+        }
+        
+        .event-timer {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 16px;
+        }
+        
+        .timer-display {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .time-unit {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 8px 12px;
+            border-radius: 4px;
+            text-align: center;
+            min-width: 40px;
+        }
+        
+        .time-number {
+            font-size: 18px;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .time-label {
+            font-size: 10px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body style="background: #f8f9fa;">
+    <!-- 프로모션 헤더 -->
+    <div class="promotion-header">
+        <button class="back-button" onclick="history.back()">←</button>
+        
+        <div class="promotion-title">
+            <h1>🎉 진행중인 행사</h1>
+            <p class="promotion-subtitle">특별한 할인 혜택을 놓치지 마세요!</p>
+        </div>
+        
+        <div class="promotion-stats">
+            <div class="stat-item">
+                <div class="stat-number">127</div>
+                <div class="stat-label">행사 상품</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">최대 50%</div>
+                <div class="stat-label">할인율</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">5개</div>
+                <div class="stat-label">진행중 이벤트</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <!-- 특별 이벤트 배너 -->
+        <div class="special-event">
+            <h2 style="font-size: 22px; margin: 0 0 8px 0;">⚡ 타임세일</h2>
+            <p style="font-size: 16px; margin: 0 0 16px 0;">지금 구매하면 추가 20% 할인!</p>
+            
+            <div class="event-timer">
+                <div style="font-size: 14px; margin-bottom: 8px;">남은 시간</div>
+                <div class="timer-display">
+                    <div class="time-unit">
+                        <span class="time-number" id="hours">02</span>
+                        <span class="time-label">시간</span>
+                    </div>
+                    <div class="time-unit">
+                        <span class="time-number" id="minutes">34</span>
+                        <span class="time-label">분</span>
+                    </div>
+                    <div class="time-unit">
+                        <span class="time-number" id="seconds">56</span>
+                        <span class="time-label">초</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1+1 행사 카테고리 -->
+        <div class="promo-category">
+            <div class="category-header">
+                <div class="category-title">🔥 1+1 행사</div>
+                <div class="category-count">32개 상품</div>
+            </div>
+            <div class="category-products">
+                <div class="category-product">
+                    <div style="font-size: 24px; margin-bottom: 8px;">🥤</div>
+                    <div style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">음료</div>
+                    <div style="font-size: 10px; color: rgba(255,255,255,0.8);">12개 상품</div>
+                </div>
+                <div class="category-product">
+                    <div style="font-size: 24px; margin-bottom: 8px;">🍜</div>
+                    <div style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">라면</div>
+                    <div style="font-size: 10px; color: rgba(255,255,255,0.8);">8개 상품</div>
+                </div>
+                <div class="category-product">
+                    <div style="font-size: 24px; margin-bottom: 8px;">🍪</div>
+                    <div style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">과자</div>
+                    <div style="font-size: 10px; color: rgba(255,255,255,0.8);">12개 상품</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 필터 섹션 -->
+        <div class="filter-section">
+            <div class="filter-tabs">
+                <div class="filter-tab active">전체</div>
+                <div class="filter-tab">1+1</div>
+                <div class="filter-tab">2+1</div>
+                <div class="filter-tab">할인</div>
+                <div class="filter-tab">타임세일</div>
+                <div class="filter-tab">신상품</div>
+            </div>
+            <div class="sort-options">
+                <button class="sort-btn active">인기순</button>
+                <button class="sort-btn">할인율순</button>
+                <button class="sort-btn">가격순</button>
+                <button class="sort-btn">마감임박순</button>
+            </div>
+        </div>
+
+        <!-- 상품 그리드 -->
+        <div class="products-grid">
+            <!-- 1+1 행사 상품 -->
+            <div class="product-card">
+                <div class="product-image">
+                    <div class="product-badge badge-1plus1">1+1</div>
+                    <div class="product-timer">12:34</div>
+                    <div>📦 상품 이미지</div>
+                </div>
+                <div class="product-info">
+                    <div class="product-name">농심 육개장사발면 86g</div>
+                    <div class="product-price">
+                        <div class="current-price">1,500원</div>
+                        <div class="original-price">3,000원</div>
+                        <div class="discount-rate">50%</div>
+                    </div>
+                    <div class="product-actions">
+                        <div class="stock-info">재고 12개</div>
+                        <button class="add-cart-btn" onclick="addToCart(this)">담기</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2+1 행사 상품 -->
+            <div class="product-card">
+                <div class="product-image">
+                    <div class="product-badge badge-2plus1">2+1</div>
+                    <div>📦 상품 이미지</div>
+                </div>
+                <div class="product-info">
+                    <div class="product-name">LBS 맥스 옐로우</div>
+                    <div class="product-price">
+                        <div class="current-price">2,800원</div>
+                        <div class="original-price">4,200원</div>
+                        <div class="discount-rate">33%</div>
+                    </div>
+                    <div class="product-actions">
+                        <div class="stock-info">재고 20개</div>
+                        <button class="add-cart-btn" onclick="addToCart(this)">담기</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 할인 상품 -->
+            <div class="product-card">
+                <div class="product-image">
+                    <div class="product-badge badge-discount">30%</div>
+                    <div>📦 상품 이미지</div>
+                </div>
+                <div class="product-info">
+                    <div class="product-name">신라면 120g</div>
+                    <div class="product-price">
+                        <div class="current-price">980원</div>
+                        <div class="original-price">1,400원</div>
+                        <div class="discount-rate">30%</div>
+                    </div>
+                    <div class="product-actions">
+                        <div class="stock-info">재고 8개</div>
+                        <button class="add-cart-btn" onclick="addToCart(this)">담기</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 신상품 -->
+            <div class="product-card">
+                <div class="product-image">
+                    <div class="product-badge badge-new">NEW</div>
+                    <div>📦 상품 이미지</div>
+                </div>
+                <div class="product-info">
+                    <div class="product-name">프리미엄 치킨샐러드</div>
+                    <div class="product-price">
+                        <div class="current-price">5,800원</div>
+                        <div class="original-price">6,800원</div>
+                        <div class="discount-rate">15%</div>
+                    </div>
+                    <div class="product-actions">
+                        <div class="stock-info">재고 5개</div>
+                        <button class="add-cart-btn" onclick="addToCart(this)">담기</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 타임세일 상품 -->
+            <div class="product-card">
+                <div class="product-image">
+                    <div class="product-badge badge-discount">⚡ 타임세일</div>
+                    <div class="product-timer">02:34</div>
+                    <div>📦 상품 이미지</div>
+                </div>
+                <div class="product-info">
+                    <div class="product-name">허니버터칩 60g</div>
+                    <div class="product-price">
+                        <div class="current-price">1,760원</div>
+                        <div class="original-price">2,200원</div>
+                        <div class="discount-rate">20%</div>
+                    </div>
+                    <div class="product-actions">
+                        <div class="stock-info low">재고 3개</div>
+                        <button class="add-cart-btn" onclick="addToCart(this)">담기</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 추가 행사 상품들 -->
+            <div class="product-card">
+                <div class="product-image">
+                    <div class="product-badge badge-1plus1">1+1</div>
+                    <div>📦 상품 이미지</div>
+                </div>
+                <div class="product-info">
+                    <div class="product-name">코카콜라 355ml</div>
+                    <div class="product-price">
+                        <div class="current-price">1,800원</div>
+                        <div class="original-price">3,600원</div>
+                        <div class="discount-rate">50%</div>
+                    </div>
+                    <div class="product-actions">
+                        <div class="stock-info">재고 충분</div>
+                        <button class="add-cart-btn" onclick="addToCart(this)">담기</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image">
+                    <div class="product-badge badge-discount">25%</div>
+                    <div>📦 상품 이미지</div>
+                </div>
+                <div class="product-info">
+                    <div class="product-name">삼각김밥 참치마요</div>
+                    <div class="product-price">
+                        <div class="current-price">900원</div>
+                        <div class="original-price">1,200원</div>
+                        <div class="discount-rate">25%</div>
+                    </div>
+                    <div class="product-actions">
+                        <div class="stock-info">재고 15개</div>
+                        <button class="add-cart-btn" onclick="addToCart(this)">담기</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image">
+                    <div class="product-badge badge-2plus1">2+1</div>
+                    <div>📦 상품 이미지</div>
+                </div>
+                <div class="product-info">
+                    <div class="product-name">새우깡 90g</div>
+                    <div class="product-price">
+                        <div class="current-price">1,300원</div>
+                        <div class="original-price">1,950원</div>
+                        <div class="discount-rate">33%</div>
+                    </div>
+                    <div class="product-actions">
+                        <div class="stock-info">재고 18개</div>
+                        <button class="add-cart-btn" onclick="addToCart(this)">담기</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 더 보기 버튼 -->
+        <div style="padding: 20px; text-align: center;">
+            <button class="wireframe-button" style="padding: 12px 32px;" onclick="loadMoreProducts()">더 많은 행사 상품 보기</button>
+        </div>
+    </div>
+
+    <!-- 플로팅 장바구니 -->
+    <button class="floating-cart" onclick="goToCart()">
+        🛒
+        <div class="cart-badge" id="cart-count">0</div>
+    </button>
+
+    <!-- 하단 네비게이션 -->
+    <div class="bottom-nav">
+        <a href="customer-home.html" class="nav-item">
+            <div>🏠</div>
+            <span>홈</span>
+        </a>
+        <a href="product-catalog.html" class="nav-item">
+            <div>🔍</div>
+            <span>검색</span>
+        </a>
+        <a href="cart-page.html" class="nav-item">
+            <div style="position: relative;">
+                🛒
+                <div style="position: absolute; top: -8px; right: -8px; background: #dc3545; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px;">0</div>
+            </div>
+            <span>장바구니</span>
+        </a>
+        <a href="customer-orders.html" class="nav-item">
+            <div>📋</div>
+            <span>주문내역</span>
+        </a>
+        <a href="customer-profile.html" class="nav-item">
+            <div>👤</div>
+            <span>마이페이지</span>
+        </a>
+    </div>
+
+    <!-- 와이어프레임 네비게이션 -->
+    <div style="position: fixed; top: 50%; right: 20px; transform: translateY(-50%); background: rgba(0,0,0,0.8); border-radius: 25px; padding: 8px;">
+        <a href="../index.html" style="color: white; text-decoration: none; font-size: 20px; display: block; padding: 8px;">🏠</a>
+    </div>
+
+    <script>
+        let cartCount = 0;
+        let timeLeft = 2 * 3600 + 34 * 60 + 56; // 2시간 34분 56초
+
+        // 타임세일 카운트다운
+        function updateCountdown() {
+            const hours = Math.floor(timeLeft / 3600);
+            const minutes = Math.floor((timeLeft % 3600) / 60);
+            const seconds = timeLeft % 60;
+
+            document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
+            document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+            document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+
+            if (timeLeft > 0) {
+                timeLeft--;
+            } else {
+                // 타임세일 종료
+                document.querySelector('.special-event h2').textContent = '⏰ 타임세일 종료';
+                document.querySelector('.special-event p').textContent = '다음 타임세일을 기다려주세요!';
+            }
+        }
+
+        // 필터 탭 클릭
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                const filter = this.textContent.trim();
+                filterProducts(filter);
+            });
+        });
+
+        // 정렬 옵션 클릭
+        document.querySelectorAll('.sort-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                const sort = this.textContent.trim();
+                sortProducts(sort);
+            });
+        });
+
+        // 상품 필터링
+        function filterProducts(filter) {
+            const products = document.querySelectorAll('.product-card');
+            
+            products.forEach(product => {
+                const badge = product.querySelector('.product-badge');
+                let show = false;
+                
+                if (filter === '전체') {
+                    show = true;
+                } else if (filter === '1+1' && badge && badge.textContent.includes('1+1')) {
+                    show = true;
+                } else if (filter === '2+1' && badge && badge.textContent.includes('2+1')) {
+                    show = true;
+                } else if (filter === '할인' && badge && badge.textContent.includes('%')) {
+                    show = true;
+                } else if (filter === '타임세일' && badge && badge.textContent.includes('타임세일')) {
+                    show = true;
+                } else if (filter === '신상품' && badge && badge.textContent.includes('NEW')) {
+                    show = true;
+                }
+                
+                product.style.display = show ? 'block' : 'none';
+            });
+            
+            alert(`"${filter}" 필터가 적용되었습니다.`);
+        }
+
+        // 상품 정렬
+        function sortProducts(sort) {
+            alert(`"${sort}" 정렬이 적용되었습니다.\\n\\n상품 순서가 변경됩니다.`);
+        }
+
+        // 장바구니 담기
+        function addToCart(button) {
+            cartCount++;
+            document.querySelectorAll('#cart-count, [style*="background: #dc3545"]').forEach(badge => {
+                if (badge.textContent.match(/^\d+$/)) {
+                    badge.textContent = cartCount;
+                }
+            });
+            
+            button.textContent = '담음!';
+            button.style.background = '#28a745';
+            setTimeout(() => {
+                button.textContent = '담기';
+                button.style.background = '#007bff';
+            }, 1000);
+        }
+
+        // 장바구니로 이동
+        function goToCart() {
+            alert(`장바구니에 ${cartCount}개 상품이 담겨있습니다.\\n\\n장바구니 페이지로 이동합니다.`);
+        }
+
+        // 더 많은 상품 로드
+        function loadMoreProducts() {
+            alert('더 많은 행사 상품을 불러옵니다.\\n\\n• 추가 할인 상품 24개\\n• 신규 1+1 행사 8개\\n• 한정 특가 상품 12개');
+        }
+
+        // 카테고리 상품 클릭
+        document.querySelectorAll('.category-product').forEach(category => {
+            category.addEventListener('click', function() {
+                const categoryName = this.querySelector('div:nth-child(2)').textContent;
+                alert(`${categoryName} 카테고리의 행사 상품을 보여드립니다.\\n\\n해당 카테고리 필터가 적용됩니다.`);
+            });
+        });
+
+        // 네비게이션 활성화
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                if (this.getAttribute('href') === '#') {
+                    e.preventDefault();
+                }
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // 페이지 로드 시 카운트다운 시작
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+        });
+
+        // 상품 카드 클릭 시 상세 정보
+        document.querySelectorAll('.product-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                if (e.target.classList.contains('add-cart-btn')) {
+                    return; // 장바구니 버튼 클릭 시는 제외
+                }
+                
+                const productName = this.querySelector('.product-name').textContent;
+                const currentPrice = this.querySelector('.current-price').textContent;
+                const badge = this.querySelector('.product-badge');
+                const badgeText = badge ? badge.textContent : '일반 상품';
+                
+                alert(`${productName}\\n\\n가격: ${currentPrice}\\n행사: ${badgeText}\\n\\n상품 상세 페이지로 이동합니다.`);
+            });
+        });
+
+        // 특별 이벤트 배너 클릭
+        document.querySelector('.special-event').addEventListener('click', function() {
+            alert('⚡ 타임세일 이벤트\\n\\n지금 구매하면 추가 20% 할인!\\n\\n• 대상: 전 상품\\n• 할인: 추가 20%\\n• 시간: 제한시간 내\\n\\n타임세일 상품만 보시겠습니까?');
+        });
+    </script>
+</body>
+</html>

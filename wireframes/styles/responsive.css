@@ -1,0 +1,342 @@
+/* 반응형 스타일 */
+
+/* 모바일 First 접근 방식 */
+@media (max-width: 767px) {
+  .wireframe-container {
+    padding: 10px;
+    margin: 10px;
+  }
+
+  .wireframe-layout {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .wireframe-sidebar {
+    width: 100%;
+    min-height: auto;
+    order: 2;
+  }
+
+  .wireframe-main {
+    order: 1;
+  }
+
+  .wireframe-header {
+    padding: 12px;
+  }
+
+  .wireframe-header .nav-items {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .wireframe-header .nav-item {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .wireframe-grid.cols-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .wireframe-grid.cols-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .wireframe-grid.cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .wireframe-table {
+    font-size: 12px;
+  }
+
+  .wireframe-table th,
+  .wireframe-table td {
+    padding: 8px;
+  }
+
+  .wireframe-modal {
+    margin: 20px;
+    padding: 16px;
+  }
+
+  .wireframe-modal-header {
+    font-size: 16px;
+  }
+
+  .wireframe-tab-list {
+    flex-wrap: wrap;
+  }
+
+  .wireframe-tab {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  /* 모바일에서 버튼을 전체 너비로 */
+  .wireframe-button.mobile-full {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  /* 모바일에서 폼을 간소화 */
+  .wireframe-form {
+    padding: 12px;
+  }
+
+  .wireframe-form-group {
+    margin-bottom: 12px;
+  }
+
+  /* 모바일에서 카드 간격 조정 */
+  .wireframe-card {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  /* 모바일에서 차트 높이 조정 */
+  .wireframe-chart {
+    height: 200px;
+  }
+}
+
+/* 태블릿 */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .wireframe-container {
+    padding: 16px;
+  }
+
+  .wireframe-sidebar {
+    width: 200px;
+  }
+
+  .wireframe-grid.cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .wireframe-modal {
+    max-width: 600px;
+  }
+}
+
+/* 데스크톱 */
+@media (min-width: 1024px) {
+  .wireframe-container {
+    padding: 24px;
+  }
+
+  .wireframe-layout {
+    gap: 24px;
+  }
+
+  .wireframe-main {
+    padding: 24px;
+  }
+
+  .wireframe-modal {
+    max-width: 700px;
+  }
+
+  /* 데스크톱에서 더 넓은 사이드바 */
+  .wireframe-sidebar {
+    width: 280px;
+  }
+
+  /* 데스크톱에서 차트 높이 증가 */
+  .wireframe-chart {
+    height: 350px;
+  }
+}
+
+/* 대형 화면 */
+@media (min-width: 1440px) {
+  .wireframe-container {
+    max-width: 1400px;
+    padding: 32px;
+  }
+
+  .wireframe-layout {
+    gap: 32px;
+  }
+
+  .wireframe-sidebar {
+    width: 320px;
+  }
+
+  .wireframe-main {
+    padding: 32px;
+  }
+}
+
+/* 프린트 스타일 */
+@media print {
+  .wireframe-container {
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .wireframe-header,
+  .wireframe-sidebar {
+    display: none;
+  }
+
+  .wireframe-layout {
+    flex-direction: column;
+  }
+
+  .wireframe-main {
+    border: none;
+    padding: 0;
+  }
+
+  .wireframe-button {
+    border: 1px solid #000;
+  }
+
+  .wireframe-modal-overlay {
+    display: none !important;
+  }
+
+  /* 프린트 시 페이지 나누기 */
+  .wireframe-card,
+  .wireframe-form,
+  .wireframe-table {
+    page-break-inside: avoid;
+  }
+}
+
+/* 다크 모드 지원 (선택사항) */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+  }
+
+  .wireframe-container {
+    background: #2d2d2d;
+    border-color: #444;
+  }
+
+  .wireframe-header {
+    background: #3a3a3a;
+    border-color: #555;
+  }
+
+  .wireframe-sidebar {
+    background: #333;
+    border-color: #555;
+  }
+
+  .wireframe-sidebar .sidebar-item {
+    background: #3a3a3a;
+    border-color: #555;
+    color: #ccc;
+  }
+
+  .wireframe-main {
+    background: #2d2d2d;
+    border-color: #555;
+  }
+
+  .wireframe-card {
+    background: #3a3a3a;
+    border-color: #555;
+  }
+
+  .wireframe-form {
+    background: #3a3a3a;
+    border-color: #555;
+  }
+
+  .wireframe-form-input,
+  .wireframe-form-select {
+    background: #2d2d2d;
+    border-color: #555;
+    color: #e0e0e0;
+  }
+
+  .wireframe-table {
+    background: #2d2d2d;
+    border-color: #555;
+  }
+
+  .wireframe-table th {
+    background: #3a3a3a;
+  }
+
+  .wireframe-button {
+    background: #3a3a3a;
+    border-color: #555;
+    color: #ccc;
+  }
+
+  .wireframe-modal {
+    background: #2d2d2d;
+    border-color: #555;
+  }
+}
+
+/* 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  .wireframe-container,
+  .wireframe-header,
+  .wireframe-sidebar,
+  .wireframe-main,
+  .wireframe-card,
+  .wireframe-form,
+  .wireframe-table,
+  .wireframe-button,
+  .wireframe-modal {
+    border-width: 2px;
+    border-color: #000;
+  }
+
+  .wireframe-form-input,
+  .wireframe-form-select {
+    border-width: 2px;
+    border-color: #000;
+  }
+
+  .wireframe-status {
+    border-width: 2px;
+  }
+}
+
+/* 애니메이션 감소 지원 */
+@media (prefers-reduced-motion: reduce) {
+  .wireframe-button,
+  .wireframe-tab,
+  .wireframe-sidebar .sidebar-item {
+    transition: none;
+  }
+
+  .wireframe-modal-overlay {
+    animation: none;
+  }
+}
+
+/* 터치 디바이스 최적화 */
+@media (pointer: coarse) {
+  .wireframe-button,
+  .wireframe-tab,
+  .wireframe-sidebar .sidebar-item {
+    min-height: 44px;
+    padding: 12px 16px;
+  }
+
+  .wireframe-form-input,
+  .wireframe-form-select {
+    min-height: 44px;
+    padding: 12px;
+  }
+
+  .wireframe-table th,
+  .wireframe-table td {
+    padding: 16px 12px;
+  }
+}

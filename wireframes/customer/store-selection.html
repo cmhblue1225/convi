@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>매장 선택 - 와이어프레임</title>
+    <link rel="stylesheet" href="../styles/wireframe.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+    <style>
+        .store-header {
+            background: white;
+            border-bottom: 1px solid #dee2e6;
+            padding: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .search-section {
+            margin-bottom: 16px;
+        }
+        
+        .search-bar {
+            position: relative;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 12px 16px 12px 40px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+        
+        .filter-section {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-chip {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .filter-chip.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
+        .map-view {
+            height: 200px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            position: relative;
+        }
+        
+        .view-toggle {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .store-list {
+            padding: 0 16px;
+        }
+        
+        .store-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .store-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .store-card.selected {
+            border-color: #007bff;
+            background: #f8f9ff;
+        }
+        
+        .store-header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        
+        .store-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #212529;
+            margin-bottom: 4px;
+        }
+        
+        .store-brand {
+            font-size: 12px;
+            background: #e9ecef;
+            color: #495057;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        .store-distance {
+            font-size: 12px;
+            color: #007bff;
+            font-weight: bold;
+        }
+        
+        .store-address {
+            font-size: 14px;
+            color: #6c757d;
+            margin-bottom: 8px;
+        }
+        
+        .store-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+        }
+        
+        .store-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .status-dot.open {
+            background: #28a745;
+        }
+        
+        .status-dot.closed {
+            background: #dc3545;
+        }
+        
+        .store-rating {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .floating-button {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+            cursor: pointer;
+        }
+        
+        .selected-store-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #dee2e6;
+            padding: 16px;
+            display: none;
+        }
+        
+        .selected-store-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .selected-store-text {
+            flex: 1;
+        }
+        
+        .selected-store-name {
+            font-weight: bold;
+            color: #212529;
+            margin-bottom: 4px;
+        }
+        
+        .selected-store-address {
+            font-size: 14px;
+            color: #6c757d;
+        }
+        
+        .confirm-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body style="background: #f8f9fa;">
+    <!-- 헤더 -->
+    <div class="store-header">
+        <div style="display: flex; align-items: center; margin-bottom: 16px;">
+            <button onclick="history.back()" style="background: none; border: none; font-size: 20px; cursor: pointer; margin-right: 12px;">←</button>
+            <h1 style="font-size: 18px; font-weight: bold; color: #212529; margin: 0;">매장 선택</h1>
+        </div>
+        
+        <!-- 검색 섹션 -->
+        <div class="search-section">
+            <div class="search-bar">
+                <div class="search-icon">🔍</div>
+                <input type="text" class="search-input" placeholder="매장명 또는 주소로 검색">
+            </div>
+        </div>
+        
+        <!-- 필터 섹션 -->
+        <div class="filter-section">
+            <div class="filter-chip active">전체</div>
+            <div class="filter-chip">영업중</div>
+            <div class="filter-chip">1km 이내</div>
+            <div class="filter-chip">평점 높은순</div>
+            <div class="filter-chip">가까운순</div>
+        </div>
+    </div>
+
+    <!-- 지도 뷰 -->
+    <div class="map-view">
+        <div style="text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 8px;">🗺️</div>
+            <div>지도에서 매장 위치 확인</div>
+        </div>
+        <button class="view-toggle" onclick="toggleView()">목록 보기</button>
+    </div>
+
+    <!-- 매장 목록 -->
+    <div class="store-list">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <div style="font-size: 16px; font-weight: bold; color: #495057;">주변 매장 (8개)</div>
+            <div style="font-size: 12px; color: #6c757d;">📍 현재 위치 기준</div>
+        </div>
+        
+        <!-- 매장 카드들 -->
+        <div class="store-card" onclick="selectStore(this, 'GS25 강남역점')">
+            <div class="store-header-info">
+                <div>
+                    <div class="store-name">GS25 강남역점</div>
+                    <div class="store-brand">GS25</div>
+                </div>
+                <div class="store-distance">120m</div>
+            </div>
+            <div class="store-address">서울시 강남구 강남대로 123</div>
+            <div class="store-meta">
+                <div class="store-status">
+                    <div class="status-dot open"></div>
+                    <span style="color: #28a745;">영업중 (06:00~24:00)</span>
+                </div>
+                <div class="store-rating">
+                    <span>⭐ 4.8</span>
+                    <span style="color: #6c757d;">(152)</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="store-card" onclick="selectStore(this, 'CU 역삼점')">
+            <div class="store-header-info">
+                <div>
+                    <div class="store-name">CU 역삼점</div>
+                    <div class="store-brand">CU</div>
+                </div>
+                <div class="store-distance">250m</div>
+            </div>
+            <div class="store-address">서울시 강남구 테헤란로 456</div>
+            <div class="store-meta">
+                <div class="store-status">
+                    <div class="status-dot open"></div>
+                    <span style="color: #28a745;">영업중 (24시간)</span>
+                </div>
+                <div class="store-rating">
+                    <span>⭐ 4.6</span>
+                    <span style="color: #6c757d;">(89)</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="store-card" onclick="selectStore(this, '세븐일레븐 선릉점')">
+            <div class="store-header-info">
+                <div>
+                    <div class="store-name">세븐일레븐 선릉점</div>
+                    <div class="store-brand">7-ELEVEn</div>
+                </div>
+                <div class="store-distance">380m</div>
+            </div>
+            <div class="store-address">서울시 강남구 선릉로 789</div>
+            <div class="store-meta">
+                <div class="store-status">
+                    <div class="status-dot open"></div>
+                    <span style="color: #28a745;">영업중 (05:00~23:00)</span>
+                </div>
+                <div class="store-rating">
+                    <span>⭐ 4.5</span>
+                    <span style="color: #6c757d;">(234)</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="store-card" onclick="selectStore(this, 'GS25 대치점')">
+            <div class="store-header-info">
+                <div>
+                    <div class="store-name">GS25 대치점</div>
+                    <div class="store-brand">GS25</div>
+                </div>
+                <div class="store-distance">520m</div>
+            </div>
+            <div class="store-address">서울시 강남구 대치동 101-1</div>
+            <div class="store-meta">
+                <div class="store-status">
+                    <div class="status-dot closed"></div>
+                    <span style="color: #dc3545;">영업종료 (내일 06:00 오픈)</span>
+                </div>
+                <div class="store-rating">
+                    <span>⭐ 4.7</span>
+                    <span style="color: #6c757d;">(67)</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="store-card" onclick="selectStore(this, 'CU 삼성점')">
+            <div class="store-header-info">
+                <div>
+                    <div class="store-name">CU 삼성점</div>
+                    <div class="store-brand">CU</div>
+                </div>
+                <div class="store-distance">650m</div>
+            </div>
+            <div class="store-address">서울시 강남구 삼성동 159-1</div>
+            <div class="store-meta">
+                <div class="store-status">
+                    <div class="status-dot open"></div>
+                    <span style="color: #28a745;">영업중 (24시간)</span>
+                </div>
+                <div class="store-rating">
+                    <span>⭐ 4.4</span>
+                    <span style="color: #6c757d;">(201)</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 추가 공간 -->
+        <div style="height: 100px;"></div>
+    </div>
+
+    <!-- 플로팅 버튼 -->
+    <button class="floating-button" onclick="toggleView()">🗺️</button>
+
+    <!-- 선택된 매장 바 -->
+    <div id="selected-store-bar" class="selected-store-bar">
+        <div class="selected-store-info">
+            <div class="selected-store-text">
+                <div class="selected-store-name" id="selected-name">매장을 선택해주세요</div>
+                <div class="selected-store-address" id="selected-address"></div>
+            </div>
+            <button class="confirm-button" onclick="confirmSelection()">확인</button>
+        </div>
+    </div>
+
+    <!-- 와이어프레임 네비게이션 -->
+    <div style="position: fixed; top: 50%; right: 20px; transform: translateY(-50%); background: rgba(0,0,0,0.8); border-radius: 25px; padding: 8px;">
+        <a href="../index.html" style="color: white; text-decoration: none; font-size: 20px; display: block; padding: 8px;">🏠</a>
+    </div>
+
+    <script>
+        let selectedStore = null;
+        let isMapView = true;
+
+        // 매장 선택
+        function selectStore(element, storeName) {
+            // 이전 선택 해제
+            document.querySelectorAll('.store-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // 새로운 선택
+            element.classList.add('selected');
+            selectedStore = {
+                name: storeName,
+                address: element.querySelector('.store-address').textContent
+            };
+            
+            // 하단 바 표시
+            const selectedBar = document.getElementById('selected-store-bar');
+            const selectedName = document.getElementById('selected-name');
+            const selectedAddress = document.getElementById('selected-address');
+            
+            selectedName.textContent = selectedStore.name;
+            selectedAddress.textContent = selectedStore.address;
+            selectedBar.style.display = 'block';
+        }
+
+        // 선택 확인
+        function confirmSelection() {
+            if (selectedStore) {
+                alert(`"${selectedStore.name}" 매장이 선택되었습니다!\n\n상품 쇼핑을 시작하세요.`);
+                // 실제로는 customer-home.html로 이동하거나 상품 페이지로 이동
+            }
+        }
+
+        // 뷰 토글 (지도/목록)
+        function toggleView() {
+            const mapView = document.querySelector('.map-view');
+            const storeList = document.querySelector('.store-list');
+            const toggleButton = document.querySelector('.view-toggle');
+            const floatingButton = document.querySelector('.floating-button');
+            
+            isMapView = !isMapView;
+            
+            if (isMapView) {
+                mapView.style.display = 'flex';
+                storeList.style.display = 'block';
+                toggleButton.textContent = '목록 보기';
+                floatingButton.textContent = '🗺️';
+            } else {
+                mapView.style.display = 'none';
+                storeList.style.display = 'block';
+                toggleButton.textContent = '지도 보기';
+                floatingButton.textContent = '📋';
+            }
+        }
+
+        // 필터 클릭
+        document.querySelectorAll('.filter-chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                
+                // 필터링 시뮬레이션
+                alert(`"${this.textContent}" 필터가 적용되었습니다.`);
+            });
+        });
+
+        // 검색 기능
+        document.querySelector('.search-input').addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            document.querySelectorAll('.store-card').forEach(card => {
+                const storeName = card.querySelector('.store-name').textContent.toLowerCase();
+                const storeAddress = card.querySelector('.store-address').textContent.toLowerCase();
+                
+                if (storeName.includes(query) || storeAddress.includes(query)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = query === '' ? 'block' : 'none';
+                }
+            });
+        });
+
+        // 초기 상태: 지도 + 목록 모두 표시
+        // toggleView();
+    </script>
+</body>
+</html>

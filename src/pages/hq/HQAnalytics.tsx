@@ -702,7 +702,7 @@ const HQAnalytics: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
             </div>
-            <h3 className="text-xl font-bold text-gray-900">🎁 상품별 매출 순위</h3>
+            <h3 className="text-xl font-bold text-gray-900">🎁 상품별 판매량 순위</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full">

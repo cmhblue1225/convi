@@ -417,6 +417,7 @@ const StoreInventory: React.FC = () => {
           store_id,
           product_id,
           price,
+          stock_quantity,
           safety_stock,
           max_stock,
           is_available,
@@ -437,62 +438,30 @@ const StoreInventory: React.FC = () => {
 
       if (!storeProductsData) return;
 
-      // 각 상품별로 재고 트랜잭션을 조회하여 총 재고량 계산
-      const allInventoryItems: (AllInventoryItem | null)[] = await Promise.all(
-        storeProductsData.map(async (storeProduct) => {
-          const { data: transactionsData, error: transactionsError } = await supabase
-            .from('inventory_transactions')
-            .select('quantity, transaction_type, new_quantity')
-            .eq('store_product_id', storeProduct.id);
+      // store_products.stock_quantity를 직접 사용 (이미 모든 배치의 합산된 재고)
+      const allInventoryItems: AllInventoryItem[] = storeProductsData.map((storeProduct) => {
+        return {
+          id: storeProduct.id,
+          store_id: storeProduct.store_id || '',
+          product_id: storeProduct.product_id || '',
+          price: storeProduct.price,
+          total_stock_quantity: storeProduct.stock_quantity || 0, // store_products의 실제 재고 사용
+          safety_stock: storeProduct.safety_stock || 0,
+          max_stock: storeProduct.max_stock || 0,
+          is_available: storeProduct.is_available || false,
+          product: {
+            name: storeProduct.products.name,
+            unit: storeProduct.products.unit,
+            base_price: storeProduct.products.base_price,
+            shelf_life_days: storeProduct.products.shelf_life_days // 실제 데이터베이스 값 사용
+          },
+          expiryDetails: [], // 모든 재고 모드에서는 유통기한 상세 정보는 표시하지 않음
+          promotionInfo: { promotion_type: null, promotion_name: null }
+        };
+      });
 
-          if (transactionsError) {
-            console.error('트랜잭션 조회 오류:', transactionsError);
-            return null;
-          }
-
-          // 총 재고량 계산
-          let totalStock = 0;
-          if (transactionsData) {
-            transactionsData.forEach((transaction) => {
-              if (transaction.transaction_type === 'in') {
-                totalStock += transaction.quantity;
-              } else if (transaction.transaction_type === 'out') {
-                totalStock -= transaction.quantity;
-              } else if (transaction.transaction_type === 'returned') {
-                // 반품의 경우 재고 증가
-                totalStock += transaction.quantity;
-              } else if (transaction.transaction_type === 'adjustment') {
-                totalStock = transaction.new_quantity || 0;
-              } else if (transaction.transaction_type === 'expired') {
-                totalStock -= transaction.quantity;
-              }
-            });
-          }
-
-          return {
-            id: storeProduct.id,
-            store_id: storeProduct.store_id || '',
-            product_id: storeProduct.product_id || '',
-            price: storeProduct.price,
-            total_stock_quantity: totalStock,
-            safety_stock: storeProduct.safety_stock || 0,
-            max_stock: storeProduct.max_stock || 0,
-            is_available: storeProduct.is_available || false,
-            product: {
-              name: storeProduct.products.name,
-              unit: storeProduct.products.unit,
-              base_price: storeProduct.products.base_price,
-              shelf_life_days: storeProduct.products.shelf_life_days // 실제 데이터베이스 값 사용
-            },
-            expiryDetails: [], // 모든 재고 모드에서는 유통기한 상세 정보는 표시하지 않음
-            promotionInfo: { promotion_type: null, promotion_name: null }
-          };
-        })
-      );
-
-      // null 값 제거하고 정렬
-      const validItems = allInventoryItems.filter(item => item !== null) as AllInventoryItem[];
-      validItems.sort((a, b) => a.product.name.localeCompare(b.product.name));
+      // 정렬
+      allInventoryItems.sort((a, b) => a.product.name.localeCompare(b.product.name));
 
       // 행사 정보 가져오기 - 임시로 주석 처리
       /*
@@ -525,7 +494,7 @@ const StoreInventory: React.FC = () => {
       }
       */
 
-      setAllInventoryItems(validItems);
+      setAllInventoryItems(allInventoryItems);
     } catch (error) {
       console.error('모든 재고 조회 오류:', error);
     }
@@ -1211,7 +1180,7 @@ const StoreInventory: React.FC = () => {
                   상품명
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  {viewMode === 'current' ? '통합 재고' : '배치별 재고'}
+                  {viewMode === 'current' ? '배치별 재고' : '통합 재고'}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   안전재고
