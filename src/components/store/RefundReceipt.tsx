@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { formatDateTime } from '../../utils/common';
 
 interface RefundReceiptProps {
@@ -7,18 +7,17 @@ interface RefundReceiptProps {
   storeInfo: any;
 }
 
-const RefundReceipt: React.FC<RefundReceiptProps> = ({
+const RefundReceipt = forwardRef<HTMLDivElement, RefundReceiptProps>(({
   refund,
   order,
   storeInfo
-}) => {
-
+}, ref) => {
   const formatCurrency = (amount: number) => {
     return amount?.toLocaleString() || '0';
   };
 
   return (
-    <div className="bg-white p-6 max-w-md mx-auto font-mono text-sm leading-relaxed print:shadow-none print:border print:border-gray-300">
+    <div ref={ref} className="bg-white p-6 max-w-md mx-auto font-mono text-sm leading-relaxed print:shadow-none print:border print:border-gray-300">
       {/* 환불 영수증 헤더 */}
       <div className="text-center border-b-2 border-gray-800 pb-4 mb-4">
         <h1 className="text-xl font-bold text-gray-800 mb-2">환불 영수증</h1>
@@ -136,6 +135,8 @@ const RefundReceipt: React.FC<RefundReceiptProps> = ({
 
     </div>
   );
-};
+});
+
+RefundReceipt.displayName = 'RefundReceipt';
 
 export default RefundReceipt;
