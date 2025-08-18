@@ -399,9 +399,23 @@ const OrderTracking: React.FC = () => {
                 {/* 결제 요약 */}
                 <div className="border-t border-gray-200 pt-3 space-y-1 text-xs text-gray-600">
                   <div className="flex justify-between">
-                    <span>주문 총액</span>
+                    <span>상품 총액 (부가세 포함)</span>
                     <span>{(order.subtotal + order.taxAmount + (order.deliveryFee || 0)).toLocaleString()}원</span>
                   </div>
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>└ 상품 금액</span>
+                    <span>{order.subtotal.toLocaleString()}원</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>└ 부가세</span>
+                    <span>{order.taxAmount.toLocaleString()}원</span>
+                  </div>
+                  {order.deliveryFee > 0 && (
+                    <div className="flex justify-between text-xs text-gray-500">
+                      <span>└ 배송비</span>
+                      <span>{order.deliveryFee.toLocaleString()}원</span>
+                    </div>
+                  )}
                   {(order.couponDiscount > 0 || order.pointsUsed > 0) && (
                     <div className="flex justify-between text-green-600">
                       <span>혜택 할인</span>

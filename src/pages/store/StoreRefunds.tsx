@@ -14,6 +14,7 @@ import {
 import { useAuthStore } from '../../stores/common/authStore';
 import { supabase } from '../../lib/supabase/client';
 import { RefundRequest, RefundStatus, RefundPriority } from '../../types/common';
+import ReceiptModal from '../../components/store/ReceiptModal';
 
 const StoreRefunds: React.FC = () => {
   const navigate = useNavigate();
@@ -27,6 +28,11 @@ const StoreRefunds: React.FC = () => {
   const [filterPriority, setFilterPriority] = useState<RefundPriority[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [processingRefund, setProcessingRefund] = useState<string | null>(null);
+  
+  // 구매 영수증 모달 상태
+  const [showOrderReceiptModal, setShowOrderReceiptModal] = useState(false);
+  const [selectedOrderForReceipt, setSelectedOrderForReceipt] = useState<any>(null);
+  const [storeInfo, setStoreInfo] = useState<any>(null);
 
   useEffect(() => {
     if (user?.id) {
@@ -44,20 +50,21 @@ const StoreRefunds: React.FC = () => {
         return;
       }
 
-      // 점주의 store_id 조회
+      // 점주의 store 정보 조회
       const { data: storeData, error: storeError } = await supabase
         .from('stores')
-        .select('id')
+        .select('id, name, address, phone')
         .eq('owner_id', user.id)
         .single();
 
       if (storeError || !storeData) {
-        console.error('점주의 store_id 조회 실패:', storeError);
+        console.error('점주의 store 정보 조회 실패:', storeError);
         setLoading(false);
         return;
       }
 
       const storeId = storeData.id;
+      setStoreInfo(storeData);
       console.log('점주 store_id:', storeId);
 
       // 간단한 쿼리로 테스트
@@ -164,6 +171,30 @@ const StoreRefunds: React.FC = () => {
   const handleProcessRefund = (refund: RefundRequest) => {
     setSelectedRefund(refund);
     setShowProcessModal(true);
+  };
+
+  // 구매 영수증 보기 함수
+  const handleViewOrderReceipt = async (refund: RefundRequest) => {
+    try {
+      // 환불 요청의 원주문 정보 조회
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', refund.order_id)
+        .single();
+
+      if (orderError) {
+        console.error('주문 정보 조회 실패:', orderError);
+        alert('주문 정보를 불러올 수 없습니다.');
+        return;
+      }
+
+      setSelectedOrderForReceipt(orderData);
+      setShowOrderReceiptModal(true);
+    } catch (error) {
+      console.error('구매 영수증 조회 실패:', error);
+      alert('구매 영수증을 불러올 수 없습니다.');
+    }
   };
 
   const handleStatusUpdate = async (newStatus: RefundStatus, notes?: string) => {
@@ -382,6 +413,16 @@ const StoreRefunds: React.FC = () => {
                           처리하기
                         </button>
                       )}
+                      {/* 모든 환불 요청에 구매 영수증 보기 버튼 추가 */}
+                      <button
+                        onClick={() => handleViewOrderReceipt(refund)}
+                        className="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      >
+                        <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        구매 영수증
+                      </button>
                     </div>
                   </div>
                 </li>
@@ -574,6 +615,16 @@ const StoreRefunds: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* 구매 영수증 모달 */}
+      <ReceiptModal
+        isOpen={showOrderReceiptModal}
+        onClose={() => setShowOrderReceiptModal(false)}
+        order={selectedOrderForReceipt}
+        storeName={storeInfo?.name}
+        storeAddress={storeInfo?.address}
+        storePhone={storeInfo?.phone}
+      />
     </div>
   );
 };

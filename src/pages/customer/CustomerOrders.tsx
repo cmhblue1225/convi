@@ -476,9 +476,18 @@ const CustomerOrders: React.FC = () => {
                     <div className="text-lg font-bold text-blue-600">
                       {order.totalAmount.toLocaleString()}원
                     </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      상품 {order.subtotal.toLocaleString()}원 + 부가세 {order.taxAmount.toLocaleString()}원
+                      {order.deliveryFee > 0 && ` + 배송비 ${order.deliveryFee.toLocaleString()}원`}
+                    </div>
                     {order.pointsUsed && order.pointsUsed > 0 && (
                       <div className="text-sm text-green-600 mt-1">
                         포인트 {order.pointsUsed.toLocaleString()}P 사용
+                      </div>
+                    )}
+                    {order.couponDiscountAmount && order.couponDiscountAmount > 0 && (
+                      <div className="text-sm text-red-600 mt-1">
+                        쿠폰 할인 -{order.couponDiscountAmount.toLocaleString()}원
                       </div>
                     )}
                   </div>
