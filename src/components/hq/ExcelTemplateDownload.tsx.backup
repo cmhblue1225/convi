@@ -1,0 +1,1106 @@
+import React, { useState } from 'react';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+
+// 브라우저 호환성을 위한 폴리필
+const downloadBlob = (blob: Blob, filename: string) => {
+  try {
+    // file-saver 사용
+    saveAs(blob, filename);
+    return true;
+  } catch (err) {
+    console.log('file-saver 실패, 대체 방법 시도...');
+    
+    try {
+      // createObjectURL 사용
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      return true;
+    } catch (err2) {
+      console.log('createObjectURL도 실패, 최후 방법 시도...');
+      
+      try {
+        // data URL 사용 (작은 파일의 경우)
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const dataUrl = e.target?.result as string;
+          const link = document.createElement('a');
+          link.href = dataUrl;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        };
+        reader.readAsDataURL(blob);
+        return true;
+      } catch (err3) {
+        console.error('모든 다운로드 방법 실패:', err3);
+        return false;
+      }
+    }
+  };
+
+const ExcelTemplateDownload: React.FC<{ className?: string }> = ({ className = '' }) => {
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const downloadTemplate = async () => {
+    try {
+      setIsDownloading(true);
+      setError(null);
+      
+      console.log('엑셀 파일 생성 시작...');
+      
+      const workbook = XLSX.utils.book_new();
+      
+      try {
+        // 📋 상품정보 시트
+        console.log('상품정보 시트 생성 중...');
+        const productSheet = createProductSheet();
+        
+        // 스타일 적용 확인
+        console.log('시트 생성 완료, 스타일 확인:', productSheet);
+        console.log('첫 번째 셀 스타일:', productSheet['A1']?.s);
+        
+        XLSX.utils.book_append_sheet(workbook, productSheet, '상품정보');
+        
+        // 📚 카테고리 가이드 시트
+        console.log('카테고리 가이드 시트 생성 중...');
+        const categorySheet = createCategorySheet();
+        XLSX.utils.book_append_sheet(workbook, categorySheet, '카테고리가이드');
+        
+        // 📖 사용설명서 시트
+        console.log('사용설명서 시트 생성 중...');
+        const guideSheet = createGuideSheet();
+        XLSX.utils.book_append_sheet(workbook, guideSheet, '사용설명서');
+      } catch (sheetError) {
+        console.error('시트 생성 중 오류:', sheetError);
+        throw new Error('엑셀 시트 생성 중 오류가 발생했습니다.');
+      }
+      
+      // 파일명 생성
+      const fileName = `상품등록_템플릿_${new Date().toISOString().split('T')[0]}.xlsx`;
+      
+      console.log('엑셀 파일을 Blob으로 변환 중...');
+      
+      try {
+        // XLSX.writeFile 대신 Blob을 사용하여 다운로드
+        const excelBuffer = XLSX.write(workbook, { 
+          bookType: 'xlsx', 
+          type: 'array',
+          compression: true
+        });
+        
+        const data = new Blob([excelBuffer], { 
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+        });
+        
+        console.log('다운로드 시작...');
+        
+        // 향상된 다운로드 함수 사용
+        const success = downloadBlob(data, fileName);
+        
+        if (success) {
+          console.log('엑셀 파일 다운로드 성공:', fileName);
+          setError(null);
+        } else {
+          throw new Error('다운로드 실패');
+        }
+      } catch (blobError) {
+        console.error('Blob 변환 또는 다운로드 오류:', blobError);
+        throw new Error('파일 변환 중 오류가 발생했습니다.');
+      }
+      
+    } catch (err) {
+      console.error('엑셀 파일 다운로드 오류:', err);
+      setError(err instanceof Error ? err.message : '파일 다운로드 중 오류가 발생했습니다. 다시 시도해주세요.');
+      
+      // 대체 방법 시도
+      tryAlternativeDownload();
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  // 대체 다운로드 방법
+  const tryAlternativeDownload = () => {
+    try {
+      console.log('대체 다운로드 방법 시도...');
+      
+      const workbook = XLSX.utils.book_new();
+      const productSheet = createProductSheet();
+      XLSX.utils.book_append_sheet(workbook, productSheet, '상품정보');
+      
+      const fileName = `상품등록_템플릿_${new Date().toISOString().split('T')[0]}.xlsx`;
+      
+      // 직접 XLSX.writeFile 시도
+      XLSX.writeFile(workbook, fileName);
+      
+      console.log('대체 방법으로 다운로드 성공');
+      setError(null);
+    } catch (err) {
+      console.error('대체 다운로드 방법도 실패:', err);
+      setError('파일 다운로드에 실패했습니다. 브라우저 설정을 확인해주세요.');
+    }
+  };
+
+  // 간단한 CSV 다운로드 (최후의 수단)
+  const downloadCSV = () => {
+    try {
+      console.log('CSV 다운로드 시작...');
+      
+      const csvContent = `상품명*,카테고리*,브랜드,제조사,단위,바코드,판매가*,원가,세율,상품설명,조리필요여부(Y/N),조리시간(분),활성상태(Y/N)*,이미지URL1,이미지URL2,이미지URL3
+코카콜라 330ml,음료,코카콜라,코카콜라컴퍼니,개,8801094001234,1500,1200,0.1,세계적으로 사랑받는 콜라,N,0,Y,https://example.com/cola1.jpg,https://example.com/cola2.jpg,
+포카칩 오리지널,과자,농심,농심,봉,8801094005678,2000,1500,0.1,바삭하고 고소한 포카칩,N,0,Y,https://example.com/chip1.jpg,https://example.com/chip3.jpg,https://example.com/chip3.jpg
+서울우유 1L,음료,서울우유,서울우유협동조합,개,8801094009012,3000,2500,0.1,신선한 서울우유,N,0,Y,https://example.com/milk1.jpg,,`;
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const fileName = `상품등록_템플릿_${new Date().toISOString().split('T')[0]}.csv`;
+      
+      const success = downloadBlob(blob, fileName);
+      
+      if (success) {
+        console.log('CSV 다운로드 성공');
+        setError(null);
+      } else {
+        throw new Error('CSV 다운로드 실패');
+      }
+    } catch (err) {
+      console.error('CSV 다운로드도 실패:', err);
+      setError('모든 다운로드 방법이 실패했습니다. 브라우저 설정을 확인해주세요.');
+    }
+  };
+
+  // 상품정보 시트 생성
+  const createProductSheet = () => {
+    // 기존 상품 추가 모달과 동일한 필드들
+    const headers = [
+      '상품명*',
+      '카테고리*',
+      '브랜드',
+      '제조사',
+      '단위*',
+      '바코드',
+      '판매가*',
+      '원가',
+      '세율',
+      '상품설명',
+      '조리필요여부',
+      '조리시간(분)',
+      '활성상태*'
+    ];
+
+    // 기존 모달과 동일한 샘플 데이터
+    const sampleData = [
+      [
+        '코카콜라 330ml',
+        '음료',
+        '코카콜라',
+        '코카콜라컴퍼니',
+        '개',
+        '8801094001234',
+        '1500',
+        '1200',
+        '0.10',
+        '세계적으로 사랑받는 콜라',
+        'false',
+        '0',
+        'true'
+      ],
+      [
+        '포카칩 오리지널',
+        '과자',
+        '농심',
+        '농심',
+        '봉',
+        '8801094005678',
+        '2000',
+        '1500',
+        '0.10',
+        '바삭하고 고소한 포카칩',
+        'false',
+        '0',
+        'true'
+      ],
+      [
+        '서울우유 1L',
+        '음료',
+        '서울우유',
+        '서울우유협동조합',
+        '개',
+        '8801094009012',
+        '3000',
+        '2500',
+        '0.10',
+        '신선한 서울우유',
+        'false',
+        '0',
+        'true'
+      ]
+    ];
+
+    // 입력 가이드 행 추가 (헤더와 샘플 데이터 사이)
+    const inputGuideRow = [
+      '← 상품명 입력 (필수)',
+      '← 카테고리 선택 (필수)',
+      '← 브랜드명 입력',
+      '← 제조사명 입력',
+      '← 단위 입력 (필수)',
+      '← 13자리 바코드',
+      '← 판매가 입력 (필수)',
+      '← 원가 입력',
+      '← 세율 입력 (기본: 0.10)',
+      '← 상품 설명 입력',
+      '← true/false 입력',
+      '← 분 단위 입력',
+      '← true/false 입력 (필수)'
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, inputGuideRow, ...sampleData]);
+    
+    // 열 너비 설정 (기존 필드에 맞게 조정)
+    worksheet['!cols'] = [
+      { width: 25 }, // 상품명
+      { width: 15 }, // 카테고리
+      { width: 15 }, // 브랜드
+      { width: 20 }, // 제조사
+      { width: 10 }, // 단위
+      { width: 18 }, // 바코드
+      { width: 12 }, // 판매가
+      { width: 10 }, // 원가
+      { width: 8 },  // 세율
+      { width: 30 }, // 상품설명
+      { width: 15 }, // 조리필요여부
+      { width: 15 }, // 조리시간
+      { width: 12 }  // 활성상태
+    ];
+
+    // 헤더 스타일링 - 기본 스타일
+    const headerRange = XLSX.utils.decode_range(worksheet['!ref']!);
+    for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+      if (worksheet[cellAddress]) {
+        // 헤더는 기본 스타일만 유지
+        worksheet[cellAddress].s = {
+          font: { 
+            bold: true,
+            size: 11
+          },
+          alignment: { 
+            horizontal: "center", 
+            vertical: "center"
+          }
+        };
+      }
+    }
+
+    // 1행에만 테두리 적용
+    for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: 1, c: col });
+      if (worksheet[cellAddress]) {
+        worksheet[cellAddress].s = {
+          border: {
+            top: { style: "thick", color: { rgb: "000000" } },
+            bottom: { style: "thick", color: { rgb: "000000" } },
+            left: { style: "thick", color: { rgb: "000000" } },
+            right: { style: "thick", color: { rgb: "000000" } }
+          }
+        };
+      }
+    }
+
+    // 입력 가이드 행 스타일링 - 사용자 안내용 (1행)
+    // 제거됨 - 중복 제거
+
+    // 1행 아래에 강한 구분선 추가 (2행)
+    // 제거됨 - 디자인 없음
+
+    // 샘플 데이터 행들 스타일링 (3행부터)
+    // 제거됨 - 디자인 없음
+
+    // 입력 공간 시작 부분에 시각적 구분선 추가
+    // 제거됨 - 디자인 없음
+
+    // 입력 공간 제목 행 추가 (5행) - 카테고리와 입력 공간 사이 구분
+    // 제거됨 - 디자인 없음
+    
+    // 입력 공간 제목 텍스트 설정
+    // 제거됨 - 디자인 없음
+
+    // 입력 공간 안내 텍스트 추가 (4행) - 카테고리와 입력 공간 사이
+    // 제거됨 - 디자인 없음
+
+    // 샘플 데이터 행 스타일링 - 줄무늬 패턴
+    // 제거됨 - 디자인 없음
+
+    // 필수 필드 강조 표시 (기존 모달과 동일하게 수정)
+    // 제거됨 - 디자인 없음
+
+    // 중요 필드 스타일링 (주황색 계열로 강조)
+    // 제거됨 - 디자인 없음
+
+    // 실제 입력 공간 스타일링 (7행부터 1000행까지)
+    // 제거됨 - 디자인 없음
+
+    // 입력 공간에 10행마다 구분선 추가 (시각적 구분)
+    // 제거됨 - 디자인 없음
+
+    // 입력 공간에 도움말 텍스트 추가 (1001행)
+    // 제거됨 - 디자인 없음
+
+    // 시각적 구분에 대한 추가 안내 (1005행)
+    // 제거됨 - 디자인 없음
+
+    // 데이터 유효성 검사 추가 - 임시로 제거
+    // addDataValidation(worksheet, headerRange);
+
+    return worksheet;
+  };
+
+  // 데이터 유효성 검사 및 조건부 서식 추가
+  const addDataValidation = (worksheet: any, headerRange: any) => {
+    // 카테고리 열에 드롭다운 메뉴 추가 (B열)
+    const categoryCol = 1; // B열
+    const categoryList = [
+      '음료', '과자', '생활용품', '냉동식품', '빵/베이커리', '육류/수산물'
+    ];
+    
+    // 조리필요여부 열에 드롭다운 메뉴 추가 (K열)
+    const cookRequiredCol = 10; // K열
+    const cookRequiredList = ['true', 'false'];
+    
+    // 활성상태 열에 드롭다운 메뉴 추가 (M열)
+    const activeStatusCol = 12; // M열
+    const activeStatusList = ['true', 'false'];
+
+    // 데이터 유효성 검사 규칙 추가
+    worksheet['!dataValidation'] = {
+      'B2:B1000': {
+        type: 'list',
+        formula1: `"${categoryList.join(',')}"`,
+        allowBlank: false,
+        showErrorMessage: true,
+        errorTitle: '입력 오류',
+        error: '카테고리 목록에서 선택해주세요'
+      },
+      'K2:K1000': {
+        type: 'list',
+        formula1: `"${cookRequiredList.join(',')}"`,
+        allowBlank: true,
+        showErrorMessage: true,
+        errorTitle: '입력 오류',
+        error: 'true 또는 false를 입력해주세요'
+      },
+      'M2:M1000': {
+        type: 'list',
+        formula1: `"${activeStatusList.join(',')}"`,
+        allowBlank: false,
+        showErrorMessage: true,
+        errorTitle: '입력 오류',
+        error: 'true 또는 false를 입력해주세요'
+      }
+    };
+
+    // 숫자 필드 형식 설정
+    const numericFields = [
+      { col: 6, name: '판매가' },      // G열
+      { col: 7, name: '원가' },          // H열
+      { col: 8, name: '세율' },          // I열
+      { col: 11, name: '조리시간' }      // L열
+    ];
+
+    numericFields.forEach(field => {
+      for (let row = 2; row <= 1000; row++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: field.col });
+        if (worksheet[cellAddress]) {
+          // 숫자 형식 설정
+          worksheet[cellAddress].z = field.col === 8 ? '0.00' : '0'; // 세율은 소수점 2자리
+        }
+      }
+    });
+
+    // 바코드 필드 형식 설정 (F열)
+    for (let row = 2; row <= 1000; row++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: row, c: 5 });
+      if (worksheet[cellAddress]) {
+        worksheet[cellAddress].z = '0000000000000'; // 13자리 숫자 형식
+      }
+    }
+  };
+
+  // 카테고리 가이드 시트 생성
+  const createCategorySheet = () => {
+    const data = [
+      ['📚 상품 카테고리 가이드'],
+      ['대분류', '중분류', '설명', '예시'],
+      ['음료', '탄산음료', '탄산이 포함된 음료', '콜라, 사이다, 환타'],
+      ['음료', '과일음료', '과일 주스 및 음료', '오렌지주스, 사과주스'],
+      ['음료', '커피음료', '커피 관련 음료', '아메리카노, 라떼, 모카'],
+      ['음료', '차음료', '차류 음료', '녹차, 홍차, 허브티'],
+      ['음료', '우유/유제품', '우유 및 유제품', '우유, 요구르트, 치즈'],
+      ['음료', '기타음료', '기타 음료류', '에너지드링크, 보조음료'],
+      [''],
+      ['과자', '스낵류', '간식용 과자', '포카칩, 새우깡, 감자칩'],
+      ['과자', '초콜릿', '초콜릿 제품', '초콜릿바, 초콜릿과자'],
+      ['과자', '비스킷', '비스킷류', '크래커, 쿠키, 웨하스'],
+      ['과자', '캔디', '사탕류', '젤리, 껌, 사탕'],
+      ['과자', '기타과자', '기타 과자류', '팝콘, 견과류'],
+      [''],
+      ['생활용품', '청소용품', '청소 관련 용품', '세제, 걸레, 빨래비누'],
+      ['생활용품', '화장용품', '화장 관련 용품', '화장지, 물티슈, 면봉'],
+      ['생활용품', '주방용품', '주방 관련 용품', '비닐봉지, 일회용품'],
+      ['생활용품', '기타용품', '기타 생활용품', '배터리, 전구, 도구'],
+      [''],
+      ['냉동식품', '냉동밥', '냉동된 밥류', '볶음밥, 김밥, 도시락'],
+      ['냉동식품', '냉동면', '냉동된 면류', '라면, 스파게티, 우동'],
+      ['냉동식품', '냉동고기', '냉동된 고기류', '돈까스, 치킨, 고기'],
+      ['냉동식품', '냉동야채', '냉동된 야채류', '콩, 당근, 브로콜리'],
+      ['냉동식품', '아이스크림', '아이스크림류', '바닐라, 초콜릿, 딸기'],
+      [''],
+      ['빵/베이커리', '식빵', '일반 식빵류', '토스트용빵, 샌드위치빵'],
+      ['빵/베이커리', '단과자', '달콤한 과자빵', '크로아상, 도넛, 케이크'],
+      ['빵/베이커리', '기타빵', '기타 빵류', '호빵, 찐빵, 만주'],
+      [''],
+      ['육류/수산물', '육류', '육류 제품', '돼지고기, 소고기, 닭고기'],
+      ['육류/수산물', '수산물', '수산물 제품', '참치, 연어, 새우'],
+      ['육류/수산물', '계란류', '계란 제품', '계란, 메추리알']
+    ];
+
+    // 사용자 입력 공간 추가
+    const userInputSection = [
+      [''],
+      ['사용자 정의 카테고리 추가'],
+      ['대분류', '중분류', '설명', '예시'],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', '']
+    ];
+
+    const allData = [...data, ...userInputSection];
+    const worksheet = XLSX.utils.aoa_to_sheet(allData);
+    
+    // 열 너비 설정
+    worksheet['!cols'] = [
+      { width: 15 },
+      { width: 15 },
+      { width: 30 },
+      { width: 40 }
+    ];
+
+    // 제목 스타일링 - 현대적인 디자인
+    const titleCell = worksheet['A1'];
+    if (titleCell) {
+      worksheet[titleCell.address].s = {
+        font: { 
+          bold: true, 
+          size: 18, 
+          color: { rgb: "2F2F2F" },
+          name: '맑은 고딕'
+        },
+        fill: { 
+          fgColor: { rgb: "FFD700" },
+          patternType: "solid"
+        },
+        alignment: { 
+          horizontal: "center",
+          vertical: "center"
+        },
+        border: {
+          bottom: { style: "thick", color: { rgb: "FFA500" } }
+        }
+      };
+    }
+
+    // 사용자 입력 섹션 제목 스타일링
+    const userInputTitleCell = worksheet[`A${data.length + 2}`];
+    if (userInputTitleCell) {
+      worksheet[userInputTitleCell.address].s = {
+        font: { 
+          bold: true, 
+          size: 14, 
+          color: { rgb: "FFFFFF" },
+          name: '맑은 고딕'
+        },
+        fill: { 
+          fgColor: { rgb: "9C27B0" },
+          patternType: "solid"
+        },
+        alignment: { 
+          horizontal: "center",
+          vertical: "center"
+        },
+        border: {
+          top: { style: "thick", color: { rgb: "7B1FA2" } },
+          bottom: { style: "thick", color: { rgb: "7B1FA2" } }
+        }
+      };
+    }
+
+    // 헤더 스타일링 - 깔끔한 파란색
+    const headerRange = XLSX.utils.decode_range(worksheet['!ref']!);
+    for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+      // 기존 헤더 (3행)
+      const cellAddress1 = XLSX.utils.encode_cell({ r: 2, c: col });
+      if (worksheet[cellAddress1]) {
+        worksheet[cellAddress1].s = {
+          font: { 
+            bold: true, 
+            color: { rgb: "FFFFFF" },
+            size: 11,
+            name: '맑은 고딕'
+          },
+          fill: { 
+            fgColor: { rgb: "5B9BD5" },
+            patternType: "solid"
+          },
+          alignment: { 
+            horizontal: "center", 
+            vertical: "center"
+          },
+          border: {
+            top: { style: "medium", color: { rgb: "4472C4" } },
+            bottom: { style: "medium", color: { rgb: "4472C4" } },
+            left: { style: "medium", color: { rgb: "4472C4" } },
+            right: { style: "medium", color: { rgb: "4472C4" } }
+          }
+        };
+      }
+
+      // 사용자 입력 섹션 헤더 (data.length + 4행)
+      const cellAddress2 = XLSX.utils.encode_cell({ r: data.length + 3, c: col });
+      if (worksheet[cellAddress2]) {
+        worksheet[cellAddress2].s = {
+          font: { 
+            bold: true, 
+            color: { rgb: "FFFFFF" },
+            size: 11,
+            name: '맑은 고딕'
+          },
+          fill: { 
+            fgColor: { rgb: "9C27B0" },
+            patternType: "solid"
+          },
+          alignment: { 
+            horizontal: "center", 
+            vertical: "center"
+          },
+          border: {
+            top: { style: "medium", color: { rgb: "7B1FA2" } },
+            bottom: { style: "medium", color: { rgb: "7B1FA2" } },
+            left: { style: "medium", color: { rgb: "7B1FA2" } },
+            right: { style: "medium", color: { rgb: "7B1FA2" } }
+          }
+        };
+      }
+    }
+
+    // 카테고리별 색상 구분 - 부드러운 파스텔 톤
+    const categoryColors = {
+      '음료': 'E3F2FD',
+      '과자': 'FFF3E0',
+      '생활용품': 'F3E5F5',
+      '냉동식품': 'E8F5E8',
+      '빵/베이커리': 'FFF8E1',
+      '육류/수산물': 'FFEBEE'
+    };
+
+    // 기존 데이터 행 스타일링 - 줄무늬 패턴과 카테고리별 색상
+    for (let row = 3; row < data.length; row++) {
+      const category = data[row][0];
+      const color = categoryColors[category] || 'FFFFFF';
+      const isEvenRow = row % 2 === 0;
+      
+      for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+        if (worksheet[cellAddress]) {
+          worksheet[cellAddress].s = {
+            font: { 
+              size: 10,
+              name: '맑은 고딕',
+              color: { rgb: "2F2F2F" }
+            },
+            fill: { 
+              fgColor: { rgb: isEvenRow ? color : "FFFFFF" },
+              patternType: "solid"
+            },
+            border: {
+              top: { style: "thin", color: { rgb: "E0E0E0" } },
+              bottom: { style: "thin", color: { rgb: "E0E0E0" } },
+              left: { style: "thin", color: { rgb: "E0E0E0" } },
+              right: { style: "thin", color: { rgb: "E0E0E0" } }
+            }
+          };
+        }
+      }
+    }
+
+    // 사용자 입력 공간 스타일링
+    for (let row = data.length + 4; row < allData.length; row++) {
+      for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+        if (worksheet[cellAddress]) {
+          const isEvenRow = row % 2 === 0;
+          worksheet[cellAddress].s = {
+            font: { 
+              size: 10,
+              name: '맑은 고딕',
+              color: { rgb: "666666" }
+            },
+            fill: { 
+              fgColor: { rgb: isEvenRow ? "F8F9FA" : "FFFFFF" },
+              patternType: "solid"
+            },
+            border: {
+              top: { style: "thin", color: { rgb: "E0E0E0" } },
+              bottom: { style: "thin", color: { rgb: "E0E0E0" } },
+              left: { style: "thin", color: { rgb: "E0E0E0" } },
+              right: { style: "thin", color: { rgb: "E0E0E0" } }
+            },
+            alignment: {
+              horizontal: "left",
+              vertical: "center"
+            }
+          };
+        }
+      }
+    }
+
+    // 카테고리 구분선 강조
+    const separatorRows = [2, 8, 13, 18, 22, 25, 28];
+    separatorRows.forEach(row => {
+      for (let col = 0; col < 4; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+        if (worksheet[cellAddress]) {
+          worksheet[cellAddress].s = {
+            ...worksheet[cellAddress].s,
+            border: {
+              top: { style: "thick", color: { rgb: "9E9E9E" } },
+              bottom: { style: "thick", color: { rgb: "9E9E9E" } }
+            }
+          };
+        }
+      }
+    });
+
+    return worksheet;
+  };
+
+  // 사용설명서 시트 생성
+  const createGuideSheet = () => {
+    const data = [
+      ['상품 등록 사용설명서'],
+      [''],
+      ['필수 입력 항목 (* 표시)'],
+      ['항목', '설명', '입력 형식', '예시'],
+      ['상품명*', '고객에게 표시될 상품 이름', '한글/영문', '콜라, 사이다'],
+      ['카테고리*', '상품 분류', '드롭다운에서 선택', '음료, 과자'],
+      ['판매가*', '상품 판매 가격', '숫자만', '1500, 2000'],
+      ['활성상태*', '상품 판매 여부', '드롭다운에서 선택', 'Y (활성), N (비활성)'],
+      [''],
+      ['선택 입력 항목'],
+      ['항목', '설명', '입력 형식', '예시'],
+      ['브랜드', '상품 브랜드명', '텍스트', '코카콜라, 펩시'],
+      ['제조사', '제조 회사명', '텍스트', '롯데칠성, 해태제과'],
+      ['단위', '판매 단위', '개, 봉, kg, L 등', '개, 봉, 500ml'],
+      ['바코드', '상품 바코드 번호', '13자리 숫자', '8801094001234'],
+      ['원가', '상품 원가 (수익률 계산용)', '숫자만', '1200, 1500'],
+      ['세율', '부가세율', '소수점 (기본값: 0.1)', '0.1 (10%)'],
+      ['상품설명', '상품에 대한 자세한 설명', '텍스트', '세계적으로 사랑받는 콜라'],
+      ['조리필요여부', '조리가 필요한 상품인지 여부', '드롭다운에서 선택', 'Y (필요), N (불필요)'],
+      ['조리시간', '조리 소요시간 (조리필요시)', '분 단위', '5, 10, 15'],
+      ['이미지URL1~3', '상품 이미지 링크 (최대 3개)', 'URL 주소', 'https://example.com/image.jpg'],
+      [''],
+      ['주의사항'],
+      ['• 상품명은 필수 입력 항목입니다'],
+      ['• 카테고리는 드롭다운에서 선택하세요'],
+      ['• 판매가는 0보다 커야 합니다'],
+      ['• 조리필요여부가 Y인 경우에만 조리시간을 입력하세요'],
+      ['• 활성상태는 드롭다운에서 Y 또는 N을 선택하세요'],
+      ['• 바코드는 13자리 숫자로 입력하세요'],
+      ['• 세율은 0~1 사이의 소수점으로 입력하세요 (예: 0.1 = 10%)'],
+      ['• 이미지URL은 유효한 링크여야 하며, 최대 3개까지 입력 가능합니다'],
+      ['• 빈 셀은 자동으로 기본값으로 설정됩니다'],
+      [''],
+      ['사용자 메모 및 참고사항'],
+      ['항목', '내용', '날짜', '담당자'],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', ''],
+      ['', '', '', '']
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(data);
+    
+    // 열 너비 설정
+    worksheet['!cols'] = [
+      { width: 20 },
+      { width: 40 },
+      { width: 25 },
+      { width: 35 }
+    ];
+
+    // 제목 스타일링 - 현대적인 골드 디자인
+    const titleCell = worksheet['A1'];
+    if (titleCell) {
+      worksheet[titleCell.address].s = {
+        font: { 
+          bold: true, 
+          size: 18, 
+          color: { rgb: "2F2F2F" },
+          name: '맑은 고딕'
+        },
+        fill: { 
+          fgColor: { rgb: "FFD700" },
+          patternType: "solid"
+        },
+        alignment: { 
+          horizontal: "center",
+          vertical: "center"
+        },
+        border: {
+          bottom: { style: "thick", color: { rgb: "FFA500" } }
+        }
+      };
+    }
+
+    // 사용자 메모 섹션 제목 스타일링
+    const memoTitleCell = worksheet['A30'];
+    if (memoTitleCell) {
+      worksheet[memoTitleCell.address].s = {
+        font: { 
+          bold: true, 
+          size: 14, 
+          color: { rgb: "FFFFFF" },
+          name: '맑은 고딕'
+        },
+        fill: { 
+          fgColor: { rgb: "4CAF50" },
+          patternType: "solid"
+        },
+        alignment: { 
+          horizontal: "center",
+          vertical: "center"
+        },
+        border: {
+          top: { style: "thick", color: { rgb: "388E3C" } },
+          bottom: { style: "thick", color: { rgb: "388E3C" } }
+        }
+      };
+    }
+
+    // 섹션 헤더 스타일링 - 현대적인 색상 체계
+    const sectionHeaders = [
+      { row: 2, color: 'E57373', title: '필수 입력 항목' },
+      { row: 9, color: '64B5F6', title: '선택 입력 항목' },
+      { row: 21, color: 'FFB74D', title: '주의사항' },
+      { row: 30, color: '4CAF50', title: '사용자 메모 및 참고사항' }
+    ];
+    
+    sectionHeaders.forEach(section => {
+      const cellAddress = XLSX.utils.encode_cell({ r: section.row, c: 0 });
+      if (worksheet[cellAddress]) {
+        worksheet[cellAddress].s = {
+          font: { 
+            bold: true, 
+            color: { rgb: "FFFFFF" },
+            size: 12,
+            name: '맑은 고딕'
+          },
+          fill: { 
+            fgColor: { rgb: section.color },
+            patternType: "solid"
+          },
+          border: {
+            top: { style: "medium", color: { rgb: "000000" } },
+            bottom: { style: "medium", color: { rgb: "000000" } }
+          }
+        };
+      }
+    });
+
+    // 테이블 헤더 스타일링 - 깔끔한 파란색
+    const tableHeaders = [3, 10, 22, 31];
+    tableHeaders.forEach(row => {
+      for (let col = 0; col < 4; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+        if (worksheet[cellAddress]) {
+          worksheet[cellAddress].s = {
+            font: { 
+              bold: true, 
+              color: { rgb: "FFFFFF" },
+              size: 10,
+              name: '맑은 고딕'
+            },
+            fill: { 
+              fgColor: { rgb: "5B9BD5" },
+              patternType: "solid"
+            },
+            alignment: { 
+              horizontal: "center", 
+              vertical: "center"
+            },
+            border: {
+              top: { style: "thin", color: { rgb: "4472C4" } },
+              bottom: { style: "thin", color: { rgb: "4472C4" } },
+              left: { style: "thin", color: { rgb: "4472C4" } },
+              right: { style: "thin", color: { rgb: "4472C4" } }
+            }
+          };
+        }
+      }
+    });
+
+    // 데이터 행 스타일링 - 줄무늬 패턴
+    for (let row = 4; row < data.length; row++) {
+      if (row !== 8 && row !== 20 && row !== 29) { // 빈 행 제외
+        for (let col = 0; col < 4; col++) {
+          const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+          if (worksheet[cellAddress]) {
+            const isEvenRow = row % 2 === 0;
+            worksheet[cellAddress].s = {
+              font: { 
+                size: 10,
+                name: '맑은 고딕',
+                color: { rgb: "2F2F2F" }
+              },
+              fill: { 
+                fgColor: { rgb: isEvenRow ? "F8F9FA" : "FFFFFF" },
+                patternType: "solid"
+              },
+              border: {
+                top: { style: "thin", color: { rgb: "E0E0E0" } },
+                bottom: { style: "thin", color: { rgb: "E0E0E0" } },
+                left: { style: "thin", color: { rgb: "E0E0E0" } },
+                right: { style: "thin", color: { rgb: "E0E0E0" } }
+              }
+            };
+          }
+        }
+      }
+    }
+
+    // 필수 항목 강조 표시
+    const requiredRows = [4, 5, 6, 7]; // 필수 입력 항목 행들
+    requiredRows.forEach(row => {
+      const cellAddress = XLSX.utils.encode_cell({ r: row, c: 0 });
+      if (worksheet[cellAddress]) {
+        worksheet[cellAddress].s = {
+          ...worksheet[cellAddress].s,
+          fill: { 
+            fgColor: { rgb: "FFCDD2" },
+            patternType: "solid"
+          },
+          font: {
+            ...worksheet[cellAddress].s.font,
+            bold: true
+          }
+        };
+      }
+    });
+
+    // 사용자 메모 공간 스타일링 (32행부터)
+    for (let row = 32; row < data.length; row++) {
+      for (let col = 0; col < 4; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+        if (worksheet[cellAddress]) {
+          const isEvenRow = row % 2 === 0;
+          worksheet[cellAddress].s = {
+            font: { 
+              size: 10,
+              name: '맑은 고딕',
+              color: { rgb: "666666" }
+            },
+            fill: { 
+              fgColor: { rgb: isEvenRow ? "F1F8E9" : "FFFFFF" },
+              patternType: "solid"
+            },
+            border: {
+              top: { style: "thin", color: { rgb: "E0E0E0" } },
+              bottom: { style: "thin", color: { rgb: "E0E0E0" } },
+              left: { style: "thin", color: { rgb: "E0E0E0" } },
+              right: { style: "thin", color: { rgb: "E0E0E0" } }
+            },
+            alignment: {
+              horizontal: "left",
+              vertical: "center"
+            }
+          };
+        }
+      }
+    }
+
+    return worksheet;
+  };
+
+  return (
+    <div className={`bg-white rounded-2xl shadow-xl border border-gray-100 p-8 ${className}`}>
+      <div className="text-center mb-8">
+        <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+          <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <h3 className="text-2xl font-bold text-gray-900 mb-3">
+          📊 엑셀 템플릿 다운로드
+        </h3>
+        <p className="text-gray-600 text-lg">
+          상품 등록용 엑셀 템플릿을 다운로드하세요
+        </p>
+      </div>
+
+      <div className="space-y-4 mb-8">
+        <div className="flex items-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+          <div className="w-3 h-3 bg-blue-500 rounded-full mr-4 flex-shrink-0"></div>
+          <span className="text-blue-800 font-medium">📋 상품정보 시트 - 기존 모달과 동일한 필드 구성</span>
+        </div>
+        <div className="flex items-center p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
+          <div className="w-3 h-3 bg-green-500 rounded-full mr-4 flex-shrink-0"></div>
+          <span className="text-green-800 font-medium">📚 카테고리 가이드 - 상품 분류 기준</span>
+        </div>
+        <div className="flex items-center p-4 bg-gradient-to-r from-purple-50 to-violet-50 rounded-xl border border-purple-100">
+          <div className="w-3 h-3 bg-purple-500 rounded-full mr-4 flex-shrink-0"></div>
+          <span className="text-purple-800 font-medium">📖 사용설명서 - 상세한 입력 방법</span>
+        </div>
+      </div>
+
+      <div className="mb-8 p-6 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
+        <div className="flex items-center mb-4">
+          <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center mr-3">
+            <span className="text-white font-bold text-sm">🔄</span>
+          </div>
+          <h4 className="font-bold text-amber-800 text-lg">기존 모달과 동일한 구성</h4>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-amber-800">
+          <div className="flex items-start">
+            <span className="w-2 h-2 bg-amber-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+            <span>상품명, 카테고리, 단위, 판매가, 활성상태 (필수)</span>
+          </div>
+          <div className="flex items-start">
+            <span className="w-2 h-2 bg-amber-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+            <span>브랜드, 제조사, 바코드, 원가, 세율 (선택)</span>
+          </div>
+          <div className="flex items-start">
+            <span className="w-2 h-2 bg-amber-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+            <span>상품설명, 조리필요여부, 조리시간 (선택)</span>
+          </div>
+          <div className="flex items-start">
+            <span className="w-2 h-2 bg-amber-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+            <span>이미지, 영양정보, 알레르기정보는 별도 관리</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 에러 메시지 표시 */}
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+          <div className="flex items-center">
+            <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+              <span className="text-white text-sm">!</span>
+            </div>
+            <div className="flex-1">
+              <p className="text-red-800 font-medium">{error}</p>
+              <div className="mt-3 flex space-x-3">
+                <button
+                  onClick={tryAlternativeDownload}
+                  className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  다시 시도
+                </button>
+                <button
+                  onClick={downloadCSV}
+                  className="px-4 py-2 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 transition-colors"
+                >
+                  CSV로 다운로드
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <button
+        onClick={downloadTemplate}
+        disabled={isDownloading}
+        className={`w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1 ${
+          isDownloading ? 'opacity-50 cursor-not-allowed' : ''
+        }`}
+      >
+        {isDownloading ? (
+          <>
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+            <span className="text-lg">다운로드 중...</span>
+          </>
+        ) : (
+          <>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span className="text-lg">엑셀 템플릿 다운로드</span>
+          </>
+        )}
+      </button>
+
+      {/* 대체 다운로드 옵션 */}
+      <div className="mt-6 space-y-3">
+        <div className="text-center">
+          <p className="text-sm text-gray-600 mb-3">다운로드에 문제가 있나요?</p>
+          <div className="flex space-x-3 justify-center">
+            <button
+              onClick={tryAlternativeDownload}
+              className="px-4 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              직접 다운로드
+            </button>
+            <button
+              onClick={downloadCSV}
+              className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
+            >
+              CSV 템플릿
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+        <div className="flex items-center justify-center">
+          <span className="text-blue-600 text-sm font-medium">
+            💡 다운로드 후 카테고리가이드를 참고하여 상품 정보를 입력하세요
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ExcelTemplateDownload;

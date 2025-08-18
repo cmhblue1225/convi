@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase/client';
 import type { Product, Category, Coupon, PointSettings } from '../../types/common';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -31,6 +32,7 @@ interface Promotion {
 }
 
 const HQProducts: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'coupons' | 'points'>('products');
   const [products, setProducts] = useState<Product[]>([]);
@@ -229,20 +231,61 @@ const HQProducts: React.FC = () => {
   };
 
   const handleProductDelete = async (productId: string) => {
-    if (!confirm('정말로 이 상품을 삭제하시겠습니까?')) return;
+    if (!confirm('정말로 이 상품을 삭제하시겠습니까?\n\n⚠️ 주의: 이 상품과 연결된 모든 지점의 재고 정보도 함께 삭제됩니다.')) return;
     
     try {
-      const { error } = await supabase
+      console.log('🗑️ 상품 삭제 시작:', productId);
+      
+      // 1단계: 관련된 store_products 먼저 삭제
+      console.log('1️⃣ store_products 삭제 중...');
+      const { error: storeProductsError } = await supabase
+        .from('store_products')
+        .delete()
+        .eq('product_id', productId);
+      
+      if (storeProductsError) {
+        console.error('store_products 삭제 실패:', storeProductsError);
+        throw new Error(`지점 상품 정보 삭제 실패: ${storeProductsError.message}`);
+      }
+      
+      console.log('✅ store_products 삭제 완료');
+      
+      // 2단계: 관련된 promotion_products 삭제
+      console.log('2️⃣ promotion_products 삭제 중...');
+      const { error: promotionProductsError } = await supabase
+        .from('promotion_products')
+        .delete()
+        .eq('product_id', productId);
+      
+      if (promotionProductsError) {
+        console.error('promotion_products 삭제 실패:', promotionProductsError);
+        // 경고만 표시하고 계속 진행
+        console.warn('⚠️ promotion_products 삭제 실패, 계속 진행');
+      } else {
+        console.log('✅ promotion_products 삭제 완료');
+      }
+      
+      // 3단계: 상품 삭제
+      console.log('3️⃣ 상품 삭제 중...');
+      const { error: productError } = await supabase
         .from('products')
         .delete()
         .eq('id', productId);
       
-      if (error) throw error;
+      if (productError) {
+        console.error('상품 삭제 실패:', productError);
+        throw new Error(`상품 삭제 실패: ${productError.message}`);
+      }
+      
+      console.log('✅ 상품 삭제 완료');
+      
+      // 성공 시 처리
       fetchProducts();
       alert('상품이 성공적으로 삭제되었습니다.');
+      
     } catch (error) {
       console.error('상품 삭제 오류:', error);
-      alert('상품 삭제 중 오류가 발생했습니다.');
+      alert(`상품 삭제 중 오류가 발생했습니다:\n${error instanceof Error ? error.message : '알 수 없는 오류'}`);
     }
   };
 
@@ -424,14 +467,11 @@ const HQProducts: React.FC = () => {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold">상품 및 행사 관리</h2>
           <button
-            onClick={() => {
-              setEditingProduct({} as Product);
-              setShowProductModal(true);
-            }}
+            onClick={() => navigate('/hq/product-excel-template')}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
           >
             <PlusIcon className="w-5 h-5" />
-            <span>새 상품 추가</span>
+            <span>엑셀로 추가</span>
           </button>
         </div>
 

@@ -50,6 +50,7 @@ import HQProducts from './pages/hq/HQProducts';
 
 import HQSupply from './pages/hq/HQSupply';
 import HQAnalytics from './pages/hq/HQAnalytics';
+import ProductExcelTemplate from './pages/hq/ProductExcelTemplate';
 
 // Support Pages
 import CustomerSupport from './pages/support/CustomerSupport';
@@ -204,6 +205,7 @@ function App() {
               <Route path="dashboard" element={<HQDashboard />} />
               <Route path="stores" element={<HQStores />} />
               <Route path="products" element={<HQProducts />} />
+              <Route path="product-excel-template" element={<ProductExcelTemplate />} />
               
               <Route path="supply" element={<HQSupply />} />
               <Route path="analytics" element={<HQAnalytics />} />
