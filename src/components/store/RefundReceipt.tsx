@@ -139,7 +139,7 @@ const RefundReceipt = forwardRef<HTMLDivElement, RefundReceiptProps>(({
       <div className="text-center text-xs text-gray-500 mt-6">
         <div>환불 처리가 완료되었습니다.</div>
         <div>문의사항이 있으시면 매장에 연락해주세요.</div>
-        <div className="mt-2">발행일시: {formatDate(new Date().toISOString())}</div>
+        <div className="mt-2">발행일시: {formatDateTime(new Date().toISOString())}</div>
       </div>
 
     </div>
