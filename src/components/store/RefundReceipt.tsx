@@ -1,4 +1,5 @@
 import React, { forwardRef } from 'react';
+import { formatDateTime } from '../../utils/common';
 
 interface RefundReceiptProps {
   refund: any;
@@ -11,16 +12,6 @@ const RefundReceipt = forwardRef<HTMLDivElement, RefundReceiptProps>(({
   order,
   storeInfo
 }, ref) => {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   const formatCurrency = (amount: number) => {
     return amount?.toLocaleString() || '0';
   };
@@ -144,6 +135,9 @@ const RefundReceipt = forwardRef<HTMLDivElement, RefundReceiptProps>(({
 
     </div>
   );
+});
+
+RefundReceipt.displayName = 'RefundReceipt';
 });
 
 RefundReceipt.displayName = 'RefundReceipt';
