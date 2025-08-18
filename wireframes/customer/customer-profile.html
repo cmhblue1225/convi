@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마이페이지 - 와이어프레임</title>
+    <link rel="stylesheet" href="../styles/wireframe.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+    <style>
+        .profile-header {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            padding: 20px 16px;
+            position: relative;
+        }
+        
+        .profile-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            position: relative;
+        }
+        
+        .profile-details h2 {
+            font-size: 24px;
+            margin: 0 0 4px 0;
+        }
+        
+        .profile-details p {
+            font-size: 14px;
+            margin: 0;
+            opacity: 0.9;
+        }
+        
+        .profile-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 16px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        
+        .menu-section {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin: 16px;
+            overflow: hidden;
+        }
+        
+        .section-title {
+            background: #f8f9fa;
+            padding: 12px 16px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #495057;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid #f8f9fa;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+        
+        .menu-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .menu-icon {
+            width: 40px;
+            height: 40px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-right: 12px;
+        }
+        
+        .menu-content {
+            flex: 1;
+        }
+        
+        .menu-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #212529;
+            margin-bottom: 4px;
+        }
+        
+        .menu-subtitle {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .menu-arrow {
+            color: #6c757d;
+            font-size: 18px;
+        }
+        
+        .menu-badge {
+            background: #dc3545;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-right: 8px;
+        }
+        
+        .points-card {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .points-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+        
+        .points-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .points-title {
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .points-amount {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .points-description {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        .coupon-section {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin: 16px;
+            padding: 20px;
+        }
+        
+        .coupon-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .coupon-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .coupon-item {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .coupon-info {
+            flex: 1;
+        }
+        
+        .coupon-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 4px;
+        }
+        
+        .coupon-details {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .coupon-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #dc3545;
+        }
+        
+        .recent-activity {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin: 16px;
+            padding: 20px;
+        }
+        
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+        
+        .activity-icon {
+            width: 32px;
+            height: 32px;
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        
+        .activity-content {
+            flex: 1;
+        }
+        
+        .activity-title {
+            font-size: 14px;
+            color: #495057;
+            margin-bottom: 2px;
+        }
+        
+        .activity-time {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #dee2e6;
+            padding: 8px 0;
+            display: flex;
+            justify-content: space-around;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px;
+            text-decoration: none;
+            color: #6c757d;
+            font-size: 12px;
+        }
+        
+        .nav-item.active {
+            color: #007bff;
+        }
+        
+        .content-wrapper {
+            padding-bottom: 80px;
+        }
+    </style>
+</head>
+<body style="background: #f8f9fa;">
+    <!-- 프로필 헤더 -->
+    <div class="profile-header">
+        <button class="back-button" onclick="history.back()">←</button>
+        
+        <div class="profile-info">
+            <div class="profile-avatar">👤</div>
+            <div class="profile-details">
+                <h2>김고객님</h2>
+                <p>kimcustomer@email.com</p>
+                <p>회원 가입일: 2024.03.15</p>
+            </div>
+        </div>
+        
+        <div class="profile-stats">
+            <div class="stat-item">
+                <div class="stat-number">24</div>
+                <div class="stat-label">총 주문</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">156,800</div>
+                <div class="stat-label">총 구매금액</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">4.8★</div>
+                <div class="stat-label">평균 평점</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <!-- 포인트 카드 -->
+        <div class="points-card">
+            <div class="points-header">
+                <div class="points-title">🎁 적립 포인트</div>
+                <button style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;">
+                    사용하기
+                </button>
+            </div>
+            <div class="points-amount">2,450 P</div>
+            <div class="points-description">다음 주문에서 사용 가능합니다</div>
+        </div>
+
+        <!-- 쿠폰 -->
+        <div class="coupon-section">
+            <div class="coupon-header">
+                <h3 style="margin: 0; font-size: 16px; color: #495057;">🎟️ 보유 쿠폰</h3>
+                <a href="#" style="color: #007bff; font-size: 14px; text-decoration: none;">전체보기</a>
+            </div>
+            <div class="coupon-list">
+                <div class="coupon-item">
+                    <div class="coupon-info">
+                        <div class="coupon-title">신규회원 할인쿠폰</div>
+                        <div class="coupon-details">1만원 이상 구매시 • 2025.02.15까지</div>
+                    </div>
+                    <div class="coupon-value">1,000원</div>
+                </div>
+                <div class="coupon-item">
+                    <div class="coupon-info">
+                        <div class="coupon-title">음료 할인쿠폰</div>
+                        <div class="coupon-details">음료 구매시 • 2025.02.28까지</div>
+                    </div>
+                    <div class="coupon-value">15%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 계정 관리 -->
+        <div class="menu-section">
+            <div class="section-title">계정 관리</div>
+            <a href="#" class="menu-item" onclick="editProfile()">
+                <div class="menu-icon">✏️</div>
+                <div class="menu-content">
+                    <div class="menu-title">개인정보 수정</div>
+                    <div class="menu-subtitle">이름, 전화번호, 비밀번호 변경</div>
+                </div>
+                <div class="menu-arrow">›</div>
+            </a>
+            <a href="#" class="menu-item" onclick="manageAddresses()">
+                <div class="menu-icon">📍</div>
+                <div class="menu-content">
+                    <div class="menu-title">배송지 관리</div>
+                    <div class="menu-subtitle">기본 배송지 설정 및 관리</div>
+                </div>
+                <div class="menu-arrow">›</div>
+            </a>
+            <a href="#" class="menu-item" onclick="paymentMethods()">
+                <div class="menu-icon">💳</div>
+                <div class="menu-content">
+                    <div class="menu-title">결제수단 관리</div>
+                    <div class="menu-subtitle">카드 등록 및 기본 결제수단 설정</div>
+                </div>
+                <div class="menu-arrow">›</div>
+            </a>
+        </div>
+
+        <!-- 쇼핑 정보 -->
+        <div class="menu-section">
+            <div class="section-title">쇼핑 정보</div>
+            <a href="customer-orders.html" class="menu-item">
+                <div class="menu-icon">📦</div>
+                <div class="menu-content">
+                    <div class="menu-title">주문 내역</div>
+                    <div class="menu-subtitle">주문 현황 및 과거 주문 확인</div>
+                </div>
+                <div class="menu-arrow">›</div>
+            </a>
+            <a href="#" class="menu-item" onclick="viewReviews()">
+                <div class="menu-icon">⭐</div>
+                <div class="menu-content">
+                    <div class="menu-title">리뷰 관리</div>
+                    <div class="menu-subtitle">작성한 리뷰 확인 및 수정</div>
+                </div>
+                <div class="menu-arrow">›</div>
+            </a>
+            <a href="#" class="menu-item" onclick="viewWishlist()">
+                <div class="menu-icon">❤️</div>
+                <div class="menu-content">
+                    <div class="menu-title">찜 목록</div>
+                    <div class="menu-subtitle">관심 상품 모아보기</div>
+                </div>
+                <div class="menu-arrow">›</div>
+            </a>
+            <a href="customer-refunds.html" class="menu-item">
+                <div class="menu-icon">💰</div>
+                <div class="menu-content">
+                    <div class="menu-title">환불/취소 내역</div>
+                    <div class="menu-subtitle">환불 신청 및 진행 상황</div>
+                </div>
+                <div class="menu-arrow">›</div>
+            </a>
+        </div>
+
+        <!-- 혜택 -->
+        <div class="menu-section">
+            <div class="section-title">혜택</div>
+            <a href="promotion-products.html" class="menu-item">
+                <div class="menu-icon">🎉</div>
+                <div class="menu-content">
+                    <div class="menu-title">진행중인 이벤트</div>
+                    <div class="menu-subtitle">할인 행사 및 프로모션 확인</div>
+                </div>
+                <div class="menu-badge">NEW</div>
+                <div class="menu-arrow">›</div>
+            </a>
+            <a href="#" class="menu-item" onclick="viewCoupons()">
+                <div class="menu-icon">🎟️</div>
+                <div class="menu-content">
+                    <div class="menu-title">쿠폰함</div>
+                    <div class="menu-subtitle">보유 쿠폰 및 쿠폰 다운로드</div>
+                </div>
+                <div class="menu-arrow">›</div>
+            </a>
+            <a href="#" class="menu-item" onclick="pointHistory()">
+                <div class="menu-icon">💎</div>
+                <div class="menu-content">
+                    <div class="menu-title">포인트 내역</div>
+                    <div class="menu-subtitle">포인트 적립 및 사용 내역</div>
+                </div>
+                <div class="menu-arrow">›</div>
+            </a>
+        </div>
+
+        <!-- 고객 지원 -->
+        <div class="menu-section">
+            <div class="section-title">고객 지원</div>
+            <a href="#" class="menu-item" onclick="contactSupport()">
+                <div class="menu-icon">📞</div>
+                <div class="menu-content">
+                    <div class="menu-title">고객센터</div>
+                    <div class="menu-subtitle">1:1 문의 및 전화 상담</div>
+                </div>
+                <div class="menu-arrow">›</div>
+            </a>
+            <a href="#" class="menu-item" onclick="viewFAQ()">
+                <div class="menu-icon">❓</div>
+                <div class="menu-content">
+                    <div class="menu-title">자주 묻는 질문</div>
+                    <div class="menu-subtitle">FAQ 및 이용 가이드</div>
+                </div>
+                <div class="menu-arrow">›</div>
+            </a>
+            <a href="#" class="menu-item" onclick="viewNotices()">
+                <div class="menu-icon">📢</div>
+                <div class="menu-content">
+                    <div class="menu-title">공지사항</div>
+                    <div class="menu-subtitle">서비스 공지 및 업데이트</div>
+                </div>
+                <div class="menu-arrow">›</div>
+            </a>
+        </div>
+
+        <!-- 최근 활동 -->
+        <div class="recent-activity">
+            <h3 style="margin-bottom: 16px; font-size: 16px; color: #495057;">📊 최근 활동</h3>
+            <div class="activity-item">
+                <div class="activity-icon">🛒</div>
+                <div class="activity-content">
+                    <div class="activity-title">GS25 강남점에서 주문</div>
+                    <div class="activity-time">2시간 전</div>
+                </div>
+            </div>
+            <div class="activity-item">
+                <div class="activity-icon">⭐</div>
+                <div class="activity-content">
+                    <div class="activity-title">CU 역삼점 리뷰 작성</div>
+                    <div class="activity-time">1일 전</div>
+                </div>
+            </div>
+            <div class="activity-item">
+                <div class="activity-icon">🎁</div>
+                <div class="activity-content">
+                    <div class="activity-title">포인트 500P 적립</div>
+                    <div class="activity-time">2일 전</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 설정 -->
+        <div class="menu-section">
+            <div class="section-title">설정</div>
+            <a href="#" class="menu-item" onclick="notificationSettings()">
+                <div class="menu-icon">🔔</div>
+                <div class="menu-content">
+                    <div class="menu-title">알림 설정</div>
+                    <div class="menu-subtitle">푸시 알림 및 이메일 설정</div>
+                </div>
+                <div class="menu-arrow">›</div>
+            </a>
+            <a href="#" class="menu-item" onclick="privacySettings()">
+                <div class="menu-icon">🔒</div>
+                <div class="menu-content">
+                    <div class="menu-title">개인정보 처리방침</div>
+                    <div class="menu-subtitle">약관 및 개인정보 보호</div>
+                </div>
+                <div class="menu-arrow">›</div>
+            </a>
+            <a href="#" class="menu-item" onclick="logout()" style="color: #dc3545;">
+                <div class="menu-icon">🚪</div>
+                <div class="menu-content">
+                    <div class="menu-title" style="color: #dc3545;">로그아웃</div>
+                    <div class="menu-subtitle">계정에서 로그아웃</div>
+                </div>
+                <div class="menu-arrow" style="color: #dc3545;">›</div>
+            </a>
+        </div>
+    </div>
+
+    <!-- 하단 네비게이션 -->
+    <div class="bottom-nav">
+        <a href="customer-home.html" class="nav-item">
+            <div>🏠</div>
+            <span>홈</span>
+        </a>
+        <a href="product-catalog.html" class="nav-item">
+            <div>🔍</div>
+            <span>검색</span>
+        </a>
+        <a href="cart-page.html" class="nav-item">
+            <div style="position: relative;">
+                🛒
+                <div style="position: absolute; top: -8px; right: -8px; background: #dc3545; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px;">2</div>
+            </div>
+            <span>장바구니</span>
+        </a>
+        <a href="customer-orders.html" class="nav-item">
+            <div>📋</div>
+            <span>주문내역</span>
+        </a>
+        <a href="#" class="nav-item active">
+            <div>👤</div>
+            <span>마이페이지</span>
+        </a>
+    </div>
+
+    <!-- 와이어프레임 네비게이션 -->
+    <div style="position: fixed; top: 50%; right: 20px; transform: translateY(-50%); background: rgba(0,0,0,0.8); border-radius: 25px; padding: 8px;">
+        <a href="../index.html" style="color: white; text-decoration: none; font-size: 20px; display: block; padding: 8px;">🏠</a>
+    </div>
+
+    <script>
+        // 개인정보 수정
+        function editProfile() {
+            alert('개인정보 수정 페이지로 이동합니다.\\n\\n수정 가능한 정보:\\n- 이름\\n- 전화번호\\n- 비밀번호\\n- 이메일');
+        }
+
+        // 배송지 관리
+        function manageAddresses() {
+            alert('배송지 관리 페이지로 이동합니다.\\n\\n기능:\\n- 기본 배송지 설정\\n- 새 주소 추가\\n- 기존 주소 수정/삭제');
+        }
+
+        // 결제수단 관리
+        function paymentMethods() {
+            alert('결제수단 관리 페이지로 이동합니다.\\n\\n기능:\\n- 카드 등록/삭제\\n- 기본 결제수단 설정\\n- 간편결제 연동');
+        }
+
+        // 리뷰 관리
+        function viewReviews() {
+            alert('리뷰 관리 페이지로 이동합니다.\\n\\n작성한 리뷰: 8개\\n평균 평점: 4.2★\\n\\n리뷰 수정 및 삭제가 가능합니다.');
+        }
+
+        // 찜 목록
+        function viewWishlist() {
+            alert('찜 목록 페이지로 이동합니다.\\n\\n저장된 상품: 12개\\n\\n관심 상품을 한 번에 확인하고 주문할 수 있습니다.');
+        }
+
+        // 쿠폰함
+        function viewCoupons() {
+            alert('쿠폰함 페이지로 이동합니다.\\n\\n보유 쿠폰: 3개\\n사용 가능: 2개\\n만료 예정: 1개\\n\\n새로운 쿠폰을 다운로드할 수 있습니다.');
+        }
+
+        // 포인트 내역
+        function pointHistory() {
+            alert('포인트 내역 페이지로 이동합니다.\\n\\n현재 포인트: 2,450P\\n이번 달 적립: 850P\\n이번 달 사용: 300P');
+        }
+
+        // 고객센터
+        function contactSupport() {
+            alert('고객센터 페이지로 이동합니다.\\n\\n이용 가능한 서비스:\\n- 1:1 문의\\n- 전화 상담 (1588-1234)\\n- 실시간 채팅');
+        }
+
+        // FAQ
+        function viewFAQ() {
+            alert('자주 묻는 질문 페이지로 이동합니다.\\n\\n인기 질문:\\n- 주문 취소 방법\\n- 포인트 사용법\\n- 배송 관련 문의');
+        }
+
+        // 공지사항
+        function viewNotices() {
+            alert('공지사항 페이지로 이동합니다.\\n\\n최신 공지:\\n- 설 연휴 배송 안내\\n- 신규 매장 오픈\\n- 시스템 점검 안내');
+        }
+
+        // 알림 설정
+        function notificationSettings() {
+            alert('알림 설정 페이지로 이동합니다.\\n\\n설정 가능한 알림:\\n- 주문 상태 알림\\n- 프로모션 알림\\n- 이메일 알림');
+        }
+
+        // 개인정보 처리방침
+        function privacySettings() {
+            alert('개인정보 처리방침을 확인합니다.\\n\\n포함 내용:\\n- 개인정보 수집 항목\\n- 이용 목적\\n- 보관 기간');
+        }
+
+        // 로그아웃
+        function logout() {
+            if (confirm('정말 로그아웃 하시겠습니까?')) {
+                alert('로그아웃 되었습니다.\\n\\n이용해 주셔서 감사합니다.');
+            }
+        }
+
+        // 네비게이션 활성화
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                if (this.getAttribute('href') === '#') {
+                    e.preventDefault();
+                }
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // 메뉴 클릭 이벤트
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                if (this.getAttribute('href') === '#') {
+                    e.preventDefault();
+                }
+            });
+        });
+
+        // 스크롤 시 헤더 효과
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.profile-header');
+            if (window.scrollY > 100) {
+                header.style.transform = 'translateY(-20px)';
+                header.style.opacity = '0.9';
+            } else {
+                header.style.transform = 'translateY(0)';
+                header.style.opacity = '1';
+            }
+        });
+
+        // 포인트 사용하기 버튼
+        document.querySelector('.points-card button').addEventListener('click', function() {
+            alert('포인트 사용 페이지로 이동합니다.\\n\\n사용 가능 포인트: 2,450P\\n최소 사용 단위: 100P\\n\\n다음 주문에서 바로 사용할 수 있습니다.');
+        });
+    </script>
+</body>
+</html>

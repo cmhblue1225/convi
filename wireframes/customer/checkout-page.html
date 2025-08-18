@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주문/결제 - 와이어프레임</title>
+    <link rel="stylesheet" href="../styles/wireframe.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+    <style>
+        .checkout-header {
+            background: white;
+            border-bottom: 1px solid #dee2e6;
+            padding: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 12px;
+            padding: 0 16px;
+        }
+        
+        .section-content {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin: 0 16px 16px;
+            padding: 16px;
+        }
+        
+        .store-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            margin-bottom: 12px;
+        }
+        
+        .store-icon {
+            width: 40px;
+            height: 40px;
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        
+        .pickup-time-slots {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .time-slot {
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        
+        .time-slot:hover,
+        .time-slot.selected {
+            border-color: #007bff;
+            background: #f8f9ff;
+            color: #007bff;
+        }
+        
+        .time-slot.disabled {
+            background: #f8f9fa;
+            color: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .order-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        
+        .order-item:last-child {
+            border-bottom: none;
+        }
+        
+        .item-image {
+            width: 50px;
+            height: 50px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #6c757d;
+            flex-shrink: 0;
+        }
+        
+        .item-info {
+            flex: 1;
+        }
+        
+        .item-name {
+            font-size: 14px;
+            font-weight: bold;
+            color: #212529;
+            margin-bottom: 4px;
+        }
+        
+        .item-details {
+            font-size: 12px;
+            color: #6c757d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .payment-methods {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        
+        .payment-method {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .payment-method:hover,
+        .payment-method.selected {
+            border-color: #007bff;
+            background: #f8f9ff;
+        }
+        
+        .payment-method input[type="radio"] {
+            margin: 0;
+        }
+        
+        .order-summary {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .summary-row.total {
+            font-size: 16px;
+            font-weight: bold;
+            color: #212529;
+            padding-top: 8px;
+            border-top: 1px solid #dee2e6;
+            margin-top: 8px;
+            margin-bottom: 0;
+        }
+        
+        .customer-info {
+            display: grid;
+            gap: 12px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        
+        .special-requests {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .terms-agreement {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 16px 0;
+        }
+        
+        .terms-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .terms-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .checkout-actions {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #dee2e6;
+            padding: 16px;
+        }
+        
+        .checkout-button {
+            width: 100%;
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .checkout-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .content-wrapper {
+            padding-bottom: 80px;
+        }
+        
+        .delivery-address {
+            padding: 12px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            margin-bottom: 12px;
+        }
+        
+        .address-text {
+            font-size: 14px;
+            color: #495057;
+            margin-bottom: 4px;
+        }
+        
+        .address-detail {
+            font-size: 12px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body style="background: #f8f9fa;">
+    <!-- 헤더 -->
+    <div class="checkout-header">
+        <div style="display: flex; align-items: center;">
+            <button onclick="history.back()" style="background: none; border: none; font-size: 20px; cursor: pointer; margin-right: 12px;">←</button>
+            <h1 style="font-size: 18px; font-weight: bold; color: #212529; margin: 0;">주문/결제</h1>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <!-- 매장 정보 및 픽업 시간 -->
+        <div class="section-title">📍 픽업 정보</div>
+        <div class="section-content">
+            <div class="store-info">
+                <div class="store-icon">🏪</div>
+                <div>
+                    <div style="font-weight: bold; color: #495057;">GS25 강남점</div>
+                    <div style="font-size: 12px; color: #6c757d;">서울시 강남구 강남대로 123</div>
+                    <div style="font-size: 12px; color: #28a745;">영업중 (06:00~24:00)</div>
+                </div>
+            </div>
+            
+            <!-- 픽업 방법 -->
+            <div style="margin-bottom: 16px;">
+                <div style="font-size: 14px; font-weight: bold; color: #495057; margin-bottom: 8px;">픽업 방법</div>
+                <div style="display: flex; gap: 8px;">
+                    <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid #007bff; border-radius: 4px; background: #f8f9ff; cursor: pointer;">
+                        <input type="radio" name="pickup-method" value="store" checked>
+                        <span style="font-size: 14px; color: #007bff;">매장 픽업</span>
+                    </label>
+                    <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">
+                        <input type="radio" name="pickup-method" value="delivery">
+                        <span style="font-size: 14px;">배달 서비스</span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- 픽업 시간 -->
+            <div id="pickup-time-section">
+                <div style="font-size: 14px; font-weight: bold; color: #495057; margin-bottom: 8px;">픽업 시간</div>
+                <div class="pickup-time-slots">
+                    <div class="time-slot selected">지금 즉시</div>
+                    <div class="time-slot">15분 후</div>
+                    <div class="time-slot">30분 후</div>
+                    <div class="time-slot">1시간 후</div>
+                    <div class="time-slot">2시간 후</div>
+                    <div class="time-slot disabled">3시간 후</div>
+                </div>
+            </div>
+            
+            <!-- 배달 주소 (숨겨짐) -->
+            <div id="delivery-address-section" style="display: none;">
+                <div style="font-size: 14px; font-weight: bold; color: #495057; margin-bottom: 8px;">배달 주소</div>
+                <div class="delivery-address">
+                    <div class="address-text">서울시 강남구 테헤란로 123</div>
+                    <div class="address-detail">101호 (우편번호: 12345)</div>
+                </div>
+                <button class="wireframe-button" style="font-size: 12px; padding: 6px 12px;">주소 변경</button>
+            </div>
+        </div>
+
+        <!-- 주문 상품 -->
+        <div class="section-title">🛒 주문 상품</div>
+        <div class="section-content">
+            <div class="order-item">
+                <div class="item-image">📦</div>
+                <div class="item-info">
+                    <div class="item-name">농심 육개장사발면 86g</div>
+                    <div class="item-details">
+                        <span>수량: 2개 (1+1 행사)</span>
+                        <span style="font-weight: bold; color: #dc3545;">3,000원</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="order-item">
+                <div class="item-image">📦</div>
+                <div class="item-info">
+                    <div class="item-name">코카콜라 355ml</div>
+                    <div class="item-details">
+                        <span>수량: 1개</span>
+                        <span style="font-weight: bold; color: #dc3545;">1,800원</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="order-item">
+                <div class="item-image">📦</div>
+                <div class="item-info">
+                    <div class="item-name">신라면 120g</div>
+                    <div class="item-details">
+                        <span>수량: 3개 (30% 할인)</span>
+                        <span style="font-weight: bold; color: #dc3545;">2,940원</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 주문 요약 -->
+            <div class="order-summary">
+                <div class="summary-row">
+                    <span>상품 총액</span>
+                    <span>9,600원</span>
+                </div>
+                <div class="summary-row">
+                    <span>할인 금액</span>
+                    <span style="color: #dc3545;">-1,860원</span>
+                </div>
+                <div class="summary-row">
+                    <span>배달비</span>
+                    <span id="delivery-fee-display">0원</span>
+                </div>
+                <div class="summary-row total">
+                    <span>결제 예정 금액</span>
+                    <span id="final-amount">7,740원</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 고객 정보 -->
+        <div class="section-title">👤 주문자 정보</div>
+        <div class="section-content">
+            <div class="customer-info">
+                <div class="form-row">
+                    <div>
+                        <label class="wireframe-form-label">이름</label>
+                        <input type="text" class="wireframe-form-input" value="김고객" readonly>
+                    </div>
+                    <div>
+                        <label class="wireframe-form-label">전화번호</label>
+                        <input type="tel" class="wireframe-form-input" value="010-1234-5678" readonly>
+                    </div>
+                </div>
+                <div>
+                    <label class="wireframe-form-label">특별 요청사항</label>
+                    <textarea class="wireframe-form-input special-requests" placeholder="매장에 전달할 특별한 요청사항이 있으시면 입력해주세요"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- 결제 수단 -->
+        <div class="section-title">💳 결제 수단</div>
+        <div class="section-content">
+            <div class="payment-methods">
+                <label class="payment-method selected">
+                    <input type="radio" name="payment" value="card" checked>
+                    <div>
+                        <div style="font-size: 20px;">💳</div>
+                        <div style="font-size: 12px; color: #495057;">신용/체크카드</div>
+                    </div>
+                </label>
+                
+                <label class="payment-method">
+                    <input type="radio" name="payment" value="kakaopay">
+                    <div>
+                        <div style="font-size: 20px;">💛</div>
+                        <div style="font-size: 12px; color: #495057;">카카오페이</div>
+                    </div>
+                </label>
+                
+                <label class="payment-method">
+                    <input type="radio" name="payment" value="naverpay">
+                    <div>
+                        <div style="font-size: 20px;">💚</div>
+                        <div style="font-size: 12px; color: #495057;">네이버페이</div>
+                    </div>
+                </label>
+                
+                <label class="payment-method">
+                    <input type="radio" name="payment" value="samsung">
+                    <div>
+                        <div style="font-size: 20px;">📱</div>
+                        <div style="font-size: 12px; color: #495057;">삼성페이</div>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <!-- 약관 동의 -->
+        <div class="section-content">
+            <div class="terms-agreement">
+                <div class="terms-item">
+                    <input type="checkbox" id="terms-service" checked>
+                    <label for="terms-service" style="font-size: 14px; color: #495057;">
+                        [필수] 서비스 이용약관에 동의합니다
+                        <a href="#" style="color: #007bff; margin-left: 4px;">보기</a>
+                    </label>
+                </div>
+                <div class="terms-item">
+                    <input type="checkbox" id="terms-payment" checked>
+                    <label for="terms-payment" style="font-size: 14px; color: #495057;">
+                        [필수] 전자결제 서비스 약관에 동의합니다
+                        <a href="#" style="color: #007bff; margin-left: 4px;">보기</a>
+                    </label>
+                </div>
+                <div class="terms-item">
+                    <input type="checkbox" id="terms-privacy" checked>
+                    <label for="terms-privacy" style="font-size: 14px; color: #495057;">
+                        [필수] 개인정보 처리방침에 동의합니다
+                        <a href="#" style="color: #007bff; margin-left: 4px;">보기</a>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 결제 버튼 -->
+    <div class="checkout-actions">
+        <button class="checkout-button" onclick="processPayment()">
+            <span id="payment-amount">7,740원</span> 결제하기
+        </button>
+    </div>
+
+    <!-- 와이어프레임 네비게이션 -->
+    <div style="position: fixed; top: 50%; right: 20px; transform: translateY(-50%); background: rgba(0,0,0,0.8); border-radius: 25px; padding: 8px;">
+        <a href="../index.html" style="color: white; text-decoration: none; font-size: 20px; display: block; padding: 8px;">🏠</a>
+    </div>
+
+    <script>
+        // 픽업 방법 변경
+        document.querySelectorAll('input[name="pickup-method"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                updatePickupMethod();
+            });
+        });
+        
+        function updatePickupMethod() {
+            const selectedMethod = document.querySelector('input[name="pickup-method"]:checked').value;
+            const pickupSection = document.getElementById('pickup-time-section');
+            const deliverySection = document.getElementById('delivery-address-section');
+            const deliveryFeeDisplay = document.getElementById('delivery-fee-display');
+            const finalAmount = document.getElementById('final-amount');
+            const paymentAmount = document.getElementById('payment-amount');
+            
+            if (selectedMethod === 'delivery') {
+                pickupSection.style.display = 'none';
+                deliverySection.style.display = 'block';
+                deliveryFeeDisplay.textContent = '2,000원';
+                finalAmount.textContent = '9,740원';
+                paymentAmount.textContent = '9,740원';
+            } else {
+                pickupSection.style.display = 'block';
+                deliverySection.style.display = 'none';
+                deliveryFeeDisplay.textContent = '0원';
+                finalAmount.textContent = '7,740원';
+                paymentAmount.textContent = '7,740원';
+            }
+        }
+        
+        // 픽업 시간 선택
+        document.querySelectorAll('.time-slot').forEach(slot => {
+            slot.addEventListener('click', function() {
+                if (!this.classList.contains('disabled')) {
+                    document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+                    this.classList.add('selected');
+                }
+            });
+        });
+        
+        // 결제 수단 선택
+        document.querySelectorAll('.payment-method').forEach(method => {
+            method.addEventListener('click', function() {
+                document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('selected'));
+                this.classList.add('selected');
+                this.querySelector('input[type="radio"]').checked = true;
+            });
+        });
+        
+        // 결제 처리
+        function processPayment() {
+            const requiredTerms = ['terms-service', 'terms-payment', 'terms-privacy'];
+            const uncheckedTerms = requiredTerms.filter(termId => !document.getElementById(termId).checked);
+            
+            if (uncheckedTerms.length > 0) {
+                alert('필수 약관에 동의해주세요.');
+                return;
+            }
+            
+            const pickupMethod = document.querySelector('input[name="pickup-method"]:checked').value;
+            const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
+            const selectedTime = document.querySelector('.time-slot.selected').textContent;
+            const amount = document.getElementById('payment-amount').textContent;
+            const specialRequest = document.querySelector('.special-requests').value;
+            
+            let orderInfo = `주문 정보:\\n`;
+            orderInfo += `- 픽업 방법: ${pickupMethod === 'store' ? '매장 픽업' : '배달 서비스'}\\n`;
+            orderInfo += `- 시간: ${selectedTime}\\n`;
+            orderInfo += `- 결제 수단: ${getPaymentMethodName(paymentMethod)}\\n`;
+            orderInfo += `- 총 금액: ${amount}\\n`;
+            
+            if (specialRequest) {
+                orderInfo += `- 특별 요청: ${specialRequest}\\n`;
+            }
+            
+            orderInfo += `\\n결제를 진행하시겠습니까?`;
+            
+            if (confirm(orderInfo)) {
+                // 결제 처리 시뮬레이션
+                const button = document.querySelector('.checkout-button');
+                button.disabled = true;
+                button.textContent = '결제 처리중...';
+                
+                setTimeout(() => {
+                    alert('결제가 완료되었습니다!\\n\\n주문번호: #2025011501\\n주문 추적 페이지로 이동합니다.');
+                    button.disabled = false;
+                    button.innerHTML = '<span id="payment-amount">' + amount + '</span> 결제하기';
+                }, 2000);
+            }
+        }
+        
+        function getPaymentMethodName(method) {
+            const names = {
+                'card': '신용/체크카드',
+                'kakaopay': '카카오페이',
+                'naverpay': '네이버페이',
+                'samsung': '삼성페이'
+            };
+            return names[method] || method;
+        }
+        
+        // 약관 링크 클릭 처리
+        document.querySelectorAll('.terms-agreement a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                alert('약관 상세 내용을 표시합니다.\\n\\n(와이어프레임 시뮬레이션)');
+            });
+        });
+    </script>
+</body>
+</html>
