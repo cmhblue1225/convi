@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatDateTime } from '../../utils/common';
 
 interface RefundReceiptProps {
   refund: any;
@@ -11,15 +12,6 @@ const RefundReceipt: React.FC<RefundReceiptProps> = ({
   order,
   storeInfo
 }) => {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   const formatCurrency = (amount: number) => {
     return amount?.toLocaleString() || '0';
@@ -44,7 +36,9 @@ const RefundReceipt: React.FC<RefundReceiptProps> = ({
       <div className="border-b-2 border-red-300 pb-3 mb-3 bg-red-50 p-3 rounded">
         <div className="flex justify-between mb-1">
           <span className="text-gray-600">환불 번호:</span>
-          <span className="font-bold text-blue-600">{refund?.id || 'N/A'}</span>
+          <span className="font-bold text-blue-600">
+            {refund?.id ? refund.id.toString().slice(0, 8).toUpperCase() : 'N/A'}
+          </span>
         </div>
         <div className="flex justify-between mb-1">
           <span className="text-gray-600">원주문 번호:</span>
@@ -52,11 +46,11 @@ const RefundReceipt: React.FC<RefundReceiptProps> = ({
         </div>
         <div className="flex justify-between mb-1">
           <span className="text-gray-600">환불 요청일:</span>
-          <span className="font-bold">{formatDate(refund?.created_at)}</span>
+          <span className="font-bold">{formatDateTime(refund?.created_at)}</span>
         </div>
         <div className="flex justify-between mb-1">
           <span className="text-gray-600">처리 완료일:</span>
-          <span className="font-bold">{formatDate(refund?.processed_at)}</span>
+          <span className="font-bold">{formatDateTime(refund?.processed_at)}</span>
         </div>
         <div className="mb-1">
           <div className="text-gray-600 mb-1">환불 사유:</div>
@@ -137,7 +131,7 @@ const RefundReceipt: React.FC<RefundReceiptProps> = ({
       <div className="text-center text-xs text-gray-500 mt-6">
         <div>환불 처리가 완료되었습니다.</div>
         <div>문의사항이 있으시면 매장에 연락해주세요.</div>
-        <div className="mt-2">발행일시: {formatDate(new Date().toISOString())}</div>
+        <div className="mt-2">발행일시: {formatDateTime(new Date().toISOString())}</div>
       </div>
 
     </div>
