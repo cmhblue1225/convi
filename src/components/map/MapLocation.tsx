@@ -1,5 +1,6 @@
 // 네이버 지도로 위치 정보 가져오기
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase/client';
 import { geocodeAddress, getDistanceFromCoordinates } from '../../lib/geocoding/geocoding';
 
@@ -34,6 +35,7 @@ const Location: React.FC<LocationProps> = ({ width = '80%', height = '600px' }) 
   const [realStores, setRealStores] = useState<MapStore[]>([]);
   const isDataLoaded = useRef(false);
   const markersRef = useRef<any[]>([]);
+  const navigate = useNavigate();
 
   const fetchRealStores = useCallback(async () => {
     // 전역 플래그로 중복 호출 차단
@@ -116,6 +118,57 @@ const Location: React.FC<LocationProps> = ({ width = '80%', height = '600px' }) 
     return R * c;
   };
 
+  const selectStore = async (storeId: string) => {
+    try {
+      const { data: latestStore, error } = await supabase
+        .from('stores')
+        .select('*')
+        .eq('id', storeId)
+        .single();
+      
+      if (error) {
+        console.error('❌ 최신 지점 정보 조회 실패:', error);
+        alert('지점 정보를 불러오는데 실패했습니다.');
+        return;
+      }
+      
+      if (!latestStore.is_active) {
+        alert('이 지점은 현재 운영 중단 상태입니다.');
+        return;
+      }
+      
+      const updatedStore = {
+        id: latestStore.id,
+        name: latestStore.name,
+        address: latestStore.address,
+        phone: latestStore.phone,
+        business_hours: latestStore.business_hours || {
+          monday: { open: '06:00', close: '24:00' },
+          tuesday: { open: '06:00', close: '24:00' },
+          wednesday: { open: '06:00', close: '24:00' },
+          thursday: { open: '06:00', close: '24:00' },
+          friday: { open: '06:00', close: '24:00' },
+          saturday: { open: '06:00', close: '24:00' },
+          sunday: { open: '06:00', close: '24:00' }
+        },
+        delivery_available: latestStore.delivery_available || false,
+        pickup_available: latestStore.pickup_available || false,
+        delivery_radius: latestStore.delivery_radius || 3000,
+        min_order_amount: latestStore.min_order_amount || 15000,
+        delivery_fee: latestStore.delivery_fee || 3000,
+        is_active: latestStore.is_active,
+        created_at: latestStore.created_at,
+        updated_at: latestStore.updated_at
+      };
+      
+      localStorage.setItem('selectedStore', JSON.stringify(updatedStore));
+      navigate('/customer/products');
+    } catch (error) {
+      console.error('❌ 지점 선택 중 오류:', error);
+      alert('지점 선택 중 오류가 발생했습니다.');
+    }
+  };
+
   const addAllStoreMarkers = (naverMap: any, userLat: number, userLng: number) => {
     // 네이버 지도 API가 완전히 로드되었는지 확인
     if (!window.naver || !window.naver.maps || !window.naver.maps.Marker) {
@@ -148,12 +201,22 @@ const Location: React.FC<LocationProps> = ({ width = '80%', height = '600px' }) 
           return;
         }
         
+        const contentId = `store-info-${store.id}`;
         const infoWindow = new window.naver.maps.InfoWindow({
           content: `
-            <div style="padding: 10px; font-size: 14px;">
-              <strong>${store.name}</strong><br/>
-              <span style="color: #666;">${store.address}</span><br/>
-              <span style="color: #4285f4; font-size: 12px;">거리: ${distance.toFixed(1)}km</span>
+            <div id="${contentId}" style="padding: 10px; font-size: 14px; cursor: pointer; user-select: none; min-width: 200px;">
+              <div style="border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 8px;">
+                <strong style="color: #333; font-size: 16px;">${store.name}</strong>
+              </div>
+              <div style="margin-bottom: 6px;">
+                <span style="color: #666; font-size: 13px;">${store.address}</span>
+              </div>
+              <div style="margin-bottom: 10px;">
+                <span style="color: #4285f4; font-size: 12px; font-weight: 500;">거리: ${distance.toFixed(1)}km</span>
+              </div>
+              <div style="text-align: center; padding: 8px; background-color: #f8f9fa; border-radius: 4px; border: 1px solid #dee2e6;">
+                <span style="color: #495057; font-size: 13px; font-weight: 500;">📍 이 지점 선택하기</span>
+              </div>
             </div>
           `
         });
@@ -163,6 +226,16 @@ const Location: React.FC<LocationProps> = ({ width = '80%', height = '600px' }) 
             infoWindow.close();
           } else {
             infoWindow.open(naverMap, marker);
+            
+            setTimeout(() => {
+              const contentElement = document.getElementById(contentId);
+              if (contentElement) {
+                contentElement.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  selectStore(store.id);
+                });
+              }
+            }, 100);
           }
         });
       }
@@ -186,35 +259,86 @@ const Location: React.FC<LocationProps> = ({ width = '80%', height = '600px' }) 
       setMap(naverMap);
       setIsLoading(false);
 
+      const createUserMarker = (lat: number, lng: number) => {
+        if (!window.naver?.maps?.LatLng || !window.naver?.maps?.Marker) {
+          console.error('네이버 지도 API 객체가 없습니다.');
+          return;
+        }
+        
+        const userPosition = new window.naver.maps.LatLng(lat, lng);
+        setUserLocation({ lat, lng });
+
+        const userMarker = new window.naver.maps.Marker({
+          position: userPosition,
+          map: naverMap,
+          icon: {
+            content: [
+              '<div style="position: relative;">',
+              '<div style="width: 20px; height: 20px; background-color: #22c55e; border: 3px solid white; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+              '</div>'
+            ].join(''),
+            size: new window.naver.maps.Size(26, 26),
+            anchor: new window.naver.maps.Point(13, 13)
+          }
+        });
+
+        const userInfoWindow = new window.naver.maps.InfoWindow({
+          content: '<div style="padding: 8px; font-size: 14px; font-weight: bold; color: #22c55e;">내 위치</div>',
+          backgroundColor: 'white',
+          borderColor: '#22c55e',
+          borderWidth: 2,
+          anchorSize: new window.naver.maps.Size(10, 10),
+          anchorSkew: true,
+          anchorColor: 'white',
+          pixelOffset: new window.naver.maps.Point(0, -10)
+        });
+
+        userInfoWindow.open(naverMap, userMarker);
+        naverMap.setCenter(userPosition);
+      };
+
       if (navigator.geolocation) {
+        console.log('위치 정보 요청 중...');
+        
         navigator.geolocation.getCurrentPosition(
           (position) => {
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
+            const accuracy = position.coords.accuracy;
             
-            if (!window.naver?.maps?.LatLng || !window.naver?.maps?.Marker) {
-              console.error('네이버 지도 API 객체가 없습니다.');
-              return;
-            }
-            
-            const userPosition = new window.naver.maps.LatLng(lat, lng);
-
-            setUserLocation({ lat, lng });
-
-            const userMarker = new window.naver.maps.Marker({
-              position: userPosition,
-              map: naverMap
-            });
-
-            naverMap.setCenter(userPosition);
-            // 초기 마커는 여기서 추가하지 않음 - 지점 데이터 로드 후 추가됨
+            console.log(`위치 찾기 성공: 위도 ${lat}, 경도 ${lng}, 정확도 ${accuracy}m`);
+            createUserMarker(lat, lng);
           },
           (error) => {
-            console.warn('위치 정보를 가져올 수 없습니다:', error);
-            setUserLocation({ lat: 37.5665, lng: 126.9780 });
+            console.warn('위치 정보 가져오기 실패:', error.message);
+            
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                console.log('두 번째 시도로 위치 찾기 성공');
+                createUserMarker(lat, lng);
+              },
+              (error2) => {
+                console.error('위치 정보를 가져올 수 없습니다:', error2.message);
+                console.log('기본 위치(서울시청) 사용');
+                setUserLocation({ lat: 37.5665, lng: 126.9780 });
+              },
+              {
+                enableHighAccuracy: false,
+                timeout: 5000,
+                maximumAge: 0
+              }
+            );
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 8000,
+            maximumAge: 60000
           }
         );
       } else {
+        console.log('Geolocation이 지원되지 않습니다. 기본 위치 사용');
         setUserLocation({ lat: 37.5665, lng: 126.9780 });
       }
     };
