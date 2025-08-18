@@ -1677,7 +1677,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 3. 상품별 매출 순위 함수
+-- 3. 상품별 판매량 순위 함수
 CREATE OR REPLACE FUNCTION get_product_rankings(
     start_date DATE DEFAULT CURRENT_DATE - INTERVAL '30 days',
     end_date DATE DEFAULT CURRENT_DATE
@@ -1700,7 +1700,7 @@ BEGIN
         COUNT(oi.id)::BIGINT as total_sold,
         COALESCE(SUM(oi.subtotal), 0) as total_revenue,
         COALESCE(AVG(oi.unit_price), 0) as avg_price,
-        RANK() OVER (ORDER BY COALESCE(SUM(oi.subtotal), 0) DESC) as rank_position
+        RANK() OVER (ORDER BY COUNT(oi.id) DESC) as rank_position
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.id
     LEFT JOIN order_items oi ON p.id = oi.product_id
@@ -1708,7 +1708,7 @@ BEGIN
         AND o.status = 'completed'
         AND DATE(o.created_at) BETWEEN start_date AND end_date
     GROUP BY p.id, p.name, c.name
-    ORDER BY total_revenue DESC;
+    ORDER BY total_sold DESC;
 END;
 $$ LANGUAGE plpgsql;
 

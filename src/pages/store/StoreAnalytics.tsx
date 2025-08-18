@@ -281,9 +281,9 @@ export default function StoreAnalytics() {
           </div>
         </div>
 
-        {/* 인기 상품 TOP 10 */}
+        {/* 인기 상품 TOP 10 (판매량 기준) */}
         <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">인기 상품 TOP 10</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">인기 상품 TOP 10 (판매량 기준)</h3>
           <div className="space-y-3">
             {productSales.length > 0 ? (
               productSales.slice(0, 10).map((product, index) => (
