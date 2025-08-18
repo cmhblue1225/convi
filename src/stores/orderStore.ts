@@ -38,6 +38,9 @@ export interface Order {
   // 포인트 정보 추가
   pointsUsed?: number;
   pointsDiscountAmount?: number;
+  // 쿠폰 정보 추가
+  couponDiscountAmount?: number;
+  appliedCouponId?: string;
   status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivering' | 'completed' | 'cancelled';
   createdAt: string;
   updatedAt: string;
@@ -87,6 +90,27 @@ export const useOrderStore = create<OrderState>()(
           
           console.log('✅ 인증된 사용자:', user.id);
 
+          // 쿠폰 코드로 쿠폰 ID 가져오기
+          const getCouponIdByCode = async (couponCode: string): Promise<string | null> => {
+            try {
+              const { data, error } = await supabase
+                .from('coupons')
+                .select('id')
+                .eq('code', couponCode)
+                .single();
+              
+              if (error) {
+                console.warn('⚠️ 쿠폰 ID 조회 실패:', error);
+                return null;
+              }
+              
+              return data?.id || null;
+            } catch (error) {
+              console.warn('⚠️ 쿠폰 ID 조회 중 오류:', error);
+              return null;
+            }
+          };
+
           // 결제 방법을 스키마에 맞게 매핑
           const mapPaymentMethod = (method: string): string => {
             const mapping: Record<string, string> = {
@@ -101,7 +125,7 @@ export const useOrderStore = create<OrderState>()(
             return mapping[method] || 'card';
           };
 
-          // 주문 데이터 준비
+          // 주문 데이터 준비 (소수점 단위 금액을 반올림으로 처리)
           const insertData = {
             order_number: orderData.orderNumber,
             customer_id: user.id, // 현재 로그인한 사용자 ID
@@ -109,13 +133,16 @@ export const useOrderStore = create<OrderState>()(
             type: orderData.orderType, // order_type → type
             delivery_address: orderData.deliveryAddress ? JSON.stringify(orderData.deliveryAddress) : null,
             payment_method: mapPaymentMethod(orderData.paymentMethod),
-            subtotal: orderData.subtotal,
-            tax_amount: orderData.taxAmount,
-            delivery_fee: orderData.deliveryFee,
-            total_amount: orderData.totalAmount,
+            subtotal: Math.round(orderData.subtotal),
+            tax_amount: Math.round(orderData.taxAmount),
+            delivery_fee: Math.round(orderData.deliveryFee),
+            total_amount: Math.round(orderData.totalAmount),
             // 포인트 정보 추가
             points_used: (orderData as any).pointsUsed || 0,
-            points_discount_amount: (orderData as any).pointsDiscountAmount || 0,
+            points_discount_amount: Math.round((orderData as any).pointsDiscountAmount || 0),
+            // 쿠폰 정보 추가
+            coupon_discount_amount: Math.round((orderData as any).couponDiscount || 0),
+            applied_coupon_id: (orderData as any).selectedCoupon ? await getCouponIdByCode((orderData as any).selectedCoupon) : null,
             status: orderData.status,
             payment_status: 'paid', // 결제 성공 페이지에서 호출되므로 paid로 설정
             payment_data: null, // paymentResult 필드 제거됨
@@ -145,6 +172,30 @@ export const useOrderStore = create<OrderState>()(
 
           console.log('✅ 주문 저장 성공:', data);
 
+          // 쿠폰 사용 상태 업데이트
+          if (insertData.applied_coupon_id && insertData.coupon_discount_amount > 0) {
+            try {
+              const { error: couponUpdateError } = await supabase
+                .from('user_coupons')
+                .update({
+                  is_used: true,
+                  used_at: new Date().toISOString(),
+                  used_order_id: data.id
+                })
+                .eq('coupon_id', insertData.applied_coupon_id)
+                .eq('user_id', user.id)
+                .eq('is_used', false);
+
+              if (couponUpdateError) {
+                console.warn('⚠️ 쿠폰 사용 상태 업데이트 실패:', couponUpdateError);
+              } else {
+                console.log('✅ 쿠폰 사용 상태 업데이트 성공');
+              }
+            } catch (error) {
+              console.warn('⚠️ 쿠폰 상태 업데이트 중 오류:', error);
+            }
+          }
+
           // 주문 아이템들을 order_items 테이블에 저장하고 재고 차감
           if (orderData.items && orderData.items.length > 0) {
             const orderItems = orderData.items.map(item => ({
@@ -152,9 +203,9 @@ export const useOrderStore = create<OrderState>()(
               product_id: item.productId,
               product_name: item.productName,
               quantity: item.quantity,
-              unit_price: item.price,
-              discount_amount: (item.price * item.discountRate * item.quantity),
-              subtotal: item.subtotal
+              unit_price: Math.round(item.price),
+              discount_amount: Math.round(item.price * item.discountRate * item.quantity),
+              subtotal: Math.round(item.subtotal)
             }));
 
             const { error: itemsError } = await supabase

@@ -157,9 +157,8 @@ const RefundReceiptModal: React.FC<RefundReceiptModalProps> = ({
 
           {/* 영수증 내용 */}
           <div className="mb-6">
-            <div className="receipt-container">
+            <div className="receipt-container" ref={receiptRef}>
               <RefundReceipt
-                ref={receiptRef}
                 refund={refund}
                 order={order}
                 storeInfo={storeInfo}
