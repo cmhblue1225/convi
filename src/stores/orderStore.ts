@@ -93,18 +93,20 @@ export const useOrderStore = create<OrderState>()(
           // 쿠폰 코드로 쿠폰 ID 가져오기
           const getCouponIdByCode = async (couponCode: string): Promise<string | null> => {
             try {
-              const { data, error } = await supabase
+              // coupons 테이블에서 쿠폰 ID 조회
+              const { data: couponData, error: couponError } = await supabase
                 .from('coupons')
                 .select('id')
                 .eq('code', couponCode)
                 .single();
               
-              if (error) {
-                console.warn('⚠️ 쿠폰 ID 조회 실패:', error);
+              if (couponError) {
+                console.warn('⚠️ 쿠폰 ID 조회 실패:', couponError);
                 return null;
               }
               
-              return data?.id || null;
+              console.log('✅ 쿠폰 ID 조회 성공:', { couponCode, couponId: couponData.id });
+              return couponData.id; // coupons 테이블의 ID 반환
             } catch (error) {
               console.warn('⚠️ 쿠폰 ID 조회 중 오류:', error);
               return null;
@@ -147,6 +149,13 @@ export const useOrderStore = create<OrderState>()(
             payment_status: 'paid', // 결제 성공 페이지에서 호출되므로 paid로 설정
             payment_data: null, // paymentResult 필드 제거됨
           };
+
+          console.log('🔍 쿠폰 정보 디버깅:', {
+            selectedCoupon: (orderData as any).selectedCoupon,
+            couponDiscount: (orderData as any).couponDiscount,
+            couponDiscountRounded: Math.round((orderData as any).couponDiscount || 0),
+            appliedCouponId: insertData.applied_coupon_id
+          });
 
           console.log('📦 Supabase에 삽입할 데이터:', insertData);
           console.log('🔍 원본 paymentMethod:', orderData.paymentMethod);
@@ -596,6 +605,9 @@ export const useOrderStore = create<OrderState>()(
             // 포인트 정보 추가
             pointsUsed: item.points_used || 0,
             pointsDiscountAmount: item.points_discount_amount || 0,
+            // 쿠폰 정보 추가
+            couponDiscountAmount: item.coupon_discount_amount || 0,
+            appliedCouponId: item.applied_coupon_id,
             status: item.status,
             createdAt: item.created_at,
             updatedAt: item.updated_at,

@@ -9,6 +9,7 @@ const OrderTracking: React.FC = () => {
   const { orders, fetchOrders, subscribeToOrders, unsubscribeFromOrders, getOrderById } = useOrderStore();
   
   const [order, setOrder] = useState(getOrderById(orderId || ''));
+  const [showCouponDetails, setShowCouponDetails] = useState(false);
 
   useEffect(() => {
     // 컴포넌트 마운트 시 주문 목록 조회 및 실시간 구독
@@ -29,6 +30,13 @@ const OrderTracking: React.FC = () => {
 
     const foundOrder = getOrderById(orderId);
     if (foundOrder) {
+      console.log('🔍 OrderTracking - 주문 정보:', {
+        주문번호: foundOrder.orderNumber,
+        쿠폰할인: foundOrder.couponDiscountAmount,
+        쿠폰ID: foundOrder.appliedCouponId,
+        포인트사용: foundOrder.pointsUsed,
+        총금액: foundOrder.totalAmount
+      });
       setOrder(foundOrder);
     } else if (orders.length > 0) {
       // 주문 목록이 로드되었지만 해당 주문을 찾을 수 없음
@@ -285,30 +293,51 @@ const OrderTracking: React.FC = () => {
                 </div>
 
                 {/* 할인 및 혜택 적용 */}
-                {(order.couponDiscount > 0 || order.pointsUsed > 0) && (
+                {(order.couponDiscountAmount > 0 || order.pointsUsed > 0) && (
                   <div className="bg-green-50 rounded-lg p-3 space-y-2">
                     <h3 className="text-xs font-medium text-green-700 uppercase tracking-wide">할인 혜택</h3>
-                    {order.couponDiscount > 0 && (
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center">
-                          <span className="text-green-600">🎫</span>
-                          <span className="ml-1">쿠폰 할인</span>
+                    {order.couponDiscountAmount > 0 && (
+                      <div>
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center">
+                            <span className="text-green-600">🎫</span>
+                            <span className="ml-1">쿠폰 할인</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-green-600 font-medium">-{order.couponDiscountAmount.toLocaleString()}원</span>
+                            <button
+                              onClick={() => setShowCouponDetails(!showCouponDetails)}
+                              className="text-xs text-green-600 hover:text-green-700 underline focus:outline-none"
+                            >
+                              {showCouponDetails ? '접기' : '상세 정보'}
+                            </button>
+                          </div>
                         </div>
-                        <span className="text-green-600 font-medium">-{order.couponDiscount.toLocaleString()}원</span>
+                        {showCouponDetails && order.appliedCouponId && (
+                          <div className="mt-2 p-2 bg-green-50 rounded text-xs text-green-700">
+                            <div className="font-medium">쿠폰 정보</div>
+                            <div className="text-green-600">ID: {order.appliedCouponId}</div>
+                          </div>
+                        )}
                       </div>
                     )}
                     {order.pointsUsed > 0 && (
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center">
-                          <span className="text-green-600">⭐</span>
-                          <span className="ml-1">포인트 사용</span>
+                      <div>
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center">
+                            <span className="text-green-600">⭐</span>
+                            <span className="ml-1">포인트 사용</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-green-600 font-medium">-{order.pointsUsed.toLocaleString()}P</span>
+                            <span className="text-xs text-green-500">({order.pointsUsed.toLocaleString()}원)</span>
+                          </div>
                         </div>
-                        <span className="text-green-600 font-medium">-{order.pointsUsed.toLocaleString()}P</span>
                       </div>
                     )}
                     <div className="border-t border-green-200 pt-2 flex justify-between font-medium text-green-700">
                       <span>총 할인 금액</span>
-                      <span>-{((order.couponDiscount || 0) + (order.pointsUsed || 0)).toLocaleString()}원</span>
+                      <span>-{((order.couponDiscountAmount || 0) + (order.pointsUsed || 0)).toLocaleString()}원</span>
                     </div>
                   </div>
                 )}
@@ -416,15 +445,15 @@ const OrderTracking: React.FC = () => {
                       <span>{order.deliveryFee.toLocaleString()}원</span>
                     </div>
                   )}
-                  {(order.couponDiscount > 0 || order.pointsUsed > 0) && (
+                  {(order.couponDiscountAmount > 0 || order.pointsUsed > 0) && (
                     <div className="flex justify-between text-green-600">
                       <span>혜택 할인</span>
-                      <span>-{((order.couponDiscount || 0) + (order.pointsUsed || 0)).toLocaleString()}원</span>
+                      <span>-{((order.couponDiscountAmount || 0) + (order.pointsUsed || 0)).toLocaleString()}원</span>
                     </div>
                   )}
                   <div className="flex justify-between font-medium text-sm text-gray-900 pt-1 border-t border-gray-100">
                     <span>실제 지불</span>
-                    <span>{order.totalAmount.toLocaleString()}원</span>
+                    <span>{(order.subtotal + order.taxAmount + (order.deliveryFee || 0) - (order.couponDiscountAmount || 0) - (order.pointsUsed || 0)).toLocaleString()}원</span>
                   </div>
                 </div>
               </div>

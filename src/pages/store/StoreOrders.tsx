@@ -324,7 +324,41 @@ const StoreOrders: React.FC = () => {
   };
 
   const handleViewReceipt = (order: Order) => {
-    setSelectedOrderForReceipt(order);
+    console.log('🔍 handleViewReceipt 호출됨:', {
+      원본주문: order,
+      쿠폰할인원본: order.couponDiscountAmount,
+      포인트사용원본: order.pointsUsed,
+      세금원본: order.taxAmount
+    });
+
+    // 주문 데이터를 Receipt 컴포넌트가 기대하는 형식으로 변환
+    const formattedOrder = {
+      ...order,
+      // 이미 camelCase로 되어 있으므로 그대로 사용
+      orderNumber: order.orderNumber,
+      createdAt: order.createdAt,
+      completedAt: order.completedAt,
+      orderType: order.orderType,
+      paymentMethod: order.paymentMethod,
+      deliveryAddress: order.deliveryAddress,
+      deliveryFee: Math.round(Number(order.deliveryFee) || 0),
+      pointsUsed: Math.round(Number(order.pointsUsed) || 0),
+      couponDiscountAmount: Math.round(Number(order.couponDiscountAmount) || 0),
+      appliedCouponId: order.appliedCouponId,
+      taxAmount: Math.round(Number(order.taxAmount) || 0),
+      totalAmount: Math.round(Number(order.totalAmount) || 0),
+      status: order.status
+    };
+
+    console.log('🔍 일반 주문 영수증 데이터 변환:', {
+      원본: order,
+      변환후: formattedOrder,
+      쿠폰할인: formattedOrder.couponDiscountAmount,
+      포인트사용: formattedOrder.pointsUsed,
+      세금: formattedOrder.taxAmount
+    });
+
+    setSelectedOrderForReceipt(formattedOrder as any);
     setReceiptModalOpen(true);
   };
 

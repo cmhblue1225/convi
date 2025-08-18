@@ -172,6 +172,9 @@ const PaymentSuccess: React.FC = () => {
           // 포인트 정보 추가
           pointsUsed: checkoutData.pointsUsed || 0,
           pointsDiscountAmount: checkoutData.pointsUsed || 0,
+          // 쿠폰 정보 추가
+          selectedCoupon: checkoutData.selectedCoupon || null,
+          couponDiscount: checkoutData.couponDiscount || 0,
           status: 'pending' as const,
           createdAt: new Date().toISOString()
         };
@@ -248,23 +251,54 @@ const PaymentSuccess: React.FC = () => {
                 console.log('🎫 쿠폰 사용 처리 시작:', {
                   userId: checkoutData.userId,
                   orderId: newOrder.id,
-                  userCouponId: checkoutData.selectedCoupon.id
+                  couponCode: checkoutData.selectedCoupon
                 });
 
-                const { error: couponError } = await supabase
-                  .from('user_coupons')
-                  .update({
-                    is_used: true,
-                    used_at: new Date().toISOString(),
-                    used_order_id: newOrder.id
-                  })
-                  .eq('id', checkoutData.selectedCoupon.id)
-                  .eq('is_used', false);
+                try {
+                  // 쿠폰 코드로 user_coupons 테이블에서 해당 사용자의 쿠폰 찾기
+                  const { data: userCouponData, error: findError } = await supabase
+                    .from('user_coupons')
+                    .select('id, coupon_id')
+                    .eq('user_id', checkoutData.userId)
+                    .eq('is_used', false)
+                    .eq('coupon_id', (await supabase
+                      .from('coupons')
+                      .select('id')
+                      .eq('code', checkoutData.selectedCoupon)
+                      .single()
+                    ).data?.id)
+                    .single();
 
-                if (couponError) {
-                  console.error('❌ 쿠폰 사용 처리 실패:', couponError);
-                } else {
-                  console.log('✅ 쿠폰 사용 처리 완료:', checkoutData.selectedCoupon.code);
+                  if (findError) {
+                    console.error('❌ 사용자 쿠폰 찾기 실패:', findError);
+                    return;
+                  }
+
+                  if (userCouponData) {
+                    // 쿠폰 사용 상태 업데이트
+                    const { error: couponError } = await supabase
+                      .from('user_coupons')
+                      .update({
+                        is_used: true,
+                        used_at: new Date().toISOString(),
+                        used_order_id: newOrder.id
+                      })
+                      .eq('id', userCouponData.id)
+                      .eq('is_used', false);
+
+                    if (couponError) {
+                      console.error('❌ 쿠폰 사용 처리 실패:', couponError);
+                    } else {
+                      console.log('✅ 쿠폰 사용 처리 완료:', {
+                        couponCode: checkoutData.selectedCoupon,
+                        userCouponId: userCouponData.id
+                      });
+                    }
+                  } else {
+                    console.warn('⚠️ 사용 가능한 쿠폰을 찾을 수 없음:', checkoutData.selectedCoupon);
+                  }
+                } catch (error) {
+                  console.error('❌ 쿠폰 처리 중 오류:', error);
                 }
               }
             }

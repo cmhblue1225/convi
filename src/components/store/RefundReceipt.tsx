@@ -11,18 +11,33 @@ const RefundReceipt = forwardRef<HTMLDivElement, RefundReceiptProps>(({
   order,
   storeInfo
 }, ref) => {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return 'N/A';
+    try {
+      return new Date(dateString).toLocaleString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return 'N/A';
+    }
   };
 
   const formatCurrency = (amount: number) => {
     return amount?.toLocaleString() || '0';
+  };
+
+  const getRefundAmountDisplay = () => {
+    if (refund?.status === 'approved' && refund?.approved_refund_amount) {
+      return formatCurrency(Math.round(refund.approved_refund_amount));
+    } else if (refund?.status === 'pending') {
+      return '검토중';
+    } else {
+      return '미정';
+    }
   };
 
   return (
@@ -54,11 +69,11 @@ const RefundReceipt = forwardRef<HTMLDivElement, RefundReceiptProps>(({
         </div>
         <div className="flex justify-between mb-1">
           <span className="text-gray-600">환불 요청일:</span>
-          <span className="font-bold">{refund?.created_at ? formatDate(refund.created_at) : 'N/A'}</span>
+          <span className="font-bold">{formatDate(refund?.created_at || refund?.requested_at)}</span>
         </div>
         <div className="flex justify-between mb-1">
           <span className="text-gray-600">처리 완료일:</span>
-          <span className="font-bold">{refund?.processed_at ? formatDate(refund.processed_at) : '처리 중'}</span>
+          <span className="font-bold">{formatDate(refund?.processed_at)}</span>
         </div>
         <div className="mb-1">
           <div className="text-gray-600 mb-1">환불 사유:</div>
@@ -80,6 +95,10 @@ const RefundReceipt = forwardRef<HTMLDivElement, RefundReceiptProps>(({
         <div className="flex justify-between mb-1">
           <span className="text-gray-600">환불 요청 금액:</span>
           <span className="font-bold text-red-600">{formatCurrency(Math.round(refund?.requested_refund_amount || 0))}원</span>
+        </div>
+        <div className="flex justify-between mb-1">
+          <span className="text-gray-600">승인 금액:</span>
+          <span className="font-bold text-green-600">{getRefundAmountDisplay()}원</span>
         </div>
         
         {/* 원주문 할인 정보 */}

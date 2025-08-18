@@ -122,21 +122,27 @@ const Checkout: React.FC = () => {
     }
   };
 
-
   const validateCoupon = async (couponCode: string) => {
     if (!user?.id) return null;
     
     try {
+      console.log('🔍 쿠폰 검증 시작:', { couponCode, user_id: user.id, order_amount: totalAmount });
+      
       const { data, error } = await supabase.rpc('validate_coupon', {
         coupon_code: couponCode,
         user_uuid: user.id,
         order_amount: totalAmount
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ 쿠폰 검증 오류:', error);
+        throw error;
+      }
+      
+      console.log('✅ 쿠폰 검증 결과:', data);
       return data[0] || null;
     } catch (error) {
-      console.error('쿠폰 검증 오류:', error);
+      console.error('❌ 쿠폰 검증 중 오류:', error);
       return null;
     }
   };
@@ -148,11 +154,13 @@ const Checkout: React.FC = () => {
       // 쿠폰 할인 금액을 정수로 반올림
       const roundedDiscount = roundAmount(couponValidation.discount_amount);
       amount -= roundedDiscount;
+      console.log('💰 쿠폰 할인 적용:', { 원래금액: totalAmount, 할인금액: roundedDiscount, 할인후금액: amount });
     }
     
     // 포인트 할인 금액을 정수로 반올림
     const roundedPoints = roundAmount(pointsToUse);
     amount -= roundedPoints;
+    console.log('💰 포인트 할인 적용:', { 할인후금액: amount, 포인트사용: roundedPoints, 최종금액: amount });
     
     // 최종 금액을 정수로 반올림
     const roundedAmount = roundAmount(amount);
@@ -162,11 +170,20 @@ const Checkout: React.FC = () => {
   const handleCouponApply = async () => {
     if (!selectedCoupon) return;
     
+    console.log('🎫 쿠폰 적용 시작:', { selectedCoupon });
+    
     const validation = await validateCoupon(selectedCoupon);
     
     // 쿠폰 할인 금액을 정수로 반올림하여 저장
     if (validation && validation.is_valid) {
       validation.discount_amount = roundAmount(validation.discount_amount);
+      console.log('✅ 쿠폰 적용 성공:', { 
+        쿠폰코드: selectedCoupon, 
+        할인금액: validation.discount_amount,
+        메시지: validation.message 
+      });
+    } else {
+      console.log('❌ 쿠폰 적용 실패:', validation);
     }
     
     setCouponValidation(validation);
@@ -616,19 +633,31 @@ const Checkout: React.FC = () => {
                     <div className="flex space-x-2">
                       <select
                         value={selectedCoupon}
-                        onChange={(e) => setSelectedCoupon(e.target.value)}
+                        onChange={(e) => {
+                          console.log('🎫 쿠폰 선택 변경:', { 
+                            이전값: selectedCoupon, 
+                            새값: e.target.value,
+                            전체옵션: e.target.options[e.target.selectedIndex]?.text 
+                          });
+                          setSelectedCoupon(e.target.value);
+                        }}
                         className="flex-1 p-2 border border-gray-300 rounded-lg text-sm"
                       >
                         <option value="">쿠폰 선택</option>
                         {userCoupons.map((userCoupon) => (
                           <option key={userCoupon.id} value={userCoupon.coupon.code}>
-                            {userCoupon.coupon.name}
+                            {userCoupon.coupon.name} ({userCoupon.coupon.code})
                           </option>
                         ))}
                       </select>
                       <button
                         onClick={handleCouponApply}
-                        className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
+                        disabled={!selectedCoupon}
+                        className={`px-3 py-2 rounded-lg text-sm transition-colors ${
+                          selectedCoupon 
+                            ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        }`}
                       >
                         적용
                       </button>
