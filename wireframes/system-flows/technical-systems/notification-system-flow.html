@@ -1055,7 +1055,7 @@ class NotificationAnalytics {
     
     // 성능이 낮은 채널 식별
     const poorPerformingChannels = Object.entries(channelPerformance)
-      .filter(([channel, performance]) => performance.deliveryRate < 0.8)
+      .filter(([channel, performance]) => performance.deliveryRate &lt; 0.8)
       .map(([channel]) => channel);
     
     if (poorPerformingChannels.length > 0) {

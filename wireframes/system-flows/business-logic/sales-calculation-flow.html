@@ -670,7 +670,7 @@ class ProfitabilityAnalyzer {
     
     const profitMargin = (sales.totalProfit / sales.totalRevenue) * 100;
     
-    if (profitMargin < 10) {
+    if (profitMargin &lt; 10) {
       recommendations.push({
         type: 'pricing',
         priority: 'high',
@@ -681,7 +681,7 @@ class ProfitabilityAnalyzer {
     }
     
     const avgDailySales = sales.totalQuantity / sales.salesDays;
-    if (avgDailySales < 1) {
+    if (avgDailySales &lt; 1) {
       recommendations.push({
         type: 'promotion',
         priority: 'medium',
@@ -763,11 +763,11 @@ class RealtimeKPICalculator {
       comparison: {
         revenueChange: {
           value: revenueChangeRate,
-          trend: revenueChangeRate > 0 ? 'up' : revenueChangeRate < 0 ? 'down' : 'stable'
+          trend: revenueChangeRate > 0 ? 'up' : revenueChangeRate &lt; 0 ? 'down' : 'stable'
         },
         orderChange: {
           value: orderChangeRate,
-          trend: orderChangeRate > 0 ? 'up' : orderChangeRate < 0 ? 'down' : 'stable'
+          trend: orderChangeRate > 0 ? 'up' : orderChangeRate &lt; 0 ? 'down' : 'stable'
         }
       },
       projections: {
@@ -807,7 +807,7 @@ class RealtimeKPICalculator {
       ? ((today.revenue - yesterday.revenue) / yesterday.revenue) * 100 
       : 0;
     
-    if (revenueDecline < -20) {
+    if (revenueDecline &lt; -20) {
       alerts.push({
         type: 'warning',
         title: '매출 급감',
@@ -938,12 +938,12 @@ class TaxAndSettlementProcessor {
 
   private getIncomeTaxRate(annualProfit: number): number {
     // 소득세 누진세율 적용
-    if (annualProfit <= 12000000) return 0.06; // 6%
-    if (annualProfit <= 46000000) return 0.15; // 15%
-    if (annualProfit <= 88000000) return 0.24; // 24%
-    if (annualProfit <= 150000000) return 0.35; // 35%
-    if (annualProfit <= 300000000) return 0.38; // 38%
-    if (annualProfit <= 500000000) return 0.40; // 40%
+    if (annualProfit &lt;= 12000000) return 0.06; // 6%
+    if (annualProfit &lt;= 46000000) return 0.15; // 15%
+    if (annualProfit &lt;= 88000000) return 0.24; // 24%
+    if (annualProfit &lt;= 150000000) return 0.35; // 35%
+    if (annualProfit &lt;= 300000000) return 0.38; // 38%
+    if (annualProfit &lt;= 500000000) return 0.40; // 40%
     return 0.42; // 42%
   }
 

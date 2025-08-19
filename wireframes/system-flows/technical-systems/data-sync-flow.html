@@ -1230,7 +1230,7 @@ class BatchSyncSystem {
       let processedRecords = 0;
       let offset = 0;
       
-      while (offset < totalRecords) {
+      while (offset &lt; totalRecords) {
         const chunk = await this.fetchChunk(sourceConnection, request.query, offset, chunkSize);
         
         if (chunk.length === 0) break;
@@ -1426,7 +1426,7 @@ class BatchSyncSystem {
     }
     
     // 동시성 최적화
-    if (batchStats.avgCpuUsage < 50) {
+    if (batchStats.avgCpuUsage &lt; 50) {
       recommendations.push({
         type: 'increase-concurrency',
         current: batchStats.concurrency,
@@ -1714,7 +1714,7 @@ class SyncMonitoringSystem {
     }
 
     // 처리량 감소
-    if (recentMetrics.throughput < baseline.throughput * 0.5) {
+    if (recentMetrics.throughput &lt; baseline.throughput * 0.5) {
       anomalies.push({
         type: 'throughput-drop',
         severity: 'warning',

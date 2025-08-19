@@ -337,7 +337,7 @@ const validateOrderItems = async (items: OrderItem[], storeId: string) => {
       }
 
       // 재고 확인
-      if (storeProduct.stockQuantity < item.quantity) {
+      if (storeProduct.stockQuantity &lt; item.quantity) {
         throw new OrderValidationError('INSUFFICIENT_STOCK', {
           productId: item.productId,
           requested: item.quantity,
@@ -371,7 +371,7 @@ const reserveStockForOrder = async (orderItems: OrderItem[]) => {
         .forUpdate()
         .first();
 
-      if (storeProduct.stock_quantity < item.quantity) {
+      if (storeProduct.stock_quantity &lt; item.quantity) {
         throw new InsufficientStockError(item);
       }
 

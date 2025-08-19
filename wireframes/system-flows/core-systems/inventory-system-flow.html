@@ -409,13 +409,13 @@ class LowStockDetector {
     
     const availableStock = currentStock - reservedStock;
     
-    if (availableStock <= 0) {
+    if (availableStock &lt;= 0) {
       // 품절 상황
       await this.handleOutOfStock(storeProduct);
-    } else if (availableStock <= minimumStock) {
+    } else if (availableStock &lt;= minimumStock) {
       // 저재고 상황
       await this.handleLowStock(storeProduct, availableStock);
-    } else if (availableStock > storeProduct.maximum_stock) {
+    } else if (availableStock &gt; storeProduct.maximum_stock) {
       // 과재고 상황
       await this.handleOverStock(storeProduct, availableStock);
     }
@@ -607,7 +607,7 @@ class InventoryAnalytics {
     const recommendations = [];
     
     // 저회전 상품 처리 권장
-    if (analysis.turnoverAnalysis.lowTurnoverProducts.length > 0) {
+    if (analysis.turnoverAnalysis.lowTurnoverProducts.length &gt; 0) {
       recommendations.push({
         type: 'reduce_slow_movers',
         priority: 'medium',
@@ -654,7 +654,7 @@ class InventoryReservationManager {
         trx
       );
       
-      if (availableStock < reservationRequest.quantity) {
+      if (availableStock &lt; reservationRequest.quantity) {
         throw new InsufficientStockError(
           `가용 재고: ${availableStock}, 요청량: ${reservationRequest.quantity}`
         );

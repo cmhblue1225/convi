@@ -360,7 +360,7 @@ class SupplyRequestValidator {
     );
     
     const minOrderAmount = await this.getMinOrderAmount(request.storeId);
-    if (totalAmount < minOrderAmount) {
+    if (totalAmount &lt; minOrderAmount) {
       validationErrors.push(`최소 주문금액 ${minOrderAmount}원 미달`);
     }
     
@@ -388,7 +388,7 @@ class SupplyRequestValidator {
         continue;
       }
       
-      if (item.quantity <= 0 || item.quantity > product.maxOrderQuantity) {
+      if (item.quantity &lt;= 0 || item.quantity &gt; product.maxOrderQuantity) {
         errors.push(`${product.name}의 주문 수량이 유효하지 않습니다`);
         continue;
       }
@@ -516,7 +516,7 @@ class WarehouseInventoryManager {
           productId: item.productId,
           requestedQuantity: item.quantity,
           availableQuantity: availableStock,
-          canFulfill: availableStock >= item.quantity,
+          canFulfill: availableStock &gt;= item.quantity,
           maxAvailable: availableStock,
           estimatedRestockDate: warehouseStock.estimatedRestockDate
         };
@@ -525,7 +525,7 @@ class WarehouseInventoryManager {
     
     const fullyAvailable = availabilityResults.every(result => result.canFulfill);
     const partiallyAvailable = availabilityResults.some(result => 
-      result.maxAvailable > 0 && !result.canFulfill
+      result.maxAvailable &gt; 0 && !result.canFulfill
     );
     
     return {
@@ -575,8 +575,8 @@ class WarehouseInventoryManager {
   private generateStockRecommendations(results: StockResult[]): Recommendation[] {
     const recommendations = [];
     
-    const outOfStock = results.filter(r => r.maxAvailable === 0);
-    if (outOfStock.length > 0) {
+    const outOfStock = results.filter(r =&gt; r.maxAvailable === 0);
+    if (outOfStock.length &gt; 0) {
       recommendations.push({
         type: 'out_of_stock',
         priority: 'high',
@@ -585,10 +585,10 @@ class WarehouseInventoryManager {
       });
     }
     
-    const lowStock = results.filter(r => 
-      r.maxAvailable > 0 && r.maxAvailable < r.requestedQuantity
+    const lowStock = results.filter(r =&gt; 
+      r.maxAvailable &gt; 0 && r.maxAvailable &lt; r.requestedQuantity
     );
-    if (lowStock.length > 0) {
+    if (lowStock.length &gt; 0) {
       recommendations.push({
         type: 'partial_fulfillment',
         priority: 'medium',
@@ -861,7 +861,7 @@ class SupplyBillingProcessor {
     
     // 볼륨 할인
     const volumeDiscount = await this.getVolumeDiscount(storeId, orderAmount);
-    if (volumeDiscount > 0) {
+    if (volumeDiscount &gt; 0) {
       discounts.push({
         type: 'volume',
         amount: volumeDiscount,
@@ -872,7 +872,7 @@ class SupplyBillingProcessor {
     
     // 단골 고객 할인
     const loyaltyDiscount = await this.getLoyaltyDiscount(store);
-    if (loyaltyDiscount > 0) {
+    if (loyaltyDiscount &gt; 0) {
       discounts.push({
         type: 'loyalty',
         amount: loyaltyDiscount,
@@ -883,7 +883,7 @@ class SupplyBillingProcessor {
     
     // 프로모션 할인
     const promotionDiscount = await this.getPromotionDiscount(storeId, orderAmount);
-    if (promotionDiscount > 0) {
+    if (promotionDiscount &gt; 0) {
       discounts.push({
         type: 'promotion',
         amount: promotionDiscount,

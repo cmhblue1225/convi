@@ -751,7 +751,7 @@ class PointsExpiryManager {
         }
         
         // 만료 처리
-        if (daysUntilExpiry <= 0) {
+        if (daysUntilExpiry &lt;= 0) {
           await this.expirePoints(pointRecord);
           results.pointsExpired += pointRecord.balance;
           results.customersAffected++;
@@ -857,7 +857,7 @@ class PointsUsageManager {
     // 사용 가능 포인트 확인
     const availablePoints = await this.getAvailablePoints(customerId);
     
-    if (availablePoints < usageAmount) {
+    if (availablePoints &lt; usageAmount) {
       throw new InsufficientPointsError(
         `사용 가능 포인트: ${availablePoints}, 요청 사용량: ${usageAmount}`
       );
@@ -873,7 +873,7 @@ class PointsUsageManager {
     
     try {
       for (const record of pointsRecords) {
-        if (remainingUsage <= 0) break;
+        if (remainingUsage &lt;= 0) break;
         
         const usableAmount = Math.min(record.balance, remainingUsage);
         
@@ -1058,7 +1058,7 @@ class PointsAnalytics {
     }
     
     // 보너스 포인트 기회 제안
-    if (analysis.earnPattern.bonusRate < 0.3) { // 보너스 적립 비율이 30% 미만
+    if (analysis.earnPattern.bonusRate &lt; 0.3) { // 보너스 적립 비율이 30% 미만
       recommendations.push({
         type: 'increase_bonus',
         priority: 'medium',
@@ -1070,7 +1070,7 @@ class PointsAnalytics {
     }
     
     // 사용 패턴 최적화 제안
-    if (analysis.usagePattern.efficiency < 0.8) {
+    if (analysis.usagePattern.efficiency &lt; 0.8) {
       recommendations.push({
         type: 'optimize_usage',
         priority: 'medium',

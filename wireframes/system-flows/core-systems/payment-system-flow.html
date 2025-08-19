@@ -464,7 +464,7 @@ class PaymentValidator {
 
   static validateAmount(orderAmount: number, paymentAmount: number): boolean {
     // 부동소수점 오차 고려한 금액 비교
-    return Math.abs(orderAmount - paymentAmount) < 0.01;
+    return Math.abs(orderAmount - paymentAmount) &lt; 0.01;
   }
 
   static validatePaymentWindow(paymentTimestamp: number): boolean {
@@ -473,7 +473,7 @@ class PaymentValidator {
     const timeDiff = now - paymentTime;
     
     // 결제 요청 후 30분 이내만 유효
-    return timeDiff > 0 && timeDiff < (30 * 60 * 1000);
+    return timeDiff > 0 && timeDiff &lt; (30 * 60 * 1000);
   }
 
   static async validateDuplicatePayment(orderId: string, amount: number): Promise<boolean> {
@@ -511,7 +511,7 @@ class PaymentFailureHandler {
     });
 
     // 복구 가능한 경우 자동 재시도
-    if (failureAnalysis.recoverable && context.retryCount < MAX_RETRY_COUNT) {
+    if (failureAnalysis.recoverable && context.retryCount &lt; MAX_RETRY_COUNT) {
       await this.scheduleRetry(context, failureAnalysis.retryDelay);
       return { action: 'retry_scheduled' };
     }

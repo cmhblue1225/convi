@@ -413,7 +413,7 @@ class DiscountEngine {
     
     return this.promotionStack.filter(promotion => {
       // 활성 기간 확인
-      if (currentTime < promotion.startDate || currentTime > promotion.endDate) {
+      if (currentTime &lt; promotion.startDate || currentTime > promotion.endDate) {
         return false;
       }
       
@@ -613,7 +613,7 @@ class DiscountOptimizer {
     const maxDiscountRate = 0.8;
     const maxAllowedDiscount = orderAmount * maxDiscountRate;
     
-    if (totalDiscountAmount <= maxAllowedDiscount) {
+    if (totalDiscountAmount &lt;= maxAllowedDiscount) {
       return discounts;
     }
     
@@ -702,7 +702,7 @@ class CouponManager {
     }
     
     // 최소 주문 금액 확인
-    if (order.subtotalAmount < coupon.minimumOrderAmount) {
+    if (order.subtotalAmount &lt; coupon.minimumOrderAmount) {
       return { 
         isValid: false, 
         errorMessage: `최소 주문 금액 ${coupon.minimumOrderAmount}원 이상이어야 합니다.` 
@@ -823,9 +823,9 @@ class TimeBasedPromotionManager {
     
     // 자정을 넘나드는 시간대 처리 (예: 22:00 - 06:00)
     if (start > end) {
-      return current >= start || current <= end;
+      return current >= start || current &lt;= end;
     } else {
-      return current >= start && current <= end;
+      return current >= start && current &lt;= end;
     }
   }
   

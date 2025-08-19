@@ -680,7 +680,7 @@ class MemoryCache {
     let oldestTime = Date.now();
     
     for (const [key, entry] of this.cache.entries()) {
-      if (entry.lastAccessed < oldestTime) {
+      if (entry.lastAccessed &lt; oldestTime) {
         oldestTime = entry.lastAccessed;
         oldestKey = key;
       }
@@ -878,7 +878,7 @@ class CacheInvalidationManager {
   async batchInvalidate(invalidations: CacheInvalidation[]): Promise<void> {
     const batchSize = 100;
     
-    for (let i = 0; i < invalidations.length; i += batchSize) {
+    for (let i = 0; i &lt; invalidations.length; i += batchSize) {
       const batch = invalidations.slice(i, i + batchSize);
       
       await Promise.all(
@@ -895,7 +895,7 @@ class CacheInvalidationManager {
       );
       
       // 배치 간 짧은 대기 (과부하 방지)
-      if (i + batchSize < invalidations.length) {
+      if (i + batchSize &lt; invalidations.length) {
         await this.delay(10);
       }
     }
@@ -932,7 +932,7 @@ class CacheMonitor {
     const hitRate = this.metrics.getHitRate(layer);
     
     // 임계값 확인 및 알림
-    if (hitRate < this.alertThresholds.minHitRate) {
+    if (hitRate &lt; this.alertThresholds.minHitRate) {
       this.sendAlert({
         type: 'low_hit_rate',
         layer,
@@ -979,7 +979,7 @@ class CacheMonitor {
     const recommendations = [];
     
     // 낮은 히트율 개선 제안
-    if (stats.hitRate < 0.8) {
+    if (stats.hitRate &lt; 0.8) {
       recommendations.push({
         type: 'increase_ttl',
         priority: 'high',
@@ -1063,7 +1063,7 @@ class CacheMonitor {
     const memoryStats = this.cacheManager.l1Cache.getStats();
     health.checks.push({
       component: 'Memory Cache',
-      status: memoryStats.memoryUsage < 0.9 ? 'healthy' : 'warning',
+      status: memoryStats.memoryUsage &lt; 0.9 ? 'healthy' : 'warning',
       details: memoryStats
     });
     
@@ -1144,7 +1144,7 @@ class CDNAndBrowserCacheManager {
       const modifiedSince = new Date(ifModifiedSince);
       const lastModified = new Date(resourceInfo.lastModified);
       
-      if (lastModified <= modifiedSince) {
+      if (lastModified &lt;= modifiedSince) {
         response.status(304).end();
         return true;
       }
