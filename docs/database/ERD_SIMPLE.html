@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>편의점 솔루션 ERD - 간단 버전</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .table-card {
+            transition: all 0.3s ease;
+        }
+
+        .table-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .relation-line {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .relation-line::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .relation-line:hover::before {
+            left: 100%;
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            .print-break { page-break-before: always; }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+    <div class="max-w-7xl mx-auto p-6">
+        <!-- 헤더 -->
+        <div class="text-center mb-12 bg-white rounded-xl shadow-lg p-8">
+            <h1 class="text-3xl font-bold text-slate-800 mb-2">편의점 종합 솔루션 ERD</h1>
+            <p class="text-slate-600 mb-4">22개 테이블로 구성된 완전한 데이터베이스 설계</p>
+            <div class="flex justify-center gap-4 text-sm text-slate-500">
+                <span>🎯 3가지 사용자 역할</span>
+                <span>📦 10개 기능 영역</span>
+                <span>🔗 45+ 관계</span>
+                <span>📊 실시간 분석</span>
+            </div>
+            
+            <!-- 컨트롤 -->
+            <div class="flex justify-center gap-3 mt-6 no-print">
+                <button onclick="toggleAll(true)" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-sm">
+                    모두 펼치기
+                </button>
+                <button onclick="toggleAll(false)" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-sm">
+                    모두 접기
+                </button>
+                <button onclick="window.print()" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition text-sm">
+                    🖨️ 인쇄
+                </button>
+                <button onclick="showCategory('all')" class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition text-sm">
+                    전체보기
+                </button>
+            </div>
+        </div>
+
+        <!-- 범례 -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8 no-print">
+            <h3 class="text-lg font-semibold text-slate-700 mb-4">📋 필드 타입 범례</h3>
+            <div class="flex flex-wrap gap-4">
+                <div class="flex items-center gap-2">
+                    <span class="px-2 py-1 bg-blue-500 text-white text-xs rounded font-mono">PK</span>
+                    <span class="text-sm text-slate-600">Primary Key</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="px-2 py-1 bg-green-500 text-white text-xs rounded font-mono">FK</span>
+                    <span class="text-sm text-slate-600">Foreign Key</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="px-2 py-1 bg-red-500 text-white text-xs rounded font-mono">UQ</span>
+                    <span class="text-sm text-slate-600">Unique</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="px-2 py-1 bg-yellow-500 text-white text-xs rounded font-mono">IX</span>
+                    <span class="text-sm text-slate-600">Index</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 카테고리 필터 -->
+        <div class="bg-white rounded-lg shadow-md p-4 mb-8 no-print">
+            <div class="flex flex-wrap gap-2 justify-center">
+                <button onclick="showCategory('all')" class="category-btn px-3 py-2 rounded-lg text-sm transition border-2" data-category="all">
+                    전체 (22)
+                </button>
+                <button onclick="showCategory('user')" class="category-btn px-3 py-2 rounded-lg text-sm transition border-2 border-blue-200 hover:bg-blue-50" data-category="user">
+                    🧑‍💼 사용자 (1)
+                </button>
+                <button onclick="showCategory('product')" class="category-btn px-3 py-2 rounded-lg text-sm transition border-2 border-green-200 hover:bg-green-50" data-category="product">
+                    📦 상품 (2)
+                </button>
+                <button onclick="showCategory('store')" class="category-btn px-3 py-2 rounded-lg text-sm transition border-2 border-purple-200 hover:bg-purple-50" data-category="store">
+                    🏪 매장 (2)
+                </button>
+                <button onclick="showCategory('order')" class="category-btn px-3 py-2 rounded-lg text-sm transition border-2 border-orange-200 hover:bg-orange-50" data-category="order">
+                    🛒 주문 (3)
+                </button>
+                <button onclick="showCategory('supply')" class="category-btn px-3 py-2 rounded-lg text-sm transition border-2 border-indigo-200 hover:bg-indigo-50" data-category="supply">
+                    🚚 물류 (3)
+                </button>
+                <button onclick="showCategory('promotion')" class="category-btn px-3 py-2 rounded-lg text-sm transition border-2 border-pink-200 hover:bg-pink-50" data-category="promotion">
+                    🎁 프로모션 (4)
+                </button>
+                <button onclick="showCategory('analytics')" class="category-btn px-3 py-2 rounded-lg text-sm transition border-2 border-gray-200 hover:bg-gray-50" data-category="analytics">
+                    📊 분석 (4)
+                </button>
+                <button onclick="showCategory('system')" class="category-btn px-3 py-2 rounded-lg text-sm transition border-2 border-yellow-200 hover:bg-yellow-50" data-category="system">
+                    ⚙️ 시스템 (3)
+                </button>
+            </div>
+        </div>
+
+        <!-- 테이블 그리드 -->
+        <div class="space-y-12">
+            <!-- 1. 사용자 관리 -->
+            <div class="category-section" data-category="user">
+                <h2 class="text-2xl font-bold text-blue-700 mb-6 flex items-center gap-3">
+                    <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                        <span class="text-white">🧑‍💼</span>
+                    </div>
+                    사용자 관리
+                    <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">1 table</span>
+                </h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <!-- profiles 테이블 -->
+                    <div class="table-card bg-white rounded-lg shadow-md border-l-4 border-blue-500 overflow-hidden" data-table="profiles">
+                        <div class="p-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
+                                        <span class="text-white text-sm">👤</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold text-blue-700">profiles</h4>
+                                        <p class="text-xs text-slate-500">사용자 프로필</p>
+                                    </div>
+                                </div>
+                                <button onclick="toggleTable('profiles')" class="text-slate-400 hover:text-slate-600">
+                                    <span class="toggle-icon">▼</span>
+                                </button>
+                            </div>
+                            
+                            <div class="table-fields space-y-1 text-xs" style="display: none;">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-blue-500 text-white rounded font-mono text-xs">PK</span>
+                                    <span>id</span>
+                                    <span class="text-slate-400 text-xs">UUID</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>role</span>
+                                    <span class="text-slate-400 text-xs">TEXT</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>full_name</span>
+                                    <span class="text-slate-400 text-xs">TEXT</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>first_name</span>
+                                    <span class="text-slate-400 text-xs">TEXT</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>last_name</span>
+                                    <span class="text-slate-400 text-xs">TEXT</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-red-500 text-white rounded font-mono text-xs">UQ</span>
+                                    <span>email</span>
+                                    <span class="text-slate-400 text-xs">TEXT</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>phone</span>
+                                    <span class="text-slate-400 text-xs">TEXT</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>birth_date</span>
+                                    <span class="text-slate-400 text-xs">DATE</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>gender</span>
+                                    <span class="text-slate-400 text-xs">TEXT</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>avatar_url</span>
+                                    <span class="text-slate-400 text-xs">TEXT</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>address</span>
+                                    <span class="text-slate-400 text-xs">JSONB</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>is_active</span>
+                                    <span class="text-slate-400 text-xs">BOOLEAN</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>created_at</span>
+                                    <span class="text-slate-400 text-xs">TIMESTAMP</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>updated_at</span>
+                                    <span class="text-slate-400 text-xs">TIMESTAMP</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. 상품 관리 -->
+            <div class="category-section print-break" data-category="product">
+                <h2 class="text-2xl font-bold text-green-700 mb-6 flex items-center gap-3">
+                    <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                        <span class="text-white">📦</span>
+                    </div>
+                    상품 관리
+                    <span class="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full">2 tables</span>
+                </h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <!-- categories 테이블 -->
+                    <div class="table-card bg-white rounded-lg shadow-md border-l-4 border-green-500 overflow-hidden" data-table="categories">
+                        <div class="p-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 bg-green-500 rounded flex items-center justify-center">
+                                        <span class="text-white text-sm">📂</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold text-green-700">categories</h4>
+                                        <p class="text-xs text-slate-500">상품 카테고리</p>
+                                    </div>
+                                </div>
+                                <button onclick="toggleTable('categories')" class="text-slate-400 hover:text-slate-600">
+                                    <span class="toggle-icon">▼</span>
+                                </button>
+                            </div>
+                            
+                            <div class="table-fields space-y-1 text-xs" style="display: none;">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-blue-500 text-white rounded font-mono text-xs">PK</span>
+                                    <span>id</span>
+                                    <span class="text-slate-400 text-xs">UUID</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-red-500 text-white rounded font-mono text-xs">UQ</span>
+                                    <span>name</span>
+                                    <span class="text-slate-400 text-xs">TEXT</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-red-500 text-white rounded font-mono text-xs">UQ</span>
+                                    <span>slug</span>
+                                    <span class="text-slate-400 text-xs">TEXT</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-green-500 text-white rounded font-mono text-xs">FK</span>
+                                    <span>parent_id</span>
+                                    <span class="text-slate-400 text-xs">→ categories.id</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>icon_url</span>
+                                    <span class="text-slate-400 text-xs">TEXT</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>description</span>
+                                    <span class="text-slate-400 text-xs">TEXT</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>display_order</span>
+                                    <span class="text-slate-400 text-xs">INTEGER</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>is_active</span>
+                                    <span class="text-slate-400 text-xs">BOOLEAN</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- products 테이블 -->
+                    <div class="table-card bg-white rounded-lg shadow-md border-l-4 border-green-500 overflow-hidden" data-table="products">
+                        <div class="p-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 bg-green-500 rounded flex items-center justify-center">
+                                        <span class="text-white text-sm">📦</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold text-green-700">products</h4>
+                                        <p class="text-xs text-slate-500">상품 마스터</p>
+                                    </div>
+                                </div>
+                                <button onclick="toggleTable('products')" class="text-slate-400 hover:text-slate-600">
+                                    <span class="toggle-icon">▼</span>
+                                </button>
+                            </div>
+                            
+                            <div class="table-fields space-y-1 text-xs" style="display: none;">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-blue-500 text-white rounded font-mono text-xs">PK</span>
+                                    <span>id</span>
+                                    <span class="text-slate-400 text-xs">UUID</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>name</span>
+                                    <span class="text-slate-400 text-xs">TEXT</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-red-500 text-white rounded font-mono text-xs">UQ</span>
+                                    <span>barcode</span>
+                                    <span class="text-slate-400 text-xs">TEXT</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-green-500 text-white rounded font-mono text-xs">FK</span>
+                                    <span>category_id</span>
+                                    <span class="text-slate-400 text-xs">→ categories.id</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>brand</span>
+                                    <span class="text-slate-400 text-xs">TEXT</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>base_price</span>
+                                    <span class="text-slate-400 text-xs">NUMERIC</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>cost_price</span>
+                                    <span class="text-slate-400 text-xs">NUMERIC</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>image_urls</span>
+                                    <span class="text-slate-400 text-xs">TEXT[]</span>
+                                </div>
+                                <div class="text-center text-slate-400 text-xs pt-1">
+                                    +12 more fields...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. 매장 관리 -->
+            <div class="category-section print-break" data-category="store">
+                <h2 class="text-2xl font-bold text-purple-700 mb-6 flex items-center gap-3">
+                    <div class="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+                        <span class="text-white">🏪</span>
+                    </div>
+                    매장 관리
+                    <span class="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-full">2 tables</span>
+                </h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <!-- stores 테이블 -->
+                    <div class="table-card bg-white rounded-lg shadow-md border-l-4 border-purple-500 overflow-hidden" data-table="stores">
+                        <div class="p-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 bg-purple-500 rounded flex items-center justify-center">
+                                        <span class="text-white text-sm">🏪</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold text-purple-700">stores</h4>
+                                        <p class="text-xs text-slate-500">매장 정보</p>
+                                    </div>
+                                </div>
+                                <button onclick="toggleTable('stores')" class="text-slate-400 hover:text-slate-600">
+                                    <span class="toggle-icon">▼</span>
+                                </button>
+                            </div>
+                            
+                            <div class="table-fields space-y-1 text-xs" style="display: none;">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-blue-500 text-white rounded font-mono text-xs">PK</span>
+                                    <span>id</span>
+                                    <span class="text-slate-400 text-xs">UUID</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>name</span>
+                                    <span class="text-slate-400 text-xs">TEXT</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-green-500 text-white rounded font-mono text-xs">FK</span>
+                                    <span>owner_id</span>
+                                    <span class="text-slate-400 text-xs">→ profiles.id</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>address</span>
+                                    <span class="text-slate-400 text-xs">TEXT</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>phone</span>
+                                    <span class="text-slate-400 text-xs">TEXT</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>location</span>
+                                    <span class="text-slate-400 text-xs">GEOGRAPHY</span>
+                                </div>
+                                <div class="text-center text-slate-400 text-xs pt-1">
+                                    +9 more fields...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- store_products 테이블 -->
+                    <div class="table-card bg-white rounded-lg shadow-md border-l-4 border-purple-500 overflow-hidden" data-table="store_products">
+                        <div class="p-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 bg-purple-500 rounded flex items-center justify-center">
+                                        <span class="text-white text-sm">🏷️</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold text-purple-700">store_products</h4>
+                                        <p class="text-xs text-slate-500">매장별 상품</p>
+                                    </div>
+                                </div>
+                                <button onclick="toggleTable('store_products')" class="text-slate-400 hover:text-slate-600">
+                                    <span class="toggle-icon">▼</span>
+                                </button>
+                            </div>
+                            
+                            <div class="table-fields space-y-1 text-xs" style="display: none;">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-blue-500 text-white rounded font-mono text-xs">PK</span>
+                                    <span>id</span>
+                                    <span class="text-slate-400 text-xs">UUID</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-green-500 text-white rounded font-mono text-xs">FK</span>
+                                    <span>store_id</span>
+                                    <span class="text-slate-400 text-xs">→ stores.id</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-green-500 text-white rounded font-mono text-xs">FK</span>
+                                    <span>product_id</span>
+                                    <span class="text-slate-400 text-xs">→ products.id</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>price</span>
+                                    <span class="text-slate-400 text-xs">NUMERIC</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>stock_quantity</span>
+                                    <span class="text-slate-400 text-xs">INTEGER</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>safety_stock</span>
+                                    <span class="text-slate-400 text-xs">INTEGER</span>
+                                </div>
+                                <div class="text-center text-slate-400 text-xs pt-1">
+                                    +7 more fields...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. 주문 관리 -->
+            <div class="category-section print-break" data-category="order">
+                <h2 class="text-2xl font-bold text-orange-700 mb-6 flex items-center gap-3">
+                    <div class="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
+                        <span class="text-white">🛒</span>
+                    </div>
+                    주문 관리
+                    <span class="px-3 py-1 bg-orange-100 text-orange-800 text-sm rounded-full">3 tables</span>
+                </h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <!-- orders 테이블 -->
+                    <div class="table-card bg-white rounded-lg shadow-md border-l-4 border-orange-500 overflow-hidden" data-table="orders">
+                        <div class="p-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 bg-orange-500 rounded flex items-center justify-center">
+                                        <span class="text-white text-sm">🛒</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold text-orange-700">orders</h4>
+                                        <p class="text-xs text-slate-500">주문 정보</p>
+                                    </div>
+                                </div>
+                                <button onclick="toggleTable('orders')" class="text-slate-400 hover:text-slate-600">
+                                    <span class="toggle-icon">▼</span>
+                                </button>
+                            </div>
+                            
+                            <div class="table-fields space-y-1 text-xs" style="display: none;">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-blue-500 text-white rounded font-mono text-xs">PK</span>
+                                    <span>id</span>
+                                    <span class="text-slate-400 text-xs">UUID</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-red-500 text-white rounded font-mono text-xs">UQ</span>
+                                    <span>order_number</span>
+                                    <span class="text-slate-400 text-xs">TEXT</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-green-500 text-white rounded font-mono text-xs">FK</span>
+                                    <span>customer_id</span>
+                                    <span class="text-slate-400 text-xs">→ profiles.id</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-green-500 text-white rounded font-mono text-xs">FK</span>
+                                    <span>store_id</span>
+                                    <span class="text-slate-400 text-xs">→ stores.id</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-yellow-500 text-white rounded font-mono text-xs">IX</span>
+                                    <span>status</span>
+                                    <span class="text-slate-400 text-xs">TEXT</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>total_amount</span>
+                                    <span class="text-slate-400 text-xs">NUMERIC</span>
+                                </div>
+                                <div class="text-center text-slate-400 text-xs pt-1">
+                                    +20 more fields...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- order_items 테이블 -->
+                    <div class="table-card bg-white rounded-lg shadow-md border-l-4 border-orange-500 overflow-hidden" data-table="order_items">
+                        <div class="p-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 bg-orange-500 rounded flex items-center justify-center">
+                                        <span class="text-white text-sm">📋</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold text-orange-700">order_items</h4>
+                                        <p class="text-xs text-slate-500">주문 상품</p>
+                                    </div>
+                                </div>
+                                <button onclick="toggleTable('order_items')" class="text-slate-400 hover:text-slate-600">
+                                    <span class="toggle-icon">▼</span>
+                                </button>
+                            </div>
+                            
+                            <div class="table-fields space-y-1 text-xs" style="display: none;">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-blue-500 text-white rounded font-mono text-xs">PK</span>
+                                    <span>id</span>
+                                    <span class="text-slate-400 text-xs">UUID</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-green-500 text-white rounded font-mono text-xs">FK</span>
+                                    <span>order_id</span>
+                                    <span class="text-slate-400 text-xs">→ orders.id</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-green-500 text-white rounded font-mono text-xs">FK</span>
+                                    <span>product_id</span>
+                                    <span class="text-slate-400 text-xs">→ products.id</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>quantity</span>
+                                    <span class="text-slate-400 text-xs">INTEGER</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>unit_price</span>
+                                    <span class="text-slate-400 text-xs">NUMERIC</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>subtotal</span>
+                                    <span class="text-slate-400 text-xs">NUMERIC</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- order_status_history 테이블 -->
+                    <div class="table-card bg-white rounded-lg shadow-md border-l-4 border-orange-500 overflow-hidden" data-table="order_status_history">
+                        <div class="p-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 bg-orange-500 rounded flex items-center justify-center">
+                                        <span class="text-white text-sm">📊</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold text-orange-700">order_status_history</h4>
+                                        <p class="text-xs text-slate-500">주문 상태 이력</p>
+                                    </div>
+                                </div>
+                                <button onclick="toggleTable('order_status_history')" class="text-slate-400 hover:text-slate-600">
+                                    <span class="toggle-icon">▼</span>
+                                </button>
+                            </div>
+                            
+                            <div class="table-fields space-y-1 text-xs" style="display: none;">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-blue-500 text-white rounded font-mono text-xs">PK</span>
+                                    <span>id</span>
+                                    <span class="text-slate-400 text-xs">UUID</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-green-500 text-white rounded font-mono text-xs">FK</span>
+                                    <span>order_id</span>
+                                    <span class="text-slate-400 text-xs">→ orders.id</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-slate-400 text-white rounded font-mono text-xs">&nbsp;&nbsp;</span>
+                                    <span>status</span>
+                                    <span class="text-slate-400 text-xs">TEXT</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-green-500 text-white rounded font-mono text-xs">FK</span>
+                                    <span>changed_by</span>
+                                    <span class="text-slate-400 text-xs">→ profiles.id</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 bg-yellow-500 text-white rounded font-mono text-xs">IX</span>
+                                    <span>created_at</span>
+                                    <span class="text-slate-400 text-xs">TIMESTAMP</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. 물류 관리 -->
+            <div class="category-section print-break" data-category="supply">
+                <h2 class="text-2xl font-bold text-indigo-700 mb-6 flex items-center gap-3">
+                    <div class="w-10 h-10 bg-indigo-500 rounded-lg flex items-center justify-center">
+                        <span class="text-white">🚚</span>
+                    </div>
+                    물류 관리
+                    <span class="px-3 py-1 bg-indigo-100 text-indigo-800 text-sm rounded-full">3 tables</span>
+                </h2>
+                
+                <div class="bg-indigo-50 rounded-lg p-4 mb-6">
+                    <p class="text-sm text-indigo-800">📋 <strong>supply_requests</strong> → <strong>supply_request_items</strong> → <strong>shipments</strong> 순서로 물류 프로세스 관리</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <div class="table-card bg-white rounded-lg shadow-md border-l-4 border-indigo-500 p-4">
+                        <div class="text-center text-slate-600">
+                            <div class="text-2xl mb-2">📦</div>
+                            <h4 class="font-semibold">supply_requests</h4>
+                            <p class="text-xs">물류 요청 마스터</p>
+                        </div>
+                    </div>
+                    <div class="table-card bg-white rounded-lg shadow-md border-l-4 border-indigo-500 p-4">
+                        <div class="text-center text-slate-600">
+                            <div class="text-2xl mb-2">📋</div>
+                            <h4 class="font-semibold">supply_request_items</h4>
+                            <p class="text-xs">물류 요청 상품 상세</p>
+                        </div>
+                    </div>
+                    <div class="table-card bg-white rounded-lg shadow-md border-l-4 border-indigo-500 p-4">
+                        <div class="text-center text-slate-600">
+                            <div class="text-2xl mb-2">🚛</div>
+                            <h4 class="font-semibold">shipments</h4>
+                            <p class="text-xs">배송 관리</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. 프로모션 & 혜택 -->
+            <div class="category-section print-break" data-category="promotion">
+                <h2 class="text-2xl font-bold text-pink-700 mb-6 flex items-center gap-3">
+                    <div class="w-10 h-10 bg-pink-500 rounded-lg flex items-center justify-center">
+                        <span class="text-white">🎁</span>
+                    </div>
+                    프로모션 & 혜택
+                    <span class="px-3 py-1 bg-pink-100 text-pink-800 text-sm rounded-full">4 tables</span>
+                </h2>
+                
+                <div class="bg-pink-50 rounded-lg p-4 mb-6">
+                    <p class="text-sm text-pink-800">🎟️ <strong>coupons</strong> + <strong>user_coupons</strong> (쿠폰 시스템) | 💰 <strong>points</strong> + <strong>point_settings</strong> (포인트 시스템)</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+                    <div class="table-card bg-white rounded-lg shadow-md border-l-4 border-pink-500 p-4">
+                        <div class="text-center text-slate-600">
+                            <div class="text-2xl mb-2">🎟️</div>
+                            <h4 class="font-semibold">coupons</h4>
+                            <p class="text-xs">쿠폰 마스터</p>
+                        </div>
+                    </div>
+                    <div class="table-card bg-white rounded-lg shadow-md border-l-4 border-pink-500 p-4">
+                        <div class="text-center text-slate-600">
+                            <div class="text-2xl mb-2">👤</div>
+                            <h4 class="font-semibold">user_coupons</h4>
+                            <p class="text-xs">사용자별 쿠폰</p>
+                        </div>
+                    </div>
+                    <div class="table-card bg-white rounded-lg shadow-md border-l-4 border-pink-500 p-4">
+                        <div class="text-center text-slate-600">
+                            <div class="text-2xl mb-2">💰</div>
+                            <h4 class="font-semibold">points</h4>
+                            <p class="text-xs">포인트 내역</p>
+                        </div>
+                    </div>
+                    <div class="table-card bg-white rounded-lg shadow-md border-l-4 border-pink-500 p-4">
+                        <div class="text-center text-slate-600">
+                            <div class="text-2xl mb-2">⚙️</div>
+                            <h4 class="font-semibold">point_settings</h4>
+                            <p class="text-xs">포인트 정책</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. 분석 & 리포팅 -->
+            <div class="category-section print-break" data-category="analytics">
+                <h2 class="text-2xl font-bold text-gray-700 mb-6 flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gray-500 rounded-lg flex items-center justify-center">
+                        <span class="text-white">📊</span>
+                    </div>
+                    분석 & 리포팅
+                    <span class="px-3 py-1 bg-gray-100 text-gray-800 text-sm rounded-full">4 tables</span>
+                </h2>
+                
+                <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                    <p class="text-sm text-gray-800">📈 매출 분석용 집계 테이블 + 📋 재고 거래 내역 + 🔔 실시간 알림 시스템</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+                    <div class="table-card bg-white rounded-lg shadow-md border-l-4 border-gray-500 p-4">
+                        <div class="text-center text-slate-600">
+                            <div class="text-2xl mb-2">📅</div>
+                            <h4 class="font-semibold">daily_sales_summary</h4>
+                            <p class="text-xs">일별 매출 요약</p>
+                        </div>
+                    </div>
+                    <div class="table-card bg-white rounded-lg shadow-md border-l-4 border-gray-500 p-4">
+                        <div class="text-center text-slate-600">
+                            <div class="text-2xl mb-2">📦</div>
+                            <h4 class="font-semibold">product_sales_summary</h4>
+                            <p class="text-xs">상품별 매출 요약</p>
+                        </div>
+                    </div>
+                    <div class="table-card bg-white rounded-lg shadow-md border-l-4 border-gray-500 p-4">
+                        <div class="text-center text-slate-600">
+                            <div class="text-2xl mb-2">📋</div>
+                            <h4 class="font-semibold">inventory_transactions</h4>
+                            <p class="text-xs">재고 거래 내역</p>
+                        </div>
+                    </div>
+                    <div class="table-card bg-white rounded-lg shadow-md border-l-4 border-gray-500 p-4">
+                        <div class="text-center text-slate-600">
+                            <div class="text-2xl mb-2">❤️</div>
+                            <h4 class="font-semibold">wishlists</h4>
+                            <p class="text-xs">위시리스트</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 8. 시스템 관리 -->
+            <div class="category-section print-break" data-category="system">
+                <h2 class="text-2xl font-bold text-yellow-700 mb-6 flex items-center gap-3">
+                    <div class="w-10 h-10 bg-yellow-500 rounded-lg flex items-center justify-center">
+                        <span class="text-white">⚙️</span>
+                    </div>
+                    시스템 관리
+                    <span class="px-3 py-1 bg-yellow-100 text-yellow-800 text-sm rounded-full">3 tables</span>
+                </h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <div class="table-card bg-white rounded-lg shadow-md border-l-4 border-yellow-500 p-4">
+                        <div class="text-center text-slate-600">
+                            <div class="text-2xl mb-2">🔔</div>
+                            <h4 class="font-semibold">notifications</h4>
+                            <p class="text-xs">알림 관리</p>
+                        </div>
+                    </div>
+                    <div class="table-card bg-white rounded-lg shadow-md border-l-4 border-yellow-500 p-4">
+                        <div class="text-center text-slate-600">
+                            <div class="text-2xl mb-2">⚙️</div>
+                            <h4 class="font-semibold">system_settings</h4>
+                            <p class="text-xs">시스템 설정</p>
+                        </div>
+                    </div>
+                    <div class="table-card bg-white rounded-lg shadow-md border-l-4 border-yellow-500 p-4">
+                        <div class="text-center text-slate-600">
+                            <div class="text-2xl mb-2">💖</div>
+                            <h4 class="font-semibold">product_wishlists</h4>
+                            <p class="text-xs">위시리스트 매핑</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 주요 관계 요약 -->
+        <div class="bg-white rounded-xl shadow-lg p-8 mt-12">
+            <h3 class="text-2xl font-bold text-center text-slate-700 mb-8 flex items-center justify-center gap-3">
+                <span class="text-3xl">🔗</span>
+                주요 데이터 관계
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-3">
+                    <div class="relation-line bg-blue-50 border-l-4 border-blue-500 p-3 rounded">
+                        <span class="font-semibold text-blue-700">profiles</span>
+                        <span class="mx-2">→</span>
+                        <span class="font-semibold text-purple-700">stores</span>
+                        <div class="text-xs text-slate-600 mt-1">점주가 매장을 소유 (owner_id)</div>
+                    </div>
+                    
+                    <div class="relation-line bg-green-50 border-l-4 border-green-500 p-3 rounded">
+                        <span class="font-semibold text-green-700">categories</span>
+                        <span class="mx-2">→</span>
+                        <span class="font-semibold text-green-700">products</span>
+                        <div class="text-xs text-slate-600 mt-1">카테고리별 상품 분류</div>
+                    </div>
+                    
+                    <div class="relation-line bg-purple-50 border-l-4 border-purple-500 p-3 rounded">
+                        <span class="font-semibold text-purple-700">stores</span>
+                        <span class="mx-2">→</span>
+                        <span class="font-semibold text-purple-700">store_products</span>
+                        <div class="text-xs text-slate-600 mt-1">매장별 상품 관리</div>
+                    </div>
+                    
+                    <div class="relation-line bg-orange-50 border-l-4 border-orange-500 p-3 rounded">
+                        <span class="font-semibold text-blue-700">profiles</span>
+                        <span class="mx-2">→</span>
+                        <span class="font-semibold text-orange-700">orders</span>
+                        <div class="text-xs text-slate-600 mt-1">고객이 주문 생성</div>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="relation-line bg-orange-50 border-l-4 border-orange-500 p-3 rounded">
+                        <span class="font-semibold text-orange-700">orders</span>
+                        <span class="mx-2">→</span>
+                        <span class="font-semibold text-orange-700">order_items</span>
+                        <div class="text-xs text-slate-600 mt-1">주문 상품 상세</div>
+                    </div>
+                    
+                    <div class="relation-line bg-indigo-50 border-l-4 border-indigo-500 p-3 rounded">
+                        <span class="font-semibold text-purple-700">stores</span>
+                        <span class="mx-2">→</span>
+                        <span class="font-semibold text-indigo-700">supply_requests</span>
+                        <div class="text-xs text-slate-600 mt-1">매장의 물류 요청</div>
+                    </div>
+                    
+                    <div class="relation-line bg-pink-50 border-l-4 border-pink-500 p-3 rounded">
+                        <span class="font-semibold text-blue-700">profiles</span>
+                        <span class="mx-2">→</span>
+                        <span class="font-semibold text-pink-700">user_coupons</span>
+                        <div class="text-xs text-slate-600 mt-1">사용자별 쿠폰 보유</div>
+                    </div>
+                    
+                    <div class="relation-line bg-gray-50 border-l-4 border-gray-500 p-3 rounded">
+                        <span class="font-semibold text-blue-700">profiles</span>
+                        <span class="mx-2">→</span>
+                        <span class="font-semibold text-yellow-700">notifications</span>
+                        <div class="text-xs text-slate-600 mt-1">사용자별 알림 관리</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 통계 요약 -->
+        <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg p-8 mt-8 text-white">
+            <h3 class="text-2xl font-bold text-center mb-8">📊 데이터베이스 통계</h3>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div class="text-center">
+                    <div class="text-3xl font-bold mb-2">22</div>
+                    <div class="text-sm opacity-90">테이블 수</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold mb-2">300+</div>
+                    <div class="text-sm opacity-90">총 컬럼</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold mb-2">45+</div>
+                    <div class="text-sm opacity-90">관계 (FK)</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold mb-2">10</div>
+                    <div class="text-sm opacity-90">기능 영역</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 푸터 -->
+        <div class="text-center mt-12 text-slate-500 text-sm">
+            <p>편의점 종합 솔루션 v2.0 | ERD 다이어그램</p>
+            <p>생성일: <span id="current-date"></span> | PostgreSQL + Supabase | React + TypeScript</p>
+        </div>
+    </div>
+
+    <script>
+        // 현재 날짜 설정
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('ko-KR');
+
+        // 테이블 토글 기능
+        function toggleTable(tableName) {
+            const table = document.querySelector(`[data-table="${tableName}"]`);
+            const fields = table.querySelector('.table-fields');
+            const icon = table.querySelector('.toggle-icon');
+            
+            if (fields.style.display === 'none') {
+                fields.style.display = 'block';
+                icon.textContent = '▲';
+            } else {
+                fields.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+
+        // 모든 테이블 토글
+        function toggleAll(expand) {
+            const tables = document.querySelectorAll('.table-card');
+            tables.forEach(table => {
+                const fields = table.querySelector('.table-fields');
+                const icon = table.querySelector('.toggle-icon');
+                
+                if (fields) {
+                    if (expand) {
+                        fields.style.display = 'block';
+                        if (icon) icon.textContent = '▲';
+                    } else {
+                        fields.style.display = 'none';
+                        if (icon) icon.textContent = '▼';
+                    }
+                }
+            });
+        }
+
+        // 카테고리 필터링
+        function showCategory(category) {
+            const sections = document.querySelectorAll('.category-section');
+            const buttons = document.querySelectorAll('.category-btn');
+            
+            // 버튼 스타일 업데이트
+            buttons.forEach(btn => {
+                if (btn.dataset.category === category) {
+                    btn.classList.add('bg-blue-500', 'text-white', 'border-blue-500');
+                    btn.classList.remove('border-gray-200', 'hover:bg-gray-50');
+                } else {
+                    btn.classList.remove('bg-blue-500', 'text-white', 'border-blue-500');
+                    btn.classList.add('border-gray-200', 'hover:bg-gray-50');
+                }
+            });
+            
+            // 섹션 표시/숨김
+            sections.forEach(section => {
+                if (category === 'all' || section.dataset.category === category) {
+                    section.style.display = 'block';
+                } else {
+                    section.style.display = 'none';
+                }
+            });
+        }
+
+        // 초기 설정
+        document.addEventListener('DOMContentLoaded', function() {
+            // 모든 카테고리 표시
+            showCategory('all');
+            
+            // 처음에는 모든 테이블 접어두기
+            toggleAll(false);
+        });
+    </script>
+</body>
+</html>

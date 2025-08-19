@@ -1,0 +1,1836 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>데이터 동기화 시스템 Flow Chart - 편의점 POS</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .btn {
+            background: #00bcd4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            background: #0097a7;
+        }
+
+        .btn-print {
+            background: #795548;
+        }
+
+        .btn-print:hover {
+            background: #5d4037;
+        }
+
+        .diagram-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: auto;
+        }
+
+        #sync-flow {
+            width: 100%;
+            min-height: 800px;
+        }
+
+        .technical-details {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .technical-details h3 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .tech-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #00bcd4;
+        }
+
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        .alert-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #ff9800;
+        }
+
+        .mermaid {
+            text-align: center;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .controls, .technical-details {
+                display: none;
+            }
+            .header {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+            .diagram-container {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔄 데이터 동기화 시스템 Flow Chart</h1>
+        <p><strong>편의점 종합 솔루션 - 실시간 데이터 동기화 및 충돌 해결</strong></p>
+        <p>실시간 동기화, 오프라인 동기화, 충돌 해결, 이벤트 기반 동기화</p>
+        <p>생성일: <span id="current-date"></span> | 버전: 1.0 | 작성: 개발팀</p>
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="zoomIn()">🔍 확대</button>
+        <button class="btn" onclick="zoomOut()">🔍 축소</button>
+        <button class="btn" onclick="resetZoom()">↻ 원래크기</button>
+        <button class="btn btn-print" onclick="printDiagram()">🖨️ 인쇄하기</button>
+        <button class="btn" onclick="downloadSVG()">💾 SVG 다운로드</button>
+    </div>
+
+    <div class="diagram-container">
+        <div id="sync-flow">
+            <div class="mermaid">
+flowchart TD
+    %% 데이터 동기화 시작점
+    Start([데이터 변경 감지]) --> DetectChangeSource{변경 소스 확인}
+    DetectChangeSource -->|로컬 변경| LocalChange[로컬 데이터 변경]
+    DetectChangeSource -->|원격 변경| RemoteChange[원격 데이터 변경]
+    DetectChangeSource -->|시스템 변경| SystemChange[시스템 데이터 변경]
+    DetectChangeSource -->|배치 동기화| BatchSync[배치 동기화 요청]
+    
+    %% 로컬 데이터 변경 처리
+    LocalChange --> CheckConnectionStatus{네트워크 연결 상태}
+    CheckConnectionStatus -->|온라인| OnlineLocalSync[온라인 로컬 동기화]
+    CheckConnectionStatus -->|오프라인| OfflineLocalSync[오프라인 로컬 동기화]
+    
+    %% 온라인 로컬 동기화
+    OnlineLocalSync --> ValidateLocalData{로컬 데이터 유효성 검증}
+    ValidateLocalData -->|유효| ValidLocalData[유효한 로컬 데이터]
+    ValidateLocalData -->|무효| InvalidLocalData[무효한 로컬 데이터]
+    
+    InvalidLocalData --> LogValidationError[검증 오류 로그]
+    LogValidationError --> RejectLocalChange[로컬 변경 거부]
+    RejectLocalChange --> End([동기화 종료])
+    
+    ValidLocalData --> PrepareChangeSet[변경 세트 준비]
+    PrepareChangeSet --> CheckForConflicts{충돌 감지}
+    CheckForConflicts -->|충돌 없음| NoConflicts[충돌 없음]
+    CheckForConflicts -->|충돌 발견| ConflictDetected[충돌 감지됨]
+    
+    %% 충돌 없는 경우
+    NoConflicts --> ApplyToRemote[원격 서버에 적용]
+    ApplyToRemote --> CheckRemoteSuccess{원격 적용 성공?}
+    CheckRemoteSuccess -->|성공| RemoteApplySuccess[원격 적용 성공]
+    CheckRemoteSuccess -->|실패| RemoteApplyFailed[원격 적용 실패]
+    
+    RemoteApplyFailed --> RetryRemoteApply{재시도 가능?}
+    RetryRemoteApply -->|재시도| DelayedRetry[지연 후 재시도]
+    RetryRemoteApply -->|중단| AbortSync[동기화 중단]
+    DelayedRetry --> ApplyToRemote
+    AbortSync --> LogSyncFailure[동기화 실패 로그]
+    LogSyncFailure --> End
+    
+    RemoteApplySuccess --> UpdateLocalTimestamp[로컬 타임스탬프 업데이트]
+    UpdateLocalTimestamp --> BroadcastChange[변경 사항 브로드캐스트]
+    BroadcastChange --> LogSyncSuccess[동기화 성공 로그]
+    LogSyncSuccess --> Success([동기화 완료])
+    
+    %% 충돌 해결 과정
+    ConflictDetected --> AnalyzeConflictType{충돌 유형 분석}
+    AnalyzeConflictType -->|타임스탬프 충돌| TimestampConflict[타임스탬프 충돌]
+    AnalyzeConflictType -->|데이터 충돌| DataConflict[데이터 충돌]
+    AnalyzeConflictType -->|버전 충돌| VersionConflict[버전 충돌]
+    AnalyzeConflictType -->|삭제 충돌| DeleteConflict[삭제 충돌]
+    
+    %% 타임스탬프 충돌 해결
+    TimestampConflict --> CompareTimestamps[타임스탬프 비교]
+    CompareTimestamps --> UseNewerTimestamp[최신 타임스탬프 사용]
+    UseNewerTimestamp --> ResolveTimestampConflict[타임스탬프 충돌 해결]
+    
+    %% 데이터 충돌 해결
+    DataConflict --> DetermineConflictResolution{충돌 해결 전략}
+    DetermineConflictResolution -->|마지막 수정 우선| LastWriteWins[마지막 수정 우선]
+    DetermineConflictResolution -->|첫 번째 수정 우선| FirstWriteWins[첫 번째 수정 우선]
+    DetermineConflictResolution -->|사용자 선택| UserChoice[사용자 선택]
+    DetermineConflictResolution -->|자동 병합| AutoMerge[자동 병합]
+    
+    LastWriteWins --> ResolveDataConflict[데이터 충돌 해결]
+    FirstWriteWins --> ResolveDataConflict
+    UserChoice --> PresentConflictToUser[사용자에게 충돌 제시]
+    PresentConflictToUser --> WaitForUserDecision[사용자 결정 대기]
+    WaitForUserDecision --> ResolveDataConflict
+    AutoMerge --> AttemptAutoMerge[자동 병합 시도]
+    AttemptAutoMerge --> CheckMergeSuccess{병합 성공?}
+    CheckMergeSuccess -->|성공| ResolveDataConflict
+    CheckMergeSuccess -->|실패| FallbackToUserChoice[사용자 선택으로 폴백]
+    FallbackToUserChoice --> PresentConflictToUser
+    
+    %% 버전 충돌 해결
+    VersionConflict --> CheckVersions[버전 정보 확인]
+    CheckVersions --> DetermineVersionStrategy{버전 전략 결정}
+    DetermineVersionStrategy -->|강제 업데이트| ForceUpdate[강제 업데이트]
+    DetermineVersionStrategy -->|버전 병합| VersionMerge[버전 병합]
+    DetermineVersionStrategy -->|새 버전 생성| CreateNewVersion[새 버전 생성]
+    
+    ForceUpdate --> ResolveVersionConflict[버전 충돌 해결]
+    VersionMerge --> ResolveVersionConflict
+    CreateNewVersion --> ResolveVersionConflict
+    
+    %% 삭제 충돌 해결
+    DeleteConflict --> CheckDeletePolicy{삭제 정책 확인}
+    CheckDeletePolicy -->|논리적 삭제| LogicalDelete[논리적 삭제]
+    CheckDeletePolicy -->|물리적 삭제| PhysicalDelete[물리적 삭제]
+    CheckDeletePolicy -->|삭제 무시| IgnoreDelete[삭제 무시]
+    
+    LogicalDelete --> ResolveDeleteConflict[삭제 충돌 해결]
+    PhysicalDelete --> ResolveDeleteConflict
+    IgnoreDelete --> ResolveDeleteConflict
+    
+    %% 충돌 해결 완료
+    ResolveTimestampConflict --> ConflictResolved[충돌 해결됨]
+    ResolveDataConflict --> ConflictResolved
+    ResolveVersionConflict --> ConflictResolved
+    ResolveDeleteConflict --> ConflictResolved
+    
+    ConflictResolved --> LogConflictResolution[충돌 해결 로그]
+    LogConflictResolution --> ApplyResolvedChange[해결된 변경 사항 적용]
+    ApplyResolvedChange --> UpdateLocalTimestamp
+    
+    %% 오프라인 로컬 동기화
+    OfflineLocalSync --> QueueLocalChange[로컬 변경 큐에 추가]
+    QueueLocalChange --> StoreLocalChange[로컬 스토리지에 저장]
+    StoreLocalChange --> MarkAsOfflinePending[오프라인 대기 상태 마킹]
+    MarkAsOfflinePending --> ScheduleRetry[재시도 스케줄링]
+    ScheduleRetry --> MonitorConnection[연결 상태 모니터링]
+    MonitorConnection --> CheckReconnection{연결 복구?}
+    CheckReconnection -->|연결됨| ProcessOfflineQueue[오프라인 큐 처리]
+    CheckReconnection -->|연결 안됨| ContinueMonitoring[계속 모니터링]
+    ContinueMonitoring --> MonitorConnection
+    
+    ProcessOfflineQueue --> LoadOfflineChanges[오프라인 변경 사항 로드]
+    LoadOfflineChanges --> SortByTimestamp[타임스탬프 순 정렬]
+    SortByTimestamp --> ProcessQueuedChange[큐된 변경 사항 처리]
+    ProcessQueuedChange --> OnlineLocalSync
+    
+    %% 원격 데이터 변경 처리
+    RemoteChange --> ReceiveRemoteChange[원격 변경 사항 수신]
+    ReceiveRemoteChange --> ValidateRemoteData{원격 데이터 유효성 검증}
+    ValidateRemoteData -->|유효| ValidRemoteData[유효한 원격 데이터]
+    ValidateRemoteData -->|무효| InvalidRemoteData[무효한 원격 데이터]
+    
+    InvalidRemoteData --> RejectRemoteChange[원격 변경 거부]
+    RejectRemoteChange --> NotifyRemoteRejection[원격 거부 알림]
+    NotifyRemoteRejection --> End
+    
+    ValidRemoteData --> CheckLocalConflicts{로컬 충돌 확인}
+    CheckLocalConflicts -->|충돌 없음| ApplyRemoteChange[원격 변경 적용]
+    CheckLocalConflicts -->|충돌 있음| HandleRemoteConflict[원격 충돌 처리]
+    
+    HandleRemoteConflict --> AnalyzeConflictType
+    
+    ApplyRemoteChange --> UpdateLocalData[로컬 데이터 업데이트]
+    UpdateLocalData --> InvalidateCache[캐시 무효화]
+    InvalidateCache --> NotifyLocalClients[로컬 클라이언트 알림]
+    NotifyLocalClients --> Success
+    
+    %% 시스템 데이터 변경 처리
+    SystemChange --> DetermineSystemChangeType{시스템 변경 유형}
+    DetermineSystemChangeType -->|설정 변경| ConfigurationChange[설정 변경]
+    DetermineSystemChangeType -->|스키마 변경| SchemaChange[스키마 변경]
+    DetermineSystemChangeType -->|마스터 데이터 변경| MasterDataChange[마스터 데이터 변경]
+    DetermineSystemChangeType -->|정책 변경| PolicyChange[정책 변경]
+    
+    ConfigurationChange --> ApplyConfigurationChange[설정 변경 적용]
+    SchemaChange --> ApplySchemaChange[스키마 변경 적용]
+    MasterDataChange --> ApplyMasterDataChange[마스터 데이터 변경 적용]
+    PolicyChange --> ApplyPolicyChange[정책 변경 적용]
+    
+    ApplyConfigurationChange --> RestartRequiredServices[관련 서비스 재시작]
+    ApplySchemaChange --> MigrateData[데이터 마이그레이션]
+    ApplyMasterDataChange --> RefreshMasterData[마스터 데이터 새로고침]
+    ApplyPolicyChange --> UpdateBusinessRules[비즈니스 규칙 업데이트]
+    
+    RestartRequiredServices --> NotifySystemChange[시스템 변경 알림]
+    MigrateData --> NotifySystemChange
+    RefreshMasterData --> NotifySystemChange
+    UpdateBusinessRules --> NotifySystemChange
+    NotifySystemChange --> Success
+    
+    %% 배치 동기화 처리
+    BatchSync --> InitializeBatchSync[배치 동기화 초기화]
+    InitializeBatchSync --> IdentifyDataSources{동기화 대상 식별}
+    IdentifyDataSources -->|전체 동기화| FullSync[전체 동기화]
+    IdentifyDataSources -->|증분 동기화| IncrementalSync[증분 동기화]
+    IdentifyDataSources -->|선택적 동기화| SelectiveSync[선택적 동기화]
+    
+    FullSync --> LoadAllData[모든 데이터 로드]
+    IncrementalSync --> LoadChangedData[변경된 데이터만 로드]
+    SelectiveSync --> LoadSelectedData[선택된 데이터 로드]
+    
+    LoadAllData --> ProcessBatchData[배치 데이터 처리]
+    LoadChangedData --> ProcessBatchData
+    LoadSelectedData --> ProcessBatchData
+    
+    ProcessBatchData --> ValidateBatchData{배치 데이터 검증}
+    ValidateBatchData -->|유효| ValidBatchData[유효한 배치 데이터]
+    ValidateBatchData -->|무효| InvalidBatchData[무효한 배치 데이터]
+    
+    InvalidBatchData --> LogBatchError[배치 오류 로그]
+    LogBatchError --> RetryBatch{배치 재시도?}
+    RetryBatch -->|재시도| DelayedBatchRetry[지연 후 배치 재시도]
+    RetryBatch -->|중단| AbortBatch[배치 중단]
+    DelayedBatchRetry --> ProcessBatchData
+    AbortBatch --> End
+    
+    ValidBatchData --> ApplyBatchChanges[배치 변경 적용]
+    ApplyBatchChanges --> UpdateSyncTimestamp[동기화 타임스탬프 업데이트]
+    UpdateSyncTimestamp --> GenerateSyncReport[동기화 보고서 생성]
+    GenerateSyncReport --> NotifyBatchCompletion[배치 완료 알림]
+    NotifyBatchCompletion --> Success
+    
+    %% 동기화 모니터링 및 알림
+    SyncMonitoring([동기화 모니터링]) --> CheckSyncHealth{동기화 상태 확인}
+    CheckSyncHealth -->|정상| HealthySync[정상 동기화]
+    CheckSyncHealth -->|지연| DelayedSync[지연된 동기화]
+    CheckSyncHealth -->|실패| FailedSync[실패한 동기화]
+    CheckSyncHealth -->|충돌| ConflictedSync[충돌된 동기화]
+    
+    HealthySync --> UpdateHealthMetrics[상태 메트릭 업데이트]
+    DelayedSync --> InvestigateDelay[지연 원인 조사]
+    FailedSync --> InvestigateFailure[실패 원인 조사]
+    ConflictedSync --> EscalateConflict[충돌 에스컬레이션]
+    
+    InvestigateDelay --> TriggerDelayAlert[지연 알림 발송]
+    InvestigateFailure --> TriggerFailureAlert[실패 알림 발송]
+    EscalateConflict --> TriggerConflictAlert[충돌 알림 발송]
+    
+    UpdateHealthMetrics --> MonitoringComplete([모니터링 완료])
+    TriggerDelayAlert --> MonitoringComplete
+    TriggerFailureAlert --> MonitoringComplete
+    TriggerConflictAlert --> MonitoringComplete
+    
+    %% 스타일 클래스 정의
+    classDef startEnd fill:#e0f2f1,stroke:#00bcd4,stroke-width:3px
+    classDef process fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
+    classDef decision fill:#fff3e0,stroke:#ff9800,stroke-width:2px
+    classDef conflict fill:#fce4ec,stroke:#e91e63,stroke-width:2px
+    classDef offline fill:#f3e5f5,stroke:#9c27b0,stroke-width:2px
+    classDef system fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
+    classDef batch fill:#e8eaf6,stroke:#3f51b5,stroke-width:2px
+    classDef monitoring fill:#fff8e1,stroke:#ffc107,stroke-width:2px
+    classDef error fill:#ffebee,stroke:#f44336,stroke-width:2px
+    
+    %% 클래스 적용
+    class Start,Success,End,SyncMonitoring,MonitoringComplete startEnd
+    class PrepareChangeSet,ApplyToRemote,UpdateLocalTimestamp,BroadcastChange,LoadOfflineChanges,ProcessQueuedChange,UpdateLocalData,InvalidateCache,ApplyConfigurationChange,ApplySchemaChange,ApplyMasterDataChange,ApplyPolicyChange,ProcessBatchData,ApplyBatchChanges process
+    class DetectChangeSource,CheckConnectionStatus,ValidateLocalData,CheckForConflicts,CheckRemoteSuccess,RetryRemoteApply,AnalyzeConflictType,DetermineConflictResolution,CheckMergeSuccess,DetermineVersionStrategy,CheckDeletePolicy,CheckReconnection,ValidateRemoteData,CheckLocalConflicts,DetermineSystemChangeType,IdentifyDataSources,ValidateBatchData,RetryBatch,CheckSyncHealth decision
+    class ConflictDetected,TimestampConflict,DataConflict,VersionConflict,DeleteConflict,HandleRemoteConflict,ConflictResolved,EscalateConflict,ConflictedSync conflict
+    class OfflineLocalSync,QueueLocalChange,StoreLocalChange,MarkAsOfflinePending,ProcessOfflineQueue,MonitorConnection offline
+    class SystemChange,ConfigurationChange,SchemaChange,MasterDataChange,PolicyChange,RestartRequiredServices,MigrateData,RefreshMasterData,UpdateBusinessRules system
+    class BatchSync,InitializeBatchSync,FullSync,IncrementalSync,SelectiveSync,LoadAllData,LoadChangedData,LoadSelectedData,GenerateSyncReport batch
+    class UpdateHealthMetrics,InvestigateDelay,InvestigateFailure,TriggerDelayAlert,TriggerFailureAlert,TriggerConflictAlert,HealthySync,DelayedSync,FailedSync monitoring
+    class InvalidLocalData,RemoteApplyFailed,AbortSync,LogSyncFailure,InvalidRemoteData,RejectRemoteChange,InvalidBatchData,LogBatchError,AbortBatch error
+            </div>
+        </div>
+    </div>
+
+    <div class="technical-details">
+        <h3>🔧 데이터 동기화 시스템 기술 구현</h3>
+        <div class="tech-grid">
+            <div class="tech-section">
+                <h4>실시간 동기화 엔진</h4>
+                <div class="code-block">
+// 실시간 데이터 동기화 관리자
+class RealTimeSyncManager {
+  private websocketConnections: Map<string, WebSocket>;
+  private changeStreams: Map<string, ChangeStream>;
+  private conflictResolver: ConflictResolver;
+  private syncQueue: SyncQueue;
+
+  constructor(config: SyncConfig) {
+    this.websocketConnections = new Map();
+    this.changeStreams = new Map();
+    this.conflictResolver = new ConflictResolver(config.conflictResolution);
+    this.syncQueue = new SyncQueue(config.queueConfig);
+    this.initializeChangeStreams();
+  }
+
+  // 변경 사항 감지 및 동기화
+  async syncChange(change: DataChange, source: SyncSource): Promise<SyncResult> {
+    try {
+      // 변경 사항 유효성 검증
+      const validation = await this.validateChange(change);
+      if (!validation.isValid) {
+        throw new ValidationError(validation.errors);
+      }
+
+      // 충돌 감지
+      const conflicts = await this.detectConflicts(change);
+      if (conflicts.length > 0) {
+        return await this.resolveConflicts(change, conflicts);
+      }
+
+      // 동기화 실행
+      const syncResult = await this.executeSync(change, source);
+      
+      // 다른 클라이언트에게 변경 사항 브로드캐스트
+      await this.broadcastChange(change, syncResult);
+      
+      return syncResult;
+    } catch (error) {
+      await this.handleSyncError(error, change);
+      throw error;
+    }
+  }
+
+  private async detectConflicts(change: DataChange): Promise<Conflict[]> {
+    const conflicts: Conflict[] = [];
+    
+    // 현재 데이터 상태 조회
+    const currentData = await this.getCurrentData(change.entityId);
+    
+    // 타임스탬프 충돌 검사
+    if (currentData.lastModified > change.timestamp) {
+      conflicts.push({
+        type: 'timestamp',
+        description: '더 최신 데이터가 이미 존재합니다.',
+        currentValue: currentData,
+        incomingValue: change.data
+      });
+    }
+    
+    // 버전 충돌 검사
+    if (currentData.version !== change.baseVersion) {
+      conflicts.push({
+        type: 'version',
+        description: '버전 불일치가 발생했습니다.',
+        expectedVersion: change.baseVersion,
+        actualVersion: currentData.version
+      });
+    }
+    
+    // 동시 수정 충돌 검사
+    const concurrentChanges = await this.getConcurrentChanges(change.entityId, change.timestamp);
+    if (concurrentChanges.length > 0) {
+      conflicts.push({
+        type: 'concurrent',
+        description: '동시 수정이 감지되었습니다.',
+        concurrentChanges
+      });
+    }
+    
+    return conflicts;
+  }
+
+  private async resolveConflicts(change: DataChange, conflicts: Conflict[]): Promise<SyncResult> {
+    const resolutionStrategy = this.determineResolutionStrategy(conflicts);
+    
+    switch (resolutionStrategy) {
+      case 'last-write-wins':
+        return await this.applyLastWriteWins(change, conflicts);
+      
+      case 'first-write-wins':
+        return await this.applyFirstWriteWins(change, conflicts);
+      
+      case 'three-way-merge':
+        return await this.applyThreeWayMerge(change, conflicts);
+      
+      case 'user-intervention':
+        return await this.requestUserIntervention(change, conflicts);
+      
+      default:
+        throw new ConflictResolutionError('지원되지 않는 충돌 해결 전략입니다.');
+    }
+  }
+
+  // WebSocket을 통한 실시간 변경 사항 브로드캐스트
+  private async broadcastChange(change: DataChange, syncResult: SyncResult): Promise<void> {
+    const message = {
+      type: 'data-change',
+      entityType: change.entityType,
+      entityId: change.entityId,
+      operation: change.operation,
+      data: syncResult.finalData,
+      timestamp: syncResult.timestamp,
+      syncId: syncResult.syncId
+    };
+
+    // 관련 클라이언트들에게 브로드캐스트
+    const relevantClients = this.getRelevantClients(change);
+    
+    await Promise.all(
+      relevantClients.map(async (clientId) => {
+        const connection = this.websocketConnections.get(clientId);
+        if (connection && connection.readyState === WebSocket.OPEN) {
+          try {
+            connection.send(JSON.stringify(message));
+          } catch (error) {
+            console.error(`클라이언트 ${clientId}에게 브로드캐스트 실패:`, error);
+            this.handleDisconnectedClient(clientId);
+          }
+        }
+      })
+    );
+  }
+}</div>
+                <p><strong>실시간 감지:</strong> 데이터 변경 사항 즉시 감지 및 동기화</p>
+                <p><strong>충돌 해결:</strong> 다양한 충돌 해결 전략 지원</p>
+                <p><strong>WebSocket:</strong> 실시간 변경 사항 브로드캐스트</p>
+            </div>
+            
+            <div class="tech-section">
+                <h4>오프라인 동기화 시스템</h4>
+                <div class="code-block">
+// 오프라인 동기화 관리자
+class OfflineSyncManager {
+  private offlineQueue: OfflineQueue;
+  private connectionMonitor: ConnectionMonitor;
+  private localStorage: LocalStorage;
+  private retryPolicy: RetryPolicy;
+
+  constructor(config: OfflineSyncConfig) {
+    this.offlineQueue = new OfflineQueue(config.queueConfig);
+    this.connectionMonitor = new ConnectionMonitor(config.connectionConfig);
+    this.localStorage = new LocalStorage(config.storageConfig);
+    this.retryPolicy = new RetryPolicy(config.retryConfig);
+    this.initializeOfflineSync();
+  }
+
+  // 오프라인 상태에서 변경 사항 큐잉
+  async queueOfflineChange(change: DataChange): Promise<void> {
+    // 로컬 스토리지에 변경 사항 저장
+    const queueItem: OfflineQueueItem = {
+      id: this.generateQueueId(),
+      change,
+      timestamp: Date.now(),
+      retryCount: 0,
+      status: 'pending'
+    };
+
+    await this.localStorage.setItem(`offline_change_${queueItem.id}`, queueItem);
+    await this.offlineQueue.enqueue(queueItem);
+
+    // 로컬 데이터 즉시 업데이트 (낙관적 업데이트)
+    await this.applyOptimisticUpdate(change);
+  }
+
+  // 연결 복구 시 오프라인 큐 처리
+  async processOfflineQueue(): Promise<ProcessResult> {
+    const queueItems = await this.offlineQueue.getAllItems();
+    const results: QueueProcessResult[] = [];
+
+    // 타임스탬프 순으로 정렬
+    queueItems.sort((a, b) => a.timestamp - b.timestamp);
+
+    for (const item of queueItems) {
+      try {
+        const result = await this.processQueueItem(item);
+        results.push(result);
+
+        if (result.success) {
+          await this.offlineQueue.remove(item.id);
+          await this.localStorage.removeItem(`offline_change_${item.id}`);
+        } else {
+          await this.handleQueueItemFailure(item, result.error);
+        }
+      } catch (error) {
+        console.error(`큐 아이템 처리 실패:`, error);
+        await this.handleQueueItemFailure(item, error);
+      }
+    }
+
+    return {
+      totalProcessed: results.length,
+      successful: results.filter(r => r.success).length,
+      failed: results.filter(r => !r.success).length,
+      results
+    };
+  }
+
+  private async processQueueItem(item: OfflineQueueItem): Promise<QueueProcessResult> {
+    // 서버와 동기화 시도
+    try {
+      const syncResult = await this.syncWithServer(item.change);
+      
+      // 낙관적 업데이트와 서버 결과 비교
+      const conflicts = await this.compareWithOptimisticUpdate(item.change, syncResult);
+      
+      if (conflicts.length > 0) {
+        // 충돌 해결
+        const resolution = await this.resolveOfflineConflicts(conflicts);
+        await this.applyConflictResolution(resolution);
+      }
+
+      return {
+        queueItemId: item.id,
+        success: true,
+        syncResult
+      };
+    } catch (error) {
+      return {
+        queueItemId: item.id,
+        success: false,
+        error: error.message,
+        retryable: this.isRetryableError(error)
+      };
+    }
+  }
+
+  // 낙관적 업데이트 적용
+  private async applyOptimisticUpdate(change: DataChange): Promise<void> {
+    try {
+      // 로컬 데이터베이스 업데이트
+      await this.localStorage.updateData(change.entityType, change.entityId, change.data);
+      
+      // UI 즉시 업데이트
+      this.notifyUIUpdate(change);
+      
+      // 낙관적 업데이트 마킹
+      await this.markAsOptimistic(change.entityId, change.operation);
+    } catch (error) {
+      console.error('낙관적 업데이트 실패:', error);
+      throw error;
+    }
+  }
+
+  // 연결 상태 모니터링
+  private initializeConnectionMonitoring(): void {
+    this.connectionMonitor.on('online', async () => {
+      console.log('네트워크 연결 복구됨. 오프라인 큐 처리 시작.');
+      await this.processOfflineQueue();
+    });
+
+    this.connectionMonitor.on('offline', () => {
+      console.log('네트워크 연결 끊어짐. 오프라인 모드 활성화.');
+    });
+
+    // 주기적 연결 상태 확인
+    setInterval(async () => {
+      const isOnline = await this.connectionMonitor.checkConnection();
+      if (isOnline && this.offlineQueue.hasItems()) {
+        await this.processOfflineQueue();
+      }
+    }, 30000); // 30초마다 확인
+  }
+
+  // 오프라인 데이터 백업 및 복구
+  async backupOfflineData(): Promise<BackupResult> {
+    const data = {
+      queue: await this.offlineQueue.getAllItems(),
+      localChanges: await this.localStorage.getAllChanges(),
+      timestamp: Date.now()
+    };
+
+    const backupId = `backup_${Date.now()}`;
+    await this.localStorage.setItem(`backup_${backupId}`, data);
+
+    return {
+      backupId,
+      itemCount: data.queue.length + data.localChanges.length,
+      size: JSON.stringify(data).length
+    };
+  }
+
+  async restoreFromBackup(backupId: string): Promise<RestoreResult> {
+    const backup = await this.localStorage.getItem(`backup_${backupId}`);
+    if (!backup) {
+      throw new Error('백업을 찾을 수 없습니다.');
+    }
+
+    // 큐 복원
+    for (const item of backup.queue) {
+      await this.offlineQueue.enqueue(item);
+    }
+
+    // 로컬 변경 사항 복원
+    for (const change of backup.localChanges) {
+      await this.localStorage.applyChange(change);
+    }
+
+    return {
+      restoredItems: backup.queue.length + backup.localChanges.length,
+      backupTimestamp: backup.timestamp
+    };
+  }
+}</div>
+                <p><strong>오프라인 큐:</strong> 네트워크 단절 시 변경 사항 저장</p>
+                <p><strong>낙관적 업데이트:</strong> 즉시 UI 반영 후 나중에 동기화</p>
+                <p><strong>충돌 해결:</strong> 온라인 복구 시 데이터 일관성 보장</p>
+            </div>
+
+            <div class="tech-section">
+                <h4>충돌 해결 엔진</h4>
+                <div class="code-block">
+// 데이터 충돌 해결 엔진
+class ConflictResolutionEngine {
+  private strategies: Map<string, ConflictStrategy>;
+  private userInterventionQueue: UserInterventionQueue;
+
+  constructor() {
+    this.strategies = new Map();
+    this.userInterventionQueue = new UserInterventionQueue();
+    this.initializeStrategies();
+  }
+
+  // 충돌 해결 전략 초기화
+  private initializeStrategies(): void {
+    this.strategies.set('last-write-wins', new LastWriteWinsStrategy());
+    this.strategies.set('first-write-wins', new FirstWriteWinsStrategy());
+    this.strategies.set('three-way-merge', new ThreeWayMergeStrategy());
+    this.strategies.set('operational-transform', new OperationalTransformStrategy());
+    this.strategies.set('custom-business-rules', new BusinessRulesStrategy());
+  }
+
+  // 충돌 해결 실행
+  async resolveConflict(conflict: DataConflict): Promise<ConflictResolution> {
+    const strategy = this.determineStrategy(conflict);
+    
+    try {
+      const resolution = await strategy.resolve(conflict);
+      
+      // 해결 결과 검증
+      const validation = await this.validateResolution(resolution);
+      if (!validation.isValid) {
+        throw new ResolutionValidationError(validation.errors);
+      }
+      
+      // 해결 이력 기록
+      await this.recordResolution(conflict, resolution);
+      
+      return resolution;
+    } catch (error) {
+      if (error instanceof AutoResolutionError) {
+        // 자동 해결 실패 시 사용자 개입 요청
+        return await this.requestUserIntervention(conflict);
+      }
+      throw error;
+    }
+  }
+
+  // 3-Way 병합 전략
+  private async applyThreeWayMerge(conflict: DataConflict): Promise<ConflictResolution> {
+    const { base, local, remote } = conflict.versions;
+    
+    // 필드별 병합
+    const mergedData = {};
+    const fields = new Set([
+      ...Object.keys(base),
+      ...Object.keys(local),
+      ...Object.keys(remote)
+    ]);
+
+    for (const field of fields) {
+      const baseValue = base[field];
+      const localValue = local[field];
+      const remoteValue = remote[field];
+
+      // 변경 사항 분석
+      const localChanged = !this.deepEqual(baseValue, localValue);
+      const remoteChanged = !this.deepEqual(baseValue, remoteValue);
+
+      if (!localChanged && !remoteChanged) {
+        // 변경 없음
+        mergedData[field] = baseValue;
+      } else if (localChanged && !remoteChanged) {
+        // 로컬에서만 변경
+        mergedData[field] = localValue;
+      } else if (!localChanged && remoteChanged) {
+        // 원격에서만 변경
+        mergedData[field] = remoteValue;
+      } else if (this.deepEqual(localValue, remoteValue)) {
+        // 양쪽에서 동일하게 변경
+        mergedData[field] = localValue;
+      } else {
+        // 양쪽에서 다르게 변경 - 충돌
+        const fieldResolution = await this.resolveFieldConflict(field, {
+          base: baseValue,
+          local: localValue,
+          remote: remoteValue
+        });
+        mergedData[field] = fieldResolution.resolvedValue;
+      }
+    }
+
+    return {
+      type: 'automatic',
+      strategy: 'three-way-merge',
+      resolvedData: mergedData,
+      confidence: this.calculateMergeConfidence(mergedData, conflict)
+    };
+  }
+
+  // 필드 수준 충돌 해결
+  private async resolveFieldConflict(
+    fieldName: string, 
+    values: FieldConflict
+  ): Promise<FieldResolution> {
+    // 필드 타입별 해결 전략
+    const fieldType = this.getFieldType(values.local);
+    
+    switch (fieldType) {
+      case 'number':
+        return await this.resolveNumberConflict(fieldName, values);
+      case 'string':
+        return await this.resolveStringConflict(fieldName, values);
+      case 'array':
+        return await this.resolveArrayConflict(fieldName, values);
+      case 'object':
+        return await this.resolveObjectConflict(fieldName, values);
+      default:
+        return await this.resolveGenericConflict(fieldName, values);
+    }
+  }
+
+  // 숫자 필드 충돌 해결
+  private async resolveNumberConflict(
+    fieldName: string, 
+    values: FieldConflict
+  ): Promise<FieldResolution> {
+    const { base, local, remote } = values;
+    
+    // 델타 기반 병합 (예: 재고 수량)
+    if (fieldName.includes('quantity') || fieldName.includes('stock')) {
+      const localDelta = local - base;
+      const remoteDelta = remote - base;
+      const resolvedValue = base + localDelta + remoteDelta;
+      
+      return {
+        resolvedValue: Math.max(0, resolvedValue), // 음수 방지
+        strategy: 'delta-merge',
+        confidence: 0.9
+      };
+    }
+    
+    // 최대값 선택 (예: 가격)
+    if (fieldName.includes('price') || fieldName.includes('amount')) {
+      return {
+        resolvedValue: Math.max(local, remote),
+        strategy: 'max-value',
+        confidence: 0.7
+      };
+    }
+    
+    // 기본적으로 최신 값 선택
+    return {
+      resolvedValue: remote, // 원격이 더 최신이라고 가정
+      strategy: 'last-write-wins',
+      confidence: 0.5
+    };
+  }
+
+  // 배열 필드 충돌 해결
+  private async resolveArrayConflict(
+    fieldName: string, 
+    values: FieldConflict
+  ): Promise<FieldResolution> {
+    const { base, local, remote } = values;
+    
+    // 배열 요소 병합
+    const baseSet = new Set(base);
+    const localAdditions = local.filter(item => !baseSet.has(item));
+    const remoteAdditions = remote.filter(item => !baseSet.has(item));
+    
+    const localRemovals = base.filter(item => !local.includes(item));
+    const remoteRemovals = base.filter(item => !remote.includes(item));
+    
+    // 공통 제거 항목 처리
+    const commonRemovals = localRemovals.filter(item => remoteRemovals.includes(item));
+    
+    // 병합된 배열 생성
+    let mergedArray = [...base];
+    
+    // 추가 항목 병합
+    mergedArray = mergedArray.concat(localAdditions, remoteAdditions);
+    
+    // 공통 제거 항목 제거
+    mergedArray = mergedArray.filter(item => !commonRemovals.includes(item));
+    
+    // 중복 제거
+    mergedArray = [...new Set(mergedArray)];
+    
+    return {
+      resolvedValue: mergedArray,
+      strategy: 'array-merge',
+      confidence: 0.8
+    };
+  }
+
+  // 사용자 개입 요청
+  private async requestUserIntervention(conflict: DataConflict): Promise<ConflictResolution> {
+    const interventionRequest: UserInterventionRequest = {
+      id: this.generateInterventionId(),
+      conflict,
+      timestamp: Date.now(),
+      timeout: 300000, // 5분 타임아웃
+      options: this.generateResolutionOptions(conflict)
+    };
+
+    await this.userInterventionQueue.enqueue(interventionRequest);
+    
+    // 사용자에게 알림 발송
+    await this.notifyUserIntervention(interventionRequest);
+    
+    // 사용자 응답 대기
+    const userResponse = await this.waitForUserResponse(interventionRequest.id);
+    
+    return {
+      type: 'manual',
+      strategy: 'user-intervention',
+      resolvedData: userResponse.selectedData,
+      userDecision: userResponse.decision,
+      confidence: 1.0
+    };
+  }
+}</div>
+                <p><strong>다중 전략:</strong> 상황별 최적 충돌 해결 전략</p>
+                <p><strong>3-Way 병합:</strong> 베이스, 로컬, 원격 버전 비교 병합</p>
+                <p><strong>사용자 개입:</strong> 자동 해결 불가 시 사용자 선택</p>
+            </div>
+
+            <div class="tech-section">
+                <h4>변경 추적 시스템</h4>
+                <div class="code-block">
+// 데이터 변경 추적 시스템
+class ChangeTrackingSystem {
+  private changeLog: ChangeLog;
+  private eventStore: EventStore;
+  private versionManager: VersionManager;
+
+  constructor(config: ChangeTrackingConfig) {
+    this.changeLog = new ChangeLog(config.logConfig);
+    this.eventStore = new EventStore(config.eventConfig);
+    this.versionManager = new VersionManager(config.versionConfig);
+  }
+
+  // 변경 사항 추적 시작
+  async trackChange(entity: Entity, operation: Operation, user: User): Promise<ChangeTracker> {
+    const changeId = this.generateChangeId();
+    const timestamp = Date.now();
+    
+    // 베이스라인 스냅샷 생성
+    const baseline = await this.createSnapshot(entity);
+    
+    const tracker: ChangeTracker = {
+      id: changeId,
+      entityId: entity.id,
+      entityType: entity.type,
+      operation,
+      user,
+      timestamp,
+      baseline,
+      changes: [],
+      status: 'in-progress'
+    };
+
+    await this.changeLog.start(tracker);
+    return tracker;
+  }
+
+  // 개별 필드 변경 기록
+  async recordFieldChange(
+    trackerId: string, 
+    fieldPath: string, 
+    oldValue: any, 
+    newValue: any
+  ): Promise<void> {
+    const fieldChange: FieldChange = {
+      fieldPath,
+      oldValue,
+      newValue,
+      timestamp: Date.now(),
+      changeType: this.determineChangeType(oldValue, newValue)
+    };
+
+    await this.changeLog.addFieldChange(trackerId, fieldChange);
+    
+    // 이벤트 발행
+    await this.eventStore.publish({
+      type: 'field-changed',
+      trackerId,
+      fieldChange
+    });
+  }
+
+  // 변경 완료 처리
+  async commitChange(trackerId: string): Promise<ChangeCommitResult> {
+    const tracker = await this.changeLog.getTracker(trackerId);
+    if (!tracker) {
+      throw new Error('변경 추적기를 찾을 수 없습니다.');
+    }
+
+    // 최종 스냅샷 생성
+    const finalSnapshot = await this.createSnapshot({
+      id: tracker.entityId,
+      type: tracker.entityType
+    });
+
+    // 변경 델타 계산
+    const delta = this.calculateDelta(tracker.baseline, finalSnapshot);
+
+    // 버전 업데이트
+    const newVersion = await this.versionManager.createVersion({
+      entityId: tracker.entityId,
+      entityType: tracker.entityType,
+      changes: delta,
+      parentVersion: tracker.baseline.version,
+      author: tracker.user,
+      timestamp: Date.now()
+    });
+
+    // 변경 커밋
+    const commitResult: ChangeCommitResult = {
+      trackerId,
+      version: newVersion,
+      delta,
+      committedAt: Date.now()
+    };
+
+    await this.changeLog.commit(trackerId, commitResult);
+    
+    // 커밋 이벤트 발행
+    await this.eventStore.publish({
+      type: 'change-committed',
+      trackerId,
+      commitResult
+    });
+
+    return commitResult;
+  }
+
+  // 변경 이력 조회
+  async getChangeHistory(
+    entityId: string, 
+    options?: HistoryOptions
+  ): Promise<ChangeHistory> {
+    const changes = await this.changeLog.getEntityChanges(entityId, options);
+    const versions = await this.versionManager.getEntityVersions(entityId, options);
+
+    return {
+      entityId,
+      totalChanges: changes.length,
+      changes: changes.map(change => ({
+        id: change.id,
+        operation: change.operation,
+        user: change.user,
+        timestamp: change.timestamp,
+        fields: change.changes,
+        version: versions.find(v => v.changeId === change.id)
+      })),
+      currentVersion: versions[0] // 최신 버전
+    };
+  }
+
+  // 변경 사항 롤백
+  async rollbackChange(entityId: string, targetVersion: string): Promise<RollbackResult> {
+    const currentVersion = await this.versionManager.getCurrentVersion(entityId);
+    const targetVersionData = await this.versionManager.getVersion(targetVersion);
+    
+    if (!targetVersionData) {
+      throw new Error('대상 버전을 찾을 수 없습니다.');
+    }
+
+    // 롤백할 변경 사항 계산
+    const rollbackDelta = this.calculateRollbackDelta(currentVersion, targetVersionData);
+    
+    // 롤백 실행
+    const rollbackTracker = await this.trackChange(
+      { id: entityId, type: targetVersionData.entityType },
+      'rollback',
+      { id: 'system', name: 'System Rollback' }
+    );
+
+    // 각 필드 롤백 적용
+    for (const fieldChange of rollbackDelta.changes) {
+      await this.applyFieldRollback(entityId, fieldChange);
+      await this.recordFieldChange(
+        rollbackTracker.id,
+        fieldChange.fieldPath,
+        fieldChange.currentValue,
+        fieldChange.targetValue
+      );
+    }
+
+    // 롤백 커밋
+    const commitResult = await this.commitChange(rollbackTracker.id);
+
+    return {
+      rollbackId: rollbackTracker.id,
+      fromVersion: currentVersion.id,
+      toVersion: targetVersion,
+      rollbackDelta,
+      commitResult
+    };
+  }
+
+  // 변경 사항 비교
+  async compareVersions(
+    entityId: string, 
+    version1: string, 
+    version2: string
+  ): Promise<VersionComparison> {
+    const v1Data = await this.versionManager.getVersion(version1);
+    const v2Data = await this.versionManager.getVersion(version2);
+
+    if (!v1Data || !v2Data) {
+      throw new Error('버전 데이터를 찾을 수 없습니다.');
+    }
+
+    const differences = this.calculateDifferences(v1Data.snapshot, v2Data.snapshot);
+
+    return {
+      entityId,
+      version1: v1Data,
+      version2: v2Data,
+      differences,
+      summary: {
+        totalDifferences: differences.length,
+        addedFields: differences.filter(d => d.type === 'added').length,
+        modifiedFields: differences.filter(d => d.type === 'modified').length,
+        removedFields: differences.filter(d => d.type === 'removed').length
+      }
+    };
+  }
+
+  // 변경 사항 압축 (스토리지 최적화)
+  async compressChangeLogs(entityId: string, olderThanDays: number): Promise<CompressionResult> {
+    const cutoffDate = Date.now() - (olderThanDays * 24 * 60 * 60 * 1000);
+    const oldChanges = await this.changeLog.getChangesOlderThan(entityId, cutoffDate);
+
+    if (oldChanges.length === 0) {
+      return { compressedCount: 0, spaceSaved: 0 };
+    }
+
+    // 변경 사항을 압축된 형태로 변환
+    const compressedSummary = this.createCompressedSummary(oldChanges);
+    
+    // 원본 변경 로그 삭제
+    await this.changeLog.deleteChanges(oldChanges.map(c => c.id));
+    
+    // 압축된 요약 저장
+    await this.changeLog.saveCompressedSummary(entityId, compressedSummary);
+
+    return {
+      compressedCount: oldChanges.length,
+      spaceSaved: this.calculateSpaceSaved(oldChanges, compressedSummary)
+    };
+  }
+}</div>
+                <p><strong>세밀한 추적:</strong> 필드 수준 변경 사항 추적</p>
+                <p><strong>버전 관리:</strong> 데이터 버전 히스토리 관리</p>
+                <p><strong>롤백 지원:</strong> 이전 버전으로 안전한 롤백</p>
+            </div>
+
+            <div class="tech-section">
+                <h4>배치 동기화 시스템</h4>
+                <div class="code-block">
+// 대용량 배치 동기화 시스템
+class BatchSyncSystem {
+  private batchProcessor: BatchProcessor;
+  private progressTracker: ProgressTracker;
+  private errorHandler: BatchErrorHandler;
+
+  constructor(config: BatchSyncConfig) {
+    this.batchProcessor = new BatchProcessor(config.processorConfig);
+    this.progressTracker = new ProgressTracker(config.trackingConfig);
+    this.errorHandler = new BatchErrorHandler(config.errorConfig);
+  }
+
+  // 대용량 배치 동기화 실행
+  async executeBatchSync(request: BatchSyncRequest): Promise<BatchSyncResult> {
+    const batchId = this.generateBatchId();
+    
+    try {
+      // 배치 초기화
+      await this.initializeBatch(batchId, request);
+      
+      // 데이터 소스 연결
+      const sourceConnection = await this.connectToDataSource(request.source);
+      const targetConnection = await this.connectToDataTarget(request.target);
+      
+      // 전체 레코드 수 계산
+      const totalRecords = await this.countRecords(sourceConnection, request.query);
+      await this.progressTracker.initialize(batchId, totalRecords);
+      
+      // 청크 단위로 처리
+      const chunkSize = request.chunkSize || 1000;
+      let processedRecords = 0;
+      let offset = 0;
+      
+      while (offset < totalRecords) {
+        const chunk = await this.fetchChunk(sourceConnection, request.query, offset, chunkSize);
+        
+        if (chunk.length === 0) break;
+        
+        const chunkResult = await this.processChunk(batchId, chunk, targetConnection);
+        
+        processedRecords += chunkResult.processedCount;
+        offset += chunkSize;
+        
+        // 진행률 업데이트
+        await this.progressTracker.updateProgress(batchId, processedRecords);
+        
+        // 오류 임계값 확인
+        if (chunkResult.errorCount > 0) {
+          const errorRate = chunkResult.errorCount / chunk.length;
+          if (errorRate > request.maxErrorRate) {
+            throw new BatchErrorThresholdExceeded(
+              `오류율 ${errorRate}이 허용 임계값 ${request.maxErrorRate}을 초과했습니다.`
+            );
+          }
+        }
+        
+        // 배치 일시 정지 확인
+        if (await this.shouldPauseBatch(batchId)) {
+          await this.pauseBatch(batchId);
+          await this.waitForResume(batchId);
+        }
+      }
+      
+      // 배치 완료 처리
+      const result = await this.finalizeBatch(batchId, processedRecords);
+      return result;
+      
+    } catch (error) {
+      await this.handleBatchError(batchId, error);
+      throw error;
+    } finally {
+      // 리소스 정리
+      await this.cleanupBatch(batchId);
+    }
+  }
+
+  // 청크 단위 데이터 처리
+  private async processChunk(
+    batchId: string, 
+    chunk: any[], 
+    targetConnection: any
+  ): Promise<ChunkProcessResult> {
+    const results: ChunkItemResult[] = [];
+    
+    // 병렬 처리로 성능 향상
+    const concurrency = 10;
+    const semaphore = new Semaphore(concurrency);
+    
+    const promises = chunk.map(async (item, index) => {
+      await semaphore.acquire();
+      
+      try {
+        const itemResult = await this.processChunkItem(batchId, item, targetConnection);
+        results[index] = itemResult;
+      } catch (error) {
+        results[index] = {
+          success: false,
+          error: error.message,
+          item
+        };
+      } finally {
+        semaphore.release();
+      }
+    });
+    
+    await Promise.all(promises);
+    
+    const successCount = results.filter(r => r.success).length;
+    const errorCount = results.filter(r => !r.success).length;
+    
+    // 오류 항목 기록
+    const errors = results.filter(r => !r.success);
+    if (errors.length > 0) {
+      await this.errorHandler.recordChunkErrors(batchId, errors);
+    }
+    
+    return {
+      processedCount: results.length,
+      successCount,
+      errorCount,
+      results
+    };
+  }
+
+  // 개별 항목 처리
+  private async processChunkItem(
+    batchId: string, 
+    item: any, 
+    targetConnection: any
+  ): Promise<ChunkItemResult> {
+    try {
+      // 데이터 변환
+      const transformedItem = await this.transformData(item);
+      
+      // 유효성 검증
+      const validation = await this.validateItem(transformedItem);
+      if (!validation.isValid) {
+        throw new ValidationError(validation.errors);
+      }
+      
+      // 중복 확인
+      const existingItem = await this.checkForDuplicate(transformedItem, targetConnection);
+      
+      if (existingItem) {
+        // 업데이트 처리
+        const updateResult = await this.updateExistingItem(existingItem, transformedItem, targetConnection);
+        return {
+          success: true,
+          operation: 'update',
+          item: transformedItem,
+          result: updateResult
+        };
+      } else {
+        // 새로운 항목 삽입
+        const insertResult = await this.insertNewItem(transformedItem, targetConnection);
+        return {
+          success: true,
+          operation: 'insert',
+          item: transformedItem,
+          result: insertResult
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        item
+      };
+    }
+  }
+
+  // 배치 진행률 모니터링
+  async getBatchProgress(batchId: string): Promise<BatchProgress> {
+    const progress = await this.progressTracker.getProgress(batchId);
+    const errors = await this.errorHandler.getBatchErrors(batchId);
+    
+    return {
+      batchId,
+      status: progress.status,
+      totalRecords: progress.totalRecords,
+      processedRecords: progress.processedRecords,
+      successCount: progress.processedRecords - errors.length,
+      errorCount: errors.length,
+      progressPercentage: (progress.processedRecords / progress.totalRecords) * 100,
+      estimatedTimeRemaining: this.calculateETA(progress),
+      currentChunk: progress.currentChunk,
+      startTime: progress.startTime,
+      lastUpdateTime: progress.lastUpdateTime
+    };
+  }
+
+  // 배치 재시작 기능
+  async resumeBatch(batchId: string): Promise<void> {
+    const batch = await this.getBatchInfo(batchId);
+    if (!batch) {
+      throw new Error('배치 정보를 찾을 수 없습니다.');
+    }
+    
+    if (batch.status !== 'paused' && batch.status !== 'failed') {
+      throw new Error('재시작할 수 없는 배치 상태입니다.');
+    }
+    
+    // 마지막 성공 지점부터 재시작
+    const lastSuccessfulOffset = await this.getLastSuccessfulOffset(batchId);
+    
+    const resumeRequest: BatchSyncRequest = {
+      ...batch.originalRequest,
+      startOffset: lastSuccessfulOffset
+    };
+    
+    await this.executeBatchSync(resumeRequest);
+  }
+
+  // 배치 정리 및 최적화
+  async optimizeBatchPerformance(batchId: string): Promise<OptimizationResult> {
+    const batchStats = await this.analyzeBatchPerformance(batchId);
+    const recommendations = [];
+    
+    // 청크 크기 최적화
+    if (batchStats.avgChunkProcessingTime > 30000) { // 30초 초과
+      recommendations.push({
+        type: 'reduce-chunk-size',
+        current: batchStats.chunkSize,
+        recommended: Math.floor(batchStats.chunkSize * 0.7),
+        reason: '청크 처리 시간이 너무 깁니다.'
+      });
+    }
+    
+    // 동시성 최적화
+    if (batchStats.avgCpuUsage < 50) {
+      recommendations.push({
+        type: 'increase-concurrency',
+        current: batchStats.concurrency,
+        recommended: batchStats.concurrency * 2,
+        reason: 'CPU 사용률이 낮아 동시성을 증가시킬 수 있습니다.'
+      });
+    }
+    
+    // 메모리 사용량 최적화
+    if (batchStats.peakMemoryUsage > 0.8) {
+      recommendations.push({
+        type: 'optimize-memory',
+        current: batchStats.memoryUsage,
+        recommended: '스트리밍 처리 도입',
+        reason: '메모리 사용률이 높습니다.'
+      });
+    }
+    
+    return {
+      batchId,
+      currentPerformance: batchStats,
+      recommendations,
+      estimatedImprovement: this.calculateEstimatedImprovement(recommendations)
+    };
+  }
+}</div>
+                <p><strong>청크 처리:</strong> 대용량 데이터 분할 처리</p>
+                <p><strong>병렬 처리:</strong> 동시성 제어로 성능 최적화</p>
+                <p><strong>진행률 추적:</strong> 실시간 배치 진행 상황 모니터링</p>
+            </div>
+
+            <div class="tech-section">
+                <h4>동기화 모니터링 시스템</h4>
+                <div class="code-block">
+// 동기화 모니터링 및 알림 시스템
+class SyncMonitoringSystem {
+  private metricsCollector: MetricsCollector;
+  private alertManager: AlertManager;
+  private dashboardUpdater: DashboardUpdater;
+  private healthChecker: HealthChecker;
+
+  constructor(config: MonitoringConfig) {
+    this.metricsCollector = new MetricsCollector(config.metricsConfig);
+    this.alertManager = new AlertManager(config.alertConfig);
+    this.dashboardUpdater = new DashboardUpdater(config.dashboardConfig);
+    this.healthChecker = new HealthChecker(config.healthConfig);
+    this.startMonitoring();
+  }
+
+  // 동기화 성능 메트릭 수집
+  private startMonitoring(): void {
+    // 실시간 메트릭 수집
+    setInterval(async () => {
+      await this.collectSyncMetrics();
+    }, 10000); // 10초마다
+
+    // 건강성 검사
+    setInterval(async () => {
+      await this.performHealthCheck();
+    }, 60000); // 1분마다
+
+    // 대시보드 업데이트
+    setInterval(async () => {
+      await this.updateDashboard();
+    }, 30000); // 30초마다
+  }
+
+  // 동기화 메트릭 수집
+  private async collectSyncMetrics(): Promise<SyncMetrics> {
+    const metrics = {
+      timestamp: Date.now(),
+      realTimeSync: await this.collectRealTimeSyncMetrics(),
+      batchSync: await this.collectBatchSyncMetrics(),
+      conflicts: await this.collectConflictMetrics(),
+      offline: await this.collectOfflineSyncMetrics(),
+      performance: await this.collectPerformanceMetrics()
+    };
+
+    await this.metricsCollector.record(metrics);
+    return metrics;
+  }
+
+  // 실시간 동기화 메트릭
+  private async collectRealTimeSyncMetrics(): Promise<RealTimeSyncMetrics> {
+    return {
+      activeConnections: await this.getActiveConnectionCount(),
+      messagesPerSecond: await this.getMessageRate(),
+      avgLatency: await this.getAverageLatency(),
+      successRate: await this.getSyncSuccessRate(),
+      queueSize: await this.getQueueSize(),
+      throughput: await this.getThroughput()
+    };
+  }
+
+  // 충돌 관련 메트릭
+  private async collectConflictMetrics(): Promise<ConflictMetrics> {
+    const conflicts = await this.getRecentConflicts();
+    
+    return {
+      totalConflicts: conflicts.length,
+      conflictsByType: this.groupConflictsByType(conflicts),
+      autoResolvedConflicts: conflicts.filter(c => c.resolution.type === 'automatic').length,
+      manualResolvedConflicts: conflicts.filter(c => c.resolution.type === 'manual').length,
+      pendingConflicts: conflicts.filter(c => c.status === 'pending').length,
+      avgResolutionTime: this.calculateAverageResolutionTime(conflicts)
+    };
+  }
+
+  // 성능 메트릭
+  private async collectPerformanceMetrics(): Promise<PerformanceMetrics> {
+    return {
+      cpuUsage: await this.getCpuUsage(),
+      memoryUsage: await this.getMemoryUsage(),
+      diskIo: await this.getDiskIoMetrics(),
+      networkIo: await this.getNetworkIoMetrics(),
+      databaseConnections: await this.getDatabaseConnectionMetrics(),
+      cacheHitRate: await this.getCacheHitRate()
+    };
+  }
+
+  // 건강성 검사
+  private async performHealthCheck(): Promise<HealthCheckResult> {
+    const checks = await Promise.all([
+      this.checkDatabaseHealth(),
+      this.checkCacheHealth(),
+      this.checkWebSocketHealth(),
+      this.checkQueueHealth(),
+      this.checkStorageHealth()
+    ]);
+
+    const overallHealth = checks.every(check => check.status === 'healthy') 
+      ? 'healthy' 
+      : checks.some(check => check.status === 'critical') 
+        ? 'critical' 
+        : 'warning';
+
+    const healthResult: HealthCheckResult = {
+      overall: overallHealth,
+      timestamp: Date.now(),
+      checks,
+      details: {
+        uptime: process.uptime(),
+        version: process.env.APP_VERSION,
+        environment: process.env.NODE_ENV
+      }
+    };
+
+    // 건강성 악화 시 알림
+    if (overallHealth !== 'healthy') {
+      await this.alertManager.sendHealthAlert(healthResult);
+    }
+
+    return healthResult;
+  }
+
+  // 알림 관리
+  async sendAlert(alert: SyncAlert): Promise<void> {
+    // 중복 알림 방지
+    if (await this.isDuplicateAlert(alert)) {
+      return;
+    }
+
+    // 심각도별 알림 채널 선택
+    const channels = this.selectAlertChannels(alert.severity);
+
+    // 알림 발송
+    await Promise.all(
+      channels.map(channel => this.sendAlertToChannel(alert, channel))
+    );
+
+    // 알림 이력 기록
+    await this.recordAlert(alert);
+  }
+
+  private selectAlertChannels(severity: AlertSeverity): AlertChannel[] {
+    const channels = [];
+
+    switch (severity) {
+      case 'critical':
+        channels.push('sms', 'email', 'slack', 'pagerduty');
+        break;
+      case 'warning':
+        channels.push('email', 'slack');
+        break;
+      case 'info':
+        channels.push('slack');
+        break;
+    }
+
+    return channels;
+  }
+
+  // 실시간 대시보드 업데이트
+  private async updateDashboard(): Promise<void> {
+    const dashboardData = {
+      syncStatus: await this.getSyncStatusSummary(),
+      recentMetrics: await this.getRecentMetrics(),
+      activeIssues: await this.getActiveIssues(),
+      systemHealth: await this.getSystemHealthSummary(),
+      performanceTrends: await this.getPerformanceTrends()
+    };
+
+    await this.dashboardUpdater.update(dashboardData);
+  }
+
+  // 성능 분석 및 최적화 제안
+  async analyzePerformance(timeRange: TimeRange): Promise<PerformanceAnalysis> {
+    const metrics = await this.getMetricsForTimeRange(timeRange);
+    const analysis = {
+      summary: this.calculatePerformanceSummary(metrics),
+      trends: this.analyzeTrends(metrics),
+      bottlenecks: this.identifyBottlenecks(metrics),
+      recommendations: this.generateRecommendations(metrics)
+    };
+
+    return analysis;
+  }
+
+  private generateRecommendations(metrics: SyncMetrics[]): Recommendation[] {
+    const recommendations = [];
+
+    // 지연 시간 개선
+    const avgLatency = this.calculateAverageLatency(metrics);
+    if (avgLatency > 1000) { // 1초 초과
+      recommendations.push({
+        type: 'reduce-latency',
+        priority: 'high',
+        description: '동기화 지연 시간이 높습니다. 네트워크 최적화를 검토하세요.',
+        expectedImprovement: '50% 지연 시간 감소'
+      });
+    }
+
+    // 충돌 발생률 개선
+    const conflictRate = this.calculateConflictRate(metrics);
+    if (conflictRate > 0.05) { // 5% 초과
+      recommendations.push({
+        type: 'reduce-conflicts',
+        priority: 'medium',
+        description: '충돌 발생률이 높습니다. 동기화 전략을 재검토하세요.',
+        expectedImprovement: '충돌 발생률 50% 감소'
+      });
+    }
+
+    // 큐 크기 최적화
+    const avgQueueSize = this.calculateAverageQueueSize(metrics);
+    if (avgQueueSize > 1000) {
+      recommendations.push({
+        type: 'optimize-queue',
+        priority: 'medium',
+        description: '동기화 큐 크기가 큽니다. 처리 용량을 증가시키세요.',
+        expectedImprovement: '처리량 30% 증가'
+      });
+    }
+
+    return recommendations;
+  }
+
+  // 동기화 이상 감지
+  async detectAnomalies(): Promise<Anomaly[]> {
+    const recentMetrics = await this.getRecentMetrics();
+    const baseline = await this.getBaselineMetrics();
+    
+    const anomalies = [];
+
+    // 지연 시간 이상
+    if (recentMetrics.avgLatency > baseline.avgLatency * 2) {
+      anomalies.push({
+        type: 'latency-spike',
+        severity: 'warning',
+        description: '동기화 지연 시간이 평소보다 높습니다.',
+        currentValue: recentMetrics.avgLatency,
+        baselineValue: baseline.avgLatency
+      });
+    }
+
+    // 오류율 이상
+    if (recentMetrics.errorRate > baseline.errorRate * 3) {
+      anomalies.push({
+        type: 'error-rate-spike',
+        severity: 'critical',
+        description: '동기화 오류율이 급증했습니다.',
+        currentValue: recentMetrics.errorRate,
+        baselineValue: baseline.errorRate
+      });
+    }
+
+    // 처리량 감소
+    if (recentMetrics.throughput < baseline.throughput * 0.5) {
+      anomalies.push({
+        type: 'throughput-drop',
+        severity: 'warning',
+        description: '동기화 처리량이 크게 감소했습니다.',
+        currentValue: recentMetrics.throughput,
+        baselineValue: baseline.throughput
+      });
+    }
+
+    return anomalies;
+  }
+}</div>
+                <p><strong>실시간 모니터링:</strong> 동기화 성능 실시간 추적</p>
+                <p><strong>건강성 검사:</strong> 시스템 구성 요소 상태 확인</p>
+                <p><strong>이상 감지:</strong> 성능 이상 자동 감지 및 알림</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert-box">
+        <h3>⚠️ 데이터 동기화 시스템 주의사항</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+            <div>
+                <h4>🚨 중요 고려사항</h4>
+                <ul>
+                    <li><strong>데이터 일관성:</strong> 분산 환경에서 데이터 일관성 보장</li>
+                    <li><strong>네트워크 장애:</strong> 네트워크 단절 시 데이터 손실 방지</li>
+                    <li><strong>성능 영향:</strong> 동기화로 인한 시스템 성능 저하 최소화</li>
+                    <li><strong>충돌 해결:</strong> 복잡한 데이터 충돌 상황 대응</li>
+                </ul>
+            </div>
+            <div>
+                <h4>🛡️ 안전 장치</h4>
+                <ul>
+                    <li><strong>백업 전략:</strong> 동기화 전 데이터 백업</li>
+                    <li><strong>롤백 메커니즘:</strong> 동기화 실패 시 안전한 롤백</li>
+                    <li><strong>모니터링:</strong> 동기화 상태 실시간 모니터링</li>
+                    <li><strong>점진적 동기화:</strong> 대용량 데이터 안전한 처리</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 현재 날짜 설정
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('ko-KR');
+
+        // Mermaid 초기화
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            },
+            themeVariables: {
+                primaryColor: '#e0f2f1',
+                primaryTextColor: '#00bcd4',
+                primaryBorderColor: '#0097a7',
+                lineColor: '#666',
+                secondaryColor: '#e8f5e8',
+                tertiaryColor: '#fff3e0'
+            }
+        });
+
+        let currentZoom = 1;
+
+        function zoomIn() {
+            currentZoom += 0.1;
+            applyZoom();
+        }
+
+        function zoomOut() {
+            currentZoom = Math.max(0.5, currentZoom - 0.1);
+            applyZoom();
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            applyZoom();
+        }
+
+        function applyZoom() {
+            const diagram = document.getElementById('sync-flow');
+            diagram.style.transform = `scale(${currentZoom})`;
+            diagram.style.transformOrigin = 'top left';
+        }
+
+        function printDiagram() {
+            window.print();
+        }
+
+        function downloadSVG() {
+            const svgElement = document.querySelector('#sync-flow svg');
+            if (svgElement) {
+                const svgData = new XMLSerializer().serializeToString(svgElement);
+                const blob = new Blob([svgData], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = '데이터동기화시스템_플로우차트_v1.0.svg';
+                link.click();
+                URL.revokeObjectURL(url);
+            } else {
+                alert('SVG 요소를 찾을 수 없습니다. 다이어그램이 완전히 로드된 후 다시 시도해주세요.');
+            }
+        }
+
+        // 다이어그램 로딩 완료 후 스타일 적용
+        setTimeout(() => {
+            const diagram = document.querySelector('#sync-flow .mermaid');
+            if (diagram) {
+                diagram.style.textAlign = 'center';
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

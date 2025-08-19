@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>매출 분석 - 와이어프레임</title>
+    <link rel="stylesheet" href="../styles/wireframe.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+    <style>
+        .analytics-header {
+            background: white;
+            border-bottom: 1px solid #dee2e6;
+            padding: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .period-selector {
+            display: flex;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            margin: 16px;
+            overflow: hidden;
+        }
+        
+        .period-tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            color: #6c757d;
+            transition: all 0.2s;
+        }
+        
+        .period-tab.active {
+            background: white;
+            color: #495057;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 16px;
+        }
+        
+        .summary-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+        
+        .card-title {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 8px;
+        }
+        
+        .card-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 4px;
+        }
+        
+        .card-change {
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        .card-change.positive {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .card-change.negative {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .chart-section {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin: 16px;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .chart-container {
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .chart-placeholder {
+            height: 200px;
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            margin-bottom: 16px;
+        }
+        
+        .chart-legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            padding: 16px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .products-table th,
+        .products-table td {
+            text-align: left;
+            padding: 12px 16px;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        
+        .products-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #495057;
+            font-size: 13px;
+        }
+        
+        .products-table td {
+            font-size: 14px;
+            color: #495057;
+        }
+        
+        .product-rank {
+            width: 32px;
+            height: 32px;
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: #1976d2;
+        }
+        
+        .product-rank.top3 {
+            background: #ffd54f;
+            border-color: #ffb300;
+            color: #f57c00;
+        }
+        
+        .revenue-amount {
+            font-weight: bold;
+            color: #dc3545;
+        }
+        
+        .time-selector {
+            display: flex;
+            gap: 8px;
+            padding: 0 16px;
+            margin-bottom: 16px;
+        }
+        
+        .time-btn {
+            padding: 6px 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 16px;
+            background: white;
+            font-size: 12px;
+            color: #6c757d;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .time-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
+        .performance-indicators {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            padding: 16px;
+        }
+        
+        .indicator-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+        
+        .indicator-icon {
+            width: 40px;
+            height: 40px;
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin: 0 auto 8px;
+        }
+        
+        .indicator-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 4px;
+        }
+        
+        .indicator-label {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .content-wrapper {
+            padding-bottom: 20px;
+        }
+        
+        .export-section {
+            padding: 16px;
+            text-align: center;
+        }
+        
+        .export-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 0 8px;
+        }
+        
+        .comparison-chart {
+            height: 150px;
+            background: linear-gradient(to right, 
+                rgba(0, 123, 255, 0.1) 0%, 
+                rgba(0, 123, 255, 0.2) 30%, 
+                rgba(0, 123, 255, 0.1) 60%, 
+                rgba(0, 123, 255, 0.3) 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #007bff;
+            font-weight: bold;
+            margin-bottom: 16px;
+        }
+        
+        .hourly-sales {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            padding: 16px;
+        }
+        
+        .hour-item {
+            text-align: center;
+            padding: 8px 4px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            background: white;
+        }
+        
+        .hour-time {
+            font-size: 10px;
+            color: #6c757d;
+            margin-bottom: 4px;
+        }
+        
+        .hour-amount {
+            font-size: 12px;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .hour-item.peak {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+        }
+    </style>
+</head>
+<body style="background: #f8f9fa;">
+    <!-- 헤더 -->
+    <div class="analytics-header">
+        <div style="display: flex; align-items: center; margin-bottom: 12px;">
+            <button onclick="history.back()" style="background: none; border: none; font-size: 20px; cursor: pointer; margin-right: 12px;">←</button>
+            <h1 style="font-size: 18px; font-weight: bold; color: #212529; margin: 0;">매출 분석</h1>
+        </div>
+    </div>
+
+    <!-- 기간 선택 -->
+    <div class="period-selector">
+        <button class="period-tab" data-period="today">오늘</button>
+        <button class="period-tab active" data-period="week">이번 주</button>
+        <button class="period-tab" data-period="month">이번 달</button>
+        <button class="period-tab" data-period="quarter">분기</button>
+    </div>
+
+    <div class="content-wrapper">
+        <!-- 요약 카드 -->
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="card-title">총 매출</div>
+                <div class="card-value">1,847,600원</div>
+                <div class="card-change positive">+12.3%</div>
+            </div>
+            <div class="summary-card">
+                <div class="card-title">주문 수</div>
+                <div class="card-value">287건</div>
+                <div class="card-change positive">+8.7%</div>
+            </div>
+            <div class="summary-card">
+                <div class="card-title">평균 주문액</div>
+                <div class="card-value">6,438원</div>
+                <div class="card-change positive">+3.2%</div>
+            </div>
+            <div class="summary-card">
+                <div class="card-title">고객 수</div>
+                <div class="card-value">194명</div>
+                <div class="card-change negative">-2.1%</div>
+            </div>
+        </div>
+
+        <!-- 매출 트렌드 차트 -->
+        <div class="chart-section">
+            <div class="section-header">
+                <div class="section-title">📈 매출 트렌드</div>
+                <button class="wireframe-button" style="font-size: 12px; padding: 6px 12px;" onclick="toggleChartType()">📊</button>
+            </div>
+            <div class="chart-container">
+                <div class="comparison-chart">
+                    <div>
+                        <div style="font-size: 24px; margin-bottom: 8px;">📊</div>
+                        <div>일별 매출 비교 차트</div>
+                    </div>
+                </div>
+                <div class="chart-legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #007bff;"></div>
+                        <span>이번 주</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #6c757d;"></div>
+                        <span>지난 주</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 시간대별 매출 -->
+        <div class="chart-section">
+            <div class="section-header">
+                <div class="section-title">🕐 시간대별 매출</div>
+            </div>
+            <div class="hourly-sales">
+                <div class="hour-item">
+                    <div class="hour-time">06-08시</div>
+                    <div class="hour-amount">52,400원</div>
+                </div>
+                <div class="hour-item">
+                    <div class="hour-time">08-10시</div>
+                    <div class="hour-amount">89,200원</div>
+                </div>
+                <div class="hour-item">
+                    <div class="hour-time">10-12시</div>
+                    <div class="hour-amount">134,800원</div>
+                </div>
+                <div class="hour-item peak">
+                    <div class="hour-time">12-14시</div>
+                    <div class="hour-amount">287,900원</div>
+                </div>
+                <div class="hour-item">
+                    <div class="hour-time">14-16시</div>
+                    <div class="hour-amount">156,300원</div>
+                </div>
+                <div class="hour-item">
+                    <div class="hour-time">16-18시</div>
+                    <div class="hour-amount">198,700원</div>
+                </div>
+                <div class="hour-item peak">
+                    <div class="hour-time">18-20시</div>
+                    <div class="hour-amount">245,600원</div>
+                </div>
+                <div class="hour-item">
+                    <div class="hour-time">20-22시</div>
+                    <div class="hour-amount">178,400원</div>
+                </div>
+                <div class="hour-item">
+                    <div class="hour-time">22-24시</div>
+                    <div class="hour-amount">98,500원</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 인기 상품 -->
+        <div class="chart-section">
+            <div class="section-header">
+                <div class="section-title">🏆 인기 상품 TOP 10</div>
+                <button class="wireframe-button" style="font-size: 12px; padding: 6px 12px;" onclick="switchRanking()">🔄</button>
+            </div>
+            <table class="products-table">
+                <thead>
+                    <tr>
+                        <th>순위</th>
+                        <th>상품명</th>
+                        <th>판매량</th>
+                        <th>매출</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr onclick="showProductDetail('신라면')">
+                        <td><div class="product-rank top3">1</div></td>
+                        <td>신라면 120g</td>
+                        <td>87개</td>
+                        <td class="revenue-amount">121,800원</td>
+                    </tr>
+                    <tr onclick="showProductDetail('코카콜라')">
+                        <td><div class="product-rank top3">2</div></td>
+                        <td>코카콜라 355ml</td>
+                        <td>76개</td>
+                        <td class="revenue-amount">136,800원</td>
+                    </tr>
+                    <tr onclick="showProductDetail('삼각김밥')">
+                        <td><div class="product-rank top3">3</div></td>
+                        <td>참치마요 삼각김밥</td>
+                        <td>64개</td>
+                        <td class="revenue-amount">89,600원</td>
+                    </tr>
+                    <tr onclick="showProductDetail('허니버터칩')">
+                        <td><div class="product-rank">4</div></td>
+                        <td>허니버터칩 60g</td>
+                        <td>52개</td>
+                        <td class="revenue-amount">135,200원</td>
+                    </tr>
+                    <tr onclick="showProductDetail('바나나우유')">
+                        <td><div class="product-rank">5</div></td>
+                        <td>바나나우유 240ml</td>
+                        <td>48개</td>
+                        <td class="revenue-amount">62,400원</td>
+                    </tr>
+                    <tr onclick="showProductDetail('새우깡')">
+                        <td><div class="product-rank">6</div></td>
+                        <td>새우깡 90g</td>
+                        <td>41개</td>
+                        <td class="revenue-amount">57,400원</td>
+                    </tr>
+                    <tr onclick="showProductDetail('컵라면')">
+                        <td><div class="product-rank">7</div></td>
+                        <td>육개장사발면 86g</td>
+                        <td>35개</td>
+                        <td class="revenue-amount">49,000원</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 성과 지표 -->
+        <div class="chart-section">
+            <div class="section-header">
+                <div class="section-title">📊 성과 지표</div>
+            </div>
+            <div class="performance-indicators">
+                <div class="indicator-card">
+                    <div class="indicator-icon">👥</div>
+                    <div class="indicator-value">3.2명</div>
+                    <div class="indicator-label">시간당 평균 고객</div>
+                </div>
+                <div class="indicator-card">
+                    <div class="indicator-icon">🛒</div>
+                    <div class="indicator-value">2.8개</div>
+                    <div class="indicator-label">고객당 평균 상품</div>
+                </div>
+                <div class="indicator-card">
+                    <div class="indicator-icon">⏱️</div>
+                    <div class="indicator-value">4분 32초</div>
+                    <div class="indicator-label">평균 주문 처리</div>
+                </div>
+                <div class="indicator-card">
+                    <div class="indicator-icon">🔄</div>
+                    <div class="indicator-value">23%</div>
+                    <div class="indicator-label">재방문율</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 카테고리별 분석 -->
+        <div class="chart-section">
+            <div class="section-header">
+                <div class="section-title">📂 카테고리별 매출</div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-placeholder">
+                    <div>
+                        <div style="font-size: 32px; margin-bottom: 8px;">🥧</div>
+                        <div>카테고리별 매출 비율</div>
+                    </div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">32%</div>
+                        <div class="stat-label">라면/즉석식품</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">28%</div>
+                        <div class="stat-label">음료</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">21%</div>
+                        <div class="stat-label">과자</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">12%</div>
+                        <div class="stat-label">도시락/김밥</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">7%</div>
+                        <div class="stat-label">기타</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 데이터 내보내기 -->
+        <div class="export-section">
+            <h3 style="margin-bottom: 16px; font-size: 16px; color: #495057;">📤 데이터 내보내기</h3>
+            <button class="export-btn" onclick="exportData('excel')">📊 Excel</button>
+            <button class="export-btn" onclick="exportData('pdf')" style="background: #dc3545;">📄 PDF</button>
+        </div>
+    </div>
+
+    <!-- 와이어프레임 네비게이션 -->
+    <div style="position: fixed; top: 50%; right: 20px; transform: translateY(-50%); background: rgba(0,0,0,0.8); border-radius: 25px; padding: 8px;">
+        <a href="../index.html" style="color: white; text-decoration: none; font-size: 20px; display: block; padding: 8px;">🏠</a>
+    </div>
+
+    <script>
+        // 기간 선택 탭
+        document.querySelectorAll('.period-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                const period = this.dataset.period;
+                updateAnalytics(period);
+            });
+        });
+
+        function updateAnalytics(period) {
+            const periodNames = {
+                'today': '오늘',
+                'week': '이번 주',
+                'month': '이번 달',
+                'quarter': '분기'
+            };
+            
+            alert(`${periodNames[period]} 데이터로 분석을 업데이트합니다.\n\n매출 데이터와 차트가 새로고침됩니다.`);
+        }
+
+        // 차트 타입 토글
+        function toggleChartType() {
+            alert('차트 타입을 변경합니다:\n\n• 막대 차트 ↔ 선 차트\n• 일별 ↔ 시간별\n• 매출 ↔ 주문수');
+        }
+
+        // 순위 기준 변경
+        function switchRanking() {
+            if (confirm('순위 기준을 변경하시겠습니까?\n\n현재: 판매량 기준\n변경: 매출액 기준')) {
+                alert('매출액 기준으로 순위가 재정렬됩니다.');
+            }
+        }
+
+        // 상품 상세 분석
+        function showProductDetail(productName) {
+            alert(`${productName} 상세 분석:\n\n• 주간 판매 추이\n• 시간대별 판매량\n• 고객 연령대 분석\n• 함께 구매하는 상품\n• 재고 회전율\n\n상세 분석 페이지로 이동하시겠습니까?`);
+        }
+
+        // 데이터 내보내기
+        function exportData(format) {
+            const formatNames = {
+                'excel': 'Excel 파일',
+                'pdf': 'PDF 보고서'
+            };
+            
+            if (confirm(`${formatNames[format]}로 데이터를 내보내시겠습니까?\n\n포함 내용:\n• 매출 요약\n• 상품별 판매 데이터\n• 시간대별 분석\n• 차트 이미지`)) {
+                alert(`${formatNames[format]} 다운로드를 시작합니다.\n\n파일명: 매출분석_${new Date().toISOString().slice(0, 10)}.${format}`);
+            }
+        }
+
+        // 성과 지표 클릭
+        document.querySelectorAll('.indicator-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const label = this.querySelector('.indicator-label').textContent;
+                alert(`${label} 상세 정보:\n\n• 지난 주 대비 변화\n• 동종업계 평균 비교\n• 개선 방안 제안\n\n상세 분석을 확인하시겠습니까?`);
+            });
+        });
+
+        // 시간대별 매출 클릭
+        document.querySelectorAll('.hour-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const time = this.querySelector('.hour-time').textContent;
+                const amount = this.querySelector('.hour-amount').textContent;
+                alert(`${time} 상세 분석:\n\n매출: ${amount}\n주요 상품: 도시락, 커피\n고객층: 직장인, 학생\n\n개선 방안:\n• 점심시간 인력 보강\n• 인기 상품 재고 확보`);
+            });
+        });
+
+        // 카테고리별 분석 클릭
+        document.querySelectorAll('.stat-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const category = this.querySelector('.stat-label').textContent;
+                const percentage = this.querySelector('.stat-value').textContent;
+                alert(`${category} 카테고리 분석:\n\n매출 비중: ${percentage}\n성장률: +5.2%\n인기 상품: TOP 3 보기\n마진율: 42.3%\n\n상세 분석 페이지로 이동하시겠습니까?`);
+            });
+        });
+
+        // 요약 카드 클릭
+        document.querySelectorAll('.summary-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const title = this.querySelector('.card-title').textContent;
+                const value = this.querySelector('.card-value').textContent;
+                const change = this.querySelector('.card-change').textContent;
+                
+                alert(`${title} 상세 정보:\n\n현재 값: ${value}\n전주 대비: ${change}\n목표 달성률: 87.3%\n동종업계 평균: 105%\n\n개선 방안을 확인하시겠습니까?`);
+            });
+        });
+
+        // 실시간 데이터 업데이트 시뮬레이션
+        setInterval(() => {
+            if (Math.random() < 0.1) { // 10% 확률
+                const cards = document.querySelectorAll('.card-value');
+                cards.forEach((card, index) => {
+                    if (index === 0) { // 매출 업데이트
+                        const currentValue = parseInt(card.textContent.replace(/[^0-9]/g, ''));
+                        const newValue = currentValue + Math.floor(Math.random() * 10000);
+                        card.textContent = newValue.toLocaleString() + '원';
+                    }
+                });
+            }
+        }, 30000); // 30초마다
+    </script>
+</body>
+</html>

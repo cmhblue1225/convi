@@ -99,6 +99,12 @@ const LandingPage: React.FC = () => {
                   무료로 시작하기
                 </Button>
               </Link>
+              <button
+                onClick={() => window.open('./wireframes/docs/index.html', '_blank')}
+                className="inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-lg text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 w-full sm:w-auto"
+              >
+                📚 설계 문서 보기
+              </button>
               <Link to="/manual">
                 <Button size="lg" variant="outline" className="w-full sm:w-auto">
                   📋 사용자 매뉴얼 보기

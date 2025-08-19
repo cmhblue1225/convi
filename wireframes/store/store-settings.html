@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>매장 설정 - 와이어프레임</title>
+    <link rel="stylesheet" href="../styles/wireframe.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+    <style>
+        .settings-header {
+            background: white;
+            border-bottom: 1px solid #dee2e6;
+            padding: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .settings-section {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin: 16px;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .section-content {
+            padding: 20px;
+        }
+        
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+        
+        .setting-info {
+            flex: 1;
+        }
+        
+        .setting-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 4px;
+        }
+        
+        .setting-description {
+            font-size: 12px;
+            color: #6c757d;
+            line-height: 1.4;
+        }
+        
+        .setting-control {
+            margin-left: 16px;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background: #dee2e6;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .toggle-switch.active {
+            background: #28a745;
+        }
+        
+        .toggle-switch::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+        
+        .toggle-switch.active::before {
+            transform: translateX(26px);
+        }
+        
+        .store-profile {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 16px;
+            border-radius: 12px;
+        }
+        
+        .store-avatar {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .camera-icon {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 24px;
+            height: 24px;
+            background: #007bff;
+            border: 2px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        
+        .store-details h2 {
+            font-size: 20px;
+            margin: 0 0 4px 0;
+        }
+        
+        .store-details p {
+            font-size: 14px;
+            margin: 0;
+            opacity: 0.9;
+        }
+        
+        .status-badge {
+            background: rgba(40, 167, 69, 0.8);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-top: 8px;
+            display: inline-block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        .form-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 80px;
+            box-sizing: border-box;
+        }
+        
+        .form-select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            box-sizing: border-box;
+        }
+        
+        .time-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .notification-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .notification-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+        
+        .notification-info {
+            flex: 1;
+        }
+        
+        .notification-title {
+            font-size: 14px;
+            color: #495057;
+            margin-bottom: 2px;
+        }
+        
+        .notification-desc {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .content-wrapper {
+            padding-bottom: 80px;
+        }
+        
+        .action-buttons {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #dee2e6;
+            padding: 16px;
+            display: flex;
+            gap: 12px;
+        }
+        
+        .btn-save {
+            flex: 1;
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .btn-cancel {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .location-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 8px;
+            font-size: 14px;
+            color: #495057;
+        }
+        
+        .quick-settings {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 20px;
+        }
+        
+        .quick-setting-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .quick-setting-card:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+        
+        .quick-setting-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .quick-setting-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 4px;
+        }
+        
+        .quick-setting-desc {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .certificate-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            margin-bottom: 12px;
+        }
+        
+        .certificate-info {
+            flex: 1;
+        }
+        
+        .certificate-name {
+            font-size: 14px;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 4px;
+        }
+        
+        .certificate-status {
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        .certificate-status.valid {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .certificate-status.expiring {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .upload-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body style="background: #f8f9fa;">
+    <!-- 헤더 -->
+    <div class="settings-header">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center;">
+                <button onclick="history.back()" style="background: none; border: none; font-size: 20px; cursor: pointer; margin-right: 12px;">←</button>
+                <h1 style="font-size: 18px; font-weight: bold; color: #212529; margin: 0;">매장 설정</h1>
+            </div>
+            <button class="wireframe-button" style="font-size: 12px; padding: 6px 12px;" onclick="resetSettings()">🔄</button>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <!-- 매장 프로필 -->
+        <div class="store-profile">
+            <div class="store-avatar" onclick="changeStoreImage()">
+                🏪
+                <div class="camera-icon">📷</div>
+            </div>
+            <div class="store-details">
+                <h2>GS25 강남점</h2>
+                <p>서울시 강남구 강남대로 123</p>
+                <p>📞 02-1234-5678</p>
+                <div class="status-badge">✅ 영업중</div>
+            </div>
+        </div>
+
+        <!-- 빠른 설정 -->
+        <div class="settings-section">
+            <div class="section-header">
+                <div class="section-title">⚡ 빠른 설정</div>
+            </div>
+            <div class="quick-settings">
+                <div class="quick-setting-card" onclick="toggleStoreOpen()">
+                    <div class="quick-setting-icon">🏪</div>
+                    <div class="quick-setting-title">영업 상태</div>
+                    <div class="quick-setting-desc">영업/휴업 전환</div>
+                </div>
+                <div class="quick-setting-card" onclick="setDeliveryMode()">
+                    <div class="quick-setting-icon">🚚</div>
+                    <div class="quick-setting-title">배달 설정</div>
+                    <div class="quick-setting-desc">배달 가능 여부</div>
+                </div>
+                <div class="quick-setting-card" onclick="setSpecialHours()">
+                    <div class="quick-setting-icon">🕐</div>
+                    <div class="quick-setting-title">특별 운영</div>
+                    <div class="quick-setting-desc">임시 시간 변경</div>
+                </div>
+                <div class="quick-setting-card" onclick="setEmergencyMode()">
+                    <div class="quick-setting-icon">🚨</div>
+                    <div class="quick-setting-title">긴급 모드</div>
+                    <div class="quick-setting-desc">일시 주문 중단</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 기본 정보 -->
+        <div class="settings-section">
+            <div class="section-header">
+                <div class="section-title">📝 기본 정보</div>
+                <button class="wireframe-button" style="font-size: 12px; padding: 6px 12px;" onclick="editBasicInfo()">수정</button>
+            </div>
+            <div class="section-content">
+                <div class="form-group">
+                    <label class="form-label">매장명</label>
+                    <input type="text" class="form-input" value="GS25 강남점" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">대표자명</label>
+                    <input type="text" class="form-input" value="이점주" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">연락처</label>
+                    <input type="tel" class="form-input" value="02-1234-5678" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">휴대폰</label>
+                    <input type="tel" class="form-input" value="010-1234-5678" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">이메일</label>
+                    <input type="email" class="form-input" value="store@gs25.com" readonly>
+                </div>
+            </div>
+        </div>
+
+        <!-- 영업 시간 -->
+        <div class="settings-section">
+            <div class="section-header">
+                <div class="section-title">🕐 영업 시간</div>
+                <button class="wireframe-button" style="font-size: 12px; padding: 6px 12px;" onclick="editOperatingHours()">수정</button>
+            </div>
+            <div class="section-content">
+                <div class="form-group">
+                    <label class="form-label">기본 영업시간</label>
+                    <div class="time-inputs">
+                        <input type="time" class="form-input" value="06:00" readonly>
+                        <input type="time" class="form-input" value="24:00" readonly>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">휴무일</label>
+                    <select class="form-select" disabled>
+                        <option>연중무휴</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">특별 운영</label>
+                    <textarea class="form-textarea" placeholder="명절, 공휴일 등 특별 운영시간 안내" readonly>설날, 추석: 오전 10시 - 오후 6시
+기타 공휴일: 정상 영업</textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- 주문 설정 -->
+        <div class="settings-section">
+            <div class="section-header">
+                <div class="section-title">📱 주문 설정</div>
+            </div>
+            <div class="section-content">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-title">온라인 주문 받기</div>
+                        <div class="setting-description">앱을 통한 주문을 받습니다</div>
+                    </div>
+                    <div class="setting-control">
+                        <div class="toggle-switch active" onclick="toggleSetting(this)"></div>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-title">픽업 서비스</div>
+                        <div class="setting-description">매장에서 직접 픽업 가능</div>
+                    </div>
+                    <div class="setting-control">
+                        <div class="toggle-switch active" onclick="toggleSetting(this)"></div>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-title">배달 서비스</div>
+                        <div class="setting-description">매장에서 직접 배달</div>
+                    </div>
+                    <div class="setting-control">
+                        <div class="toggle-switch" onclick="toggleSetting(this)"></div>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-title">최소 주문 금액</div>
+                        <div class="setting-description">주문 가능한 최소 금액</div>
+                    </div>
+                    <div class="setting-control">
+                        <input type="number" class="form-input" value="1000" style="width: 80px;" step="1000" min="0">
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-title">주문 준비 시간</div>
+                        <div class="setting-description">평균 주문 처리 시간 (분)</div>
+                    </div>
+                    <div class="setting-control">
+                        <input type="number" class="form-input" value="5" style="width: 60px;" min="1" max="60">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 알림 설정 -->
+        <div class="settings-section">
+            <div class="section-header">
+                <div class="section-title">🔔 알림 설정</div>
+            </div>
+            <div class="section-content">
+                <div class="notification-list">
+                    <div class="notification-item">
+                        <div class="notification-info">
+                            <div class="notification-title">신규 주문 알림</div>
+                            <div class="notification-desc">새로운 주문이 들어올 때</div>
+                        </div>
+                        <div class="toggle-switch active" onclick="toggleSetting(this)"></div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-info">
+                            <div class="notification-title">재고 부족 알림</div>
+                            <div class="notification-desc">상품 재고가 최소량 이하일 때</div>
+                        </div>
+                        <div class="toggle-switch active" onclick="toggleSetting(this)"></div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-info">
+                            <div class="notification-title">발주 승인 알림</div>
+                            <div class="notification-desc">발주 요청이 승인/거부될 때</div>
+                        </div>
+                        <div class="toggle-switch active" onclick="toggleSetting(this)"></div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-info">
+                            <div class="notification-title">매출 리포트</div>
+                            <div class="notification-desc">일일 매출 리포트 (오후 11시)</div>
+                        </div>
+                        <div class="toggle-switch active" onclick="toggleSetting(this)"></div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-info">
+                            <div class="notification-title">시스템 공지</div>
+                            <div class="notification-desc">중요 공지사항 및 업데이트</div>
+                        </div>
+                        <div class="toggle-switch active" onclick="toggleSetting(this)"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 인증서 관리 -->
+        <div class="settings-section">
+            <div class="section-header">
+                <div class="section-title">📄 인증서 관리</div>
+            </div>
+            <div class="section-content">
+                <div class="certificate-item">
+                    <div class="certificate-info">
+                        <div class="certificate-name">사업자등록증</div>
+                        <div class="certificate-status valid">유효 (2025.12.31까지)</div>
+                    </div>
+                    <button class="upload-btn" onclick="uploadCertificate('business')">재업로드</button>
+                </div>
+                <div class="certificate-item">
+                    <div class="certificate-info">
+                        <div class="certificate-name">통신판매업 신고증</div>
+                        <div class="certificate-status valid">유효 (2025.06.15까지)</div>
+                    </div>
+                    <button class="upload-btn" onclick="uploadCertificate('telecom')">재업로드</button>
+                </div>
+                <div class="certificate-item">
+                    <div class="certificate-info">
+                        <div class="certificate-name">식품위생업 허가증</div>
+                        <div class="certificate-status expiring">만료 임박 (2025.02.28)</div>
+                    </div>
+                    <button class="upload-btn" onclick="uploadCertificate('food')" style="background: #dc3545;">갱신 필요</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 위치 정보 -->
+        <div class="settings-section">
+            <div class="section-header">
+                <div class="section-title">📍 위치 정보</div>
+                <button class="wireframe-button" style="font-size: 12px; padding: 6px 12px;" onclick="updateLocation()">위치 수정</button>
+            </div>
+            <div class="section-content">
+                <div class="form-group">
+                    <label class="form-label">주소</label>
+                    <input type="text" class="form-input" value="서울시 강남구 강남대로 123" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">상세 주소</label>
+                    <input type="text" class="form-input" value="1층 101호" readonly>
+                </div>
+                <div class="location-display">
+                    📍 위도: 37.5665, 경도: 126.9780<br>
+                    🚇 가까운 역: 강남역 3번 출구 (도보 2분)
+                </div>
+            </div>
+        </div>
+
+        <!-- 계정 관리 -->
+        <div class="settings-section">
+            <div class="section-header">
+                <div class="section-title">👤 계정 관리</div>
+            </div>
+            <div class="section-content">
+                <div class="setting-item" onclick="changePassword()">
+                    <div class="setting-info">
+                        <div class="setting-title">비밀번호 변경</div>
+                        <div class="setting-description">로그인 비밀번호를 변경합니다</div>
+                    </div>
+                    <div class="setting-control">
+                        <span style="color: #6c757d;">›</span>
+                    </div>
+                </div>
+                <div class="setting-item" onclick="manageDevices()">
+                    <div class="setting-info">
+                        <div class="setting-title">기기 관리</div>
+                        <div class="setting-description">로그인된 기기 목록 확인</div>
+                    </div>
+                    <div class="setting-control">
+                        <span style="color: #6c757d;">›</span>
+                    </div>
+                </div>
+                <div class="setting-item" onclick="viewLoginHistory()">
+                    <div class="setting-info">
+                        <div class="setting-title">로그인 기록</div>
+                        <div class="setting-description">최근 로그인 내역 확인</div>
+                    </div>
+                    <div class="setting-control">
+                        <span style="color: #6c757d;">›</span>
+                    </div>
+                </div>
+                <div class="setting-item" onclick="deactivateAccount()">
+                    <div class="setting-info">
+                        <div class="setting-title">계정 비활성화</div>
+                        <div class="setting-description">임시로 계정을 비활성화합니다</div>
+                    </div>
+                    <div class="setting-control">
+                        <span style="color: #dc3545;">›</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 액션 버튼 -->
+    <div class="action-buttons">
+        <button class="btn-cancel" onclick="cancelChanges()">취소</button>
+        <button class="btn-save" onclick="saveSettings()">저장</button>
+    </div>
+
+    <!-- 와이어프레임 네비게이션 -->
+    <div style="position: fixed; top: 50%; right: 20px; transform: translateY(-50%); background: rgba(0,0,0,0.8); border-radius: 25px; padding: 8px;">
+        <a href="../index.html" style="color: white; text-decoration: none; font-size: 20px; display: block; padding: 8px;">🏠</a>
+    </div>
+
+    <script>
+        // 토글 스위치 제어
+        function toggleSetting(element) {
+            element.classList.toggle('active');
+            
+            // 설정에 따른 추가 동작
+            const parentItem = element.closest('.setting-item, .notification-item');
+            if (parentItem) {
+                const title = parentItem.querySelector('.setting-title, .notification-title').textContent;
+                const isActive = element.classList.contains('active');
+                console.log(`${title}: ${isActive ? 'ON' : 'OFF'}`);
+            }
+        }
+
+        // 매장 이미지 변경
+        function changeStoreImage() {
+            if (confirm('매장 이미지를 변경하시겠습니까?\n\n• 갤러리에서 선택\n• 카메라로 촬영\n• 기본 이미지 사용')) {
+                alert('이미지 업로드 기능:\n\n✅ 최대 5MB\n✅ JPG, PNG 형식\n✅ 정사각형 권장\n\n갤러리가 열립니다.');
+            }
+        }
+
+        // 기본 정보 수정
+        function editBasicInfo() {
+            if (confirm('기본 정보를 수정하시겠습니까?\n\n수정 가능한 항목:\n• 연락처\n• 휴대폰\n• 이메일\n\n매장명과 대표자명은 본사 승인이 필요합니다.')) {
+                const inputs = document.querySelectorAll('.settings-section input[readonly]');
+                inputs.forEach(input => {
+                    if (!['매장명', '대표자명'].includes(input.previousElementSibling.textContent)) {
+                        input.removeAttribute('readonly');
+                        input.style.background = '#fff3cd';
+                    }
+                });
+                alert('수정 모드가 활성화되었습니다.\n변경 후 저장 버튼을 눌러주세요.');
+            }
+        }
+
+        // 영업시간 수정
+        function editOperatingHours() {
+            if (confirm('영업시간을 수정하시겠습니까?\n\n변경사항은 즉시 고객에게 표시됩니다.\n임시 변경은 "특별 운영" 기능을 이용해주세요.')) {
+                const timeInputs = document.querySelectorAll('.time-inputs input, .form-select, .form-textarea');
+                timeInputs.forEach(input => {
+                    input.removeAttribute('readonly');
+                    input.removeAttribute('disabled');
+                    input.style.background = '#fff3cd';
+                });
+                alert('영업시간 수정 모드가 활성화되었습니다.');
+            }
+        }
+
+        // 빠른 설정들
+        function toggleStoreOpen() {
+            if (confirm('영업 상태를 변경하시겠습니까?\n\n현재: 영업중\n변경: 휴업중\n\n휴업 시 모든 주문이 중단됩니다.')) {
+                alert('영업 상태가 변경되었습니다.\n\n🔴 휴업중\n\n고객에게 휴업 안내가 표시됩니다.');
+            }
+        }
+
+        function setDeliveryMode() {
+            const options = prompt('배달 설정을 선택하세요:\n\n1. 배달 가능\n2. 픽업만 가능\n3. 배달 일시 중단\n\n번호를 입력하세요:');
+            
+            if (options) {
+                const modes = ['', '배달 가능', '픽업만 가능', '배달 일시 중단'];
+                if (modes[options]) {
+                    alert(`배달 설정이 "${modes[options]}"로 변경되었습니다.`);
+                }
+            }
+        }
+
+        function setSpecialHours() {
+            if (confirm('특별 운영시간을 설정하시겠습니까?\n\n예시:\n• 점심시간 휴게: 14:00-15:00\n• 재고조사: 익일 06:00까지 주문중단\n• 임시휴업: 오늘 17:00부터')) {
+                alert('특별 운영시간 설정:\n\n시작: 오늘 17:00\n종료: 내일 09:00\n사유: 재고조사\n\n설정되었습니다.');
+            }
+        }
+
+        function setEmergencyMode() {
+            if (confirm('긴급 모드를 활성화하시겠습니까?\n\n• 모든 신규 주문 차단\n• 기존 주문은 정상 처리\n• 고객에게 임시 운영중단 안내\n\n긴급상황 시에만 사용해주세요.')) {
+                alert('🚨 긴급 모드 활성화\n\n모든 신규 주문이 차단됩니다.\n해제하려면 다시 눌러주세요.');
+            }
+        }
+
+        // 인증서 업로드
+        function uploadCertificate(type) {
+            const certNames = {
+                'business': '사업자등록증',
+                'telecom': '통신판매업 신고증',
+                'food': '식품위생업 허가증'
+            };
+            
+            if (confirm(`${certNames[type]}을 업로드하시겠습니까?\n\n파일 요건:\n• PDF 또는 이미지 파일\n• 최대 10MB\n• 선명한 화질`)) {
+                alert(`${certNames[type]} 업로드:\n\n파일 선택 창이 열립니다.\n업로드 후 승인까지 1-2일 소요됩니다.`);
+            }
+        }
+
+        // 위치 정보 업데이트
+        function updateLocation() {
+            if (confirm('매장 위치를 수정하시겠습니까?\n\n위치 변경 시 배달 서비스 범위가 재설정되며,\n본사 승인이 필요할 수 있습니다.')) {
+                alert('위치 수정 방법:\n\n1. 🗺️ 지도에서 선택\n2. 📍 현재 위치 사용\n3. 🔍 주소 검색\n\n지도가 열립니다.');
+            }
+        }
+
+        // 계정 관리 기능들
+        function changePassword() {
+            alert('비밀번호 변경:\n\n보안을 위해 SMS 인증이 필요합니다.\n휴대폰으로 인증번호를 발송할까요?');
+        }
+
+        function manageDevices() {
+            alert('로그인된 기기 목록:\n\n✅ iPhone 14 (현재 기기)\n📱 iPad Pro (3일 전)\n💻 MacBook Pro (1주일 전)\n\n의심스러운 기기가 있다면 로그아웃시킬 수 있습니다.');
+        }
+
+        function viewLoginHistory() {
+            alert('최근 로그인 기록:\n\n• 오늘 09:23 - iPhone 14\n• 어제 18:45 - iPhone 14\n• 3일 전 14:20 - iPad Pro\n• 1주일 전 10:15 - MacBook Pro\n\n이상 활동이 발견되면 즉시 신고해주세요.');
+        }
+
+        function deactivateAccount() {
+            if (confirm('정말로 계정을 비활성화하시겠습니까?\n\n⚠️ 주의사항:\n• 모든 주문 접수 중단\n• 매장 정보 숨김 처리\n• 재활성화까지 영업 불가\n\n신중히 결정해주세요.')) {
+                alert('계정 비활성화:\n\n본인 확인을 위해 SMS 인증이 필요합니다.\n인증 후 즉시 비활성화됩니다.');
+            }
+        }
+
+        // 설정 초기화
+        function resetSettings() {
+            if (confirm('모든 설정을 기본값으로 초기화하시겠습니까?\n\n초기화되는 항목:\n• 알림 설정\n• 주문 설정\n• 영업시간 (기본값으로)\n\n기본 정보는 유지됩니다.')) {
+                alert('설정이 초기화되었습니다.\n\n기본값으로 복원되었습니다.\n필요한 설정을 다시 조정해주세요.');
+            }
+        }
+
+        // 저장 및 취소
+        function saveSettings() {
+            if (confirm('변경사항을 저장하시겠습니까?\n\n저장되는 내용:\n• 알림 설정\n• 주문 설정\n• 영업시간\n• 기타 매장 설정')) {
+                alert('✅ 설정이 저장되었습니다!\n\n변경사항이 즉시 적용됩니다.\n고객에게도 업데이트된 정보가 표시됩니다.');
+            }
+        }
+
+        function cancelChanges() {
+            if (confirm('변경사항을 취소하고 나가시겠습니까?\n\n저장하지 않은 모든 변경사항이 사라집니다.')) {
+                history.back();
+            }
+        }
+
+        // 설정 변경 감지
+        let hasChanges = false;
+        
+        document.querySelectorAll('input, select, textarea').forEach(element => {
+            element.addEventListener('change', function() {
+                hasChanges = true;
+                document.querySelector('.btn-save').style.background = '#dc3545';
+                document.querySelector('.btn-save').textContent = '저장 *';
+            });
+        });
+
+        // 페이지 떠나기 전 확인
+        window.addEventListener('beforeunload', function(e) {
+            if (hasChanges) {
+                e.preventDefault();
+                e.returnValue = '';
+                return '저장하지 않은 변경사항이 있습니다.';
+            }
+        });
+    </script>
+</body>
+</html>

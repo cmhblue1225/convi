@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Flow Charts - 편의점 POS</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin: 0 0 10px 0;
+            font-size: 36px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            margin: 10px 0;
+            font-size: 16px;
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .flow-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .flow-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border-top: 5px solid;
+        }
+
+        .flow-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+
+        .flow-card.customer {
+            border-top-color: #3498db;
+        }
+
+        .flow-card.store {
+            border-top-color: #e67e22;
+        }
+
+        .flow-card.headquarters {
+            border-top-color: #9b59b6;
+        }
+
+        .flow-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .flow-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+        }
+
+        .flow-icon.customer {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+
+        .flow-icon.store {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+        }
+
+        .flow-icon.headquarters {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+        }
+
+        .flow-title {
+            flex: 1;
+        }
+
+        .flow-title h3 {
+            margin: 0 0 5px 0;
+            font-size: 20px;
+            color: #2c3e50;
+        }
+
+        .flow-subtitle {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin: 0;
+        }
+
+        .flow-description {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .flow-features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 25px 0;
+        }
+
+        .flow-features li {
+            padding: 8px 0;
+            color: #666;
+            font-size: 14px;
+            border-bottom: 1px solid #f0f0f0;
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .flow-features li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        .flow-features li:last-child {
+            border-bottom: none;
+        }
+
+        .flow-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            text-align: center;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #6c757d;
+            border: 1px solid #dee2e6;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .resources-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .resources-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .resources-header h2 {
+            color: #2c3e50;
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+
+        .resources-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .resource-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            transition: all 0.2s ease;
+        }
+
+        .resource-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .resource-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .resource-description {
+            font-size: 14px;
+            color: #6c757d;
+            line-height: 1.5;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .footer a {
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            color: white;
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .nav-button {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            border: none;
+        }
+
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .nav-button.active {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .flow-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .flow-buttons {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔄 User Flow Charts</h1>
+            <p><strong>편의점 종합 솔루션 - 사용자 여정 플로우</strong></p>
+            <p>각 사용자 역할별 완전한 업무 플로우와 상호작용 다이어그램</p>
+            
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <div class="stat-number">3</div>
+                    <div class="stat-label">사용자 역할</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">50+</div>
+                    <div class="stat-label">프로세스 단계</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">20+</div>
+                    <div class="stat-label">의사결정 포인트</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">인터랙티브</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <button onclick="window.open('http://localhost:5173', '_blank')" class="nav-button">🚀 React 앱으로</button>
+            <a href="../docs/index.html" class="nav-button">📚 문서 센터</a>
+            <a href="../index.html" class="nav-button">📱 와이어프레임</a>
+            <a href="#" class="nav-button active">👥 현재: 사용자 플로우</a>
+            <a href="../system-flows/index.html" class="nav-button">⚙️ 시스템 플로우</a>
+        </div>
+
+        <div class="flow-grid">
+            <!-- 고객 앱 플로우 -->
+            <div class="flow-card customer">
+                <div class="flow-header">
+                    <div class="flow-icon customer">📱</div>
+                    <div class="flow-title">
+                        <h3>고객 앱 User Flow</h3>
+                        <p class="flow-subtitle">Customer App Journey</p>
+                    </div>
+                </div>
+                <div class="flow-description">
+                    앱 실행부터 주문 완료까지의 전체 고객 여정을 단계별로 시각화한 플로우 차트입니다. 
+                    신규/기존 사용자 시나리오와 예외 상황 처리를 모두 포함합니다.
+                </div>
+                <ul class="flow-features">
+                    <li>회원가입 및 로그인 프로세스</li>
+                    <li>점포 선택 및 상품 브라우징</li>
+                    <li>장바구니 및 주문 과정</li>
+                    <li>결제 및 주문 추적</li>
+                    <li>예외 상황 및 오류 처리</li>
+                </ul>
+                <div class="flow-buttons">
+                    <a href="customer-app-flow.html" class="btn btn-primary">📊 플로우 보기</a>
+                    <a href="#" class="btn btn-secondary" onclick="downloadFlow('customer')">💾 다운로드</a>
+                </div>
+            </div>
+
+            <!-- 점주 앱 플로우 -->
+            <div class="flow-card store">
+                <div class="flow-header">
+                    <div class="flow-icon store">🏪</div>
+                    <div class="flow-title">
+                        <h3>점주 앱 User Flow</h3>
+                        <p class="flow-subtitle">Store Owner Management</p>
+                    </div>
+                </div>
+                <div class="flow-description">
+                    점주의 일일 업무부터 장기 운영 관리까지 모든 업무 프로세스를 체계적으로 
+                    정리한 관리 플로우입니다. 실시간 주문 처리와 재고 관리가 핵심입니다.
+                </div>
+                <ul class="flow-features">
+                    <li>실시간 주문 관리 및 처리</li>
+                    <li>재고 관리 및 발주 시스템</li>
+                    <li>매출 분석 및 리포팅</li>
+                    <li>점포 설정 및 직원 관리</li>
+                    <li>비상 상황 및 긴급 대응</li>
+                </ul>
+                <div class="flow-buttons">
+                    <a href="store-app-flow.html" class="btn btn-primary">📊 플로우 보기</a>
+                    <a href="#" class="btn btn-secondary" onclick="downloadFlow('store')">💾 다운로드</a>
+                </div>
+            </div>
+
+            <!-- 본사 시스템 플로우 -->
+            <div class="flow-card headquarters">
+                <div class="flow-header">
+                    <div class="flow-icon headquarters">🏢</div>
+                    <div class="flow-title">
+                        <h3>본사 시스템 User Flow</h3>
+                        <p class="flow-subtitle">Headquarters Management</p>
+                    </div>
+                </div>
+                <div class="flow-description">
+                    전체 네트워크 관리부터 개별 점포 승인까지 본사의 모든 관리 업무를 
+                    포괄하는 통합 관리 플로우입니다. 승인 프로세스와 분석 기능이 핵심입니다.
+                </div>
+                <ul class="flow-features">
+                    <li>신규 점포 승인 프로세스</li>
+                    <li>발주 요청 검토 및 승인</li>
+                    <li>상품 관리 및 가격 정책</li>
+                    <li>통계 분석 및 성과 관리</li>
+                    <li>사용자 및 시스템 관리</li>
+                </ul>
+                <div class="flow-buttons">
+                    <a href="headquarters-flow.html" class="btn btn-primary">📊 플로우 보기</a>
+                    <a href="#" class="btn btn-secondary" onclick="downloadFlow('headquarters')">💾 다운로드</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="resources-section">
+            <div class="resources-header">
+                <h2>🛠️ 개발 리소스</h2>
+                <p>User Flow 개발 및 활용을 위한 추가 자료들</p>
+            </div>
+            <div class="resources-grid">
+                <div class="resource-item">
+                    <div class="resource-title">📋 AI 프롬프트 가이드</div>
+                    <div class="resource-description">
+                        다른 AI 도구에서 동일한 User Flow를 재생성할 수 있는 상세한 프롬프트 문서
+                        <br><a href="AI_PROMPT_FOR_USERFLOW.md" target="_blank">📄 문서 보기</a>
+                    </div>
+                </div>
+                <div class="resource-item">
+                    <div class="resource-title">🎨 와이어프레임 연결</div>
+                    <div class="resource-description">
+                        User Flow와 연결된 실제 화면 와이어프레임으로 구체적인 UI/UX 확인
+                        <br><a href="../index.html" target="_blank">🖼️ 와이어프레임 보기</a>
+                    </div>
+                </div>
+                <div class="resource-item">
+                    <div class="resource-title">📊 데이터베이스 ERD</div>
+                    <div class="resource-description">
+                        User Flow 구현에 필요한 데이터베이스 구조 및 관계 다이어그램
+                        <br><a href="../../docs/database/ERD_DIAGRAM.html" target="_blank">🗂️ ERD 보기</a>
+                    </div>
+                </div>
+                <div class="resource-item">
+                    <div class="resource-title">⚡ Mermaid 소스코드</div>
+                    <div class="resource-description">
+                        각 플로우 차트의 Mermaid 소스코드를 확인하고 수정 가능
+                        <br><a href="#" onclick="showMermaidCode()">💻 코드 보기</a>
+                    </div>
+                </div>
+                <div class="resource-item">
+                    <div class="resource-title">📱 실제 앱 연결</div>
+                    <div class="resource-description">
+                        User Flow에 기반하여 개발된 실제 동작하는 애플리케이션
+                        <br><a href="../../../src/index.html" target="_blank">🚀 앱 체험하기</a>
+                    </div>
+                </div>
+                <div class="resource-item">
+                    <div class="resource-title">📖 개발 문서</div>
+                    <div class="resource-description">
+                        User Flow 구현을 위한 기술 스택, API 명세, 개발 가이드
+                        <br><a href="../../README.md" target="_blank">📚 문서 보기</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>
+                🏪 편의점 종합 솔루션 v2.0 | 
+                생성일: <span id="current-date"></span> | 
+                <a href="mailto:dev@convenience-store.com">개발팀 문의</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // 현재 날짜 설정
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('ko-KR');
+
+        // 다운로드 기능
+        function downloadFlow(type) {
+            const urls = {
+                customer: 'customer-app-flow.html',
+                store: 'store-app-flow.html',
+                headquarters: 'headquarters-flow.html'
+            };
+            
+            const names = {
+                customer: '고객앱_사용자플로우',
+                store: '점주앱_사용자플로우',
+                headquarters: '본사시스템_사용자플로우'
+            };
+
+            // HTML 파일 다운로드
+            const link = document.createElement('a');
+            link.href = urls[type];
+            link.download = `${names[type]}_v1.0.html`;
+            link.click();
+
+            // 다운로드 완료 알림
+            setTimeout(() => {
+                alert(`${names[type]} 파일이 다운로드되었습니다.\n브라우저에서 열어서 확인하세요.`);
+            }, 500);
+        }
+
+        // Mermaid 코드 보기
+        function showMermaidCode() {
+            const message = `
+Mermaid 소스코드 확인 방법:
+
+1. 각 User Flow HTML 파일을 텍스트 에디터로 열기
+2. <div class="mermaid"> 태그 내부의 flowchart 코드 복사
+3. Mermaid Live Editor (https://mermaid.live)에서 편집
+
+또는 개발자 도구 (F12)에서 소스코드를 직접 확인할 수 있습니다.
+            `;
+            alert(message);
+        }
+
+        // 카드 애니메이션 효과
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.flow-card');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach((entry, index) => {
+                    if (entry.isIntersecting) {
+                        setTimeout(() => {
+                            entry.target.style.opacity = '1';
+                            entry.target.style.transform = 'translateY(0)';
+                        }, index * 100);
+                    }
+                });
+            });
+
+            cards.forEach(card => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'all 0.6s ease';
+                observer.observe(card);
+            });
+        });
+    </script>
+</body>
+</html>
