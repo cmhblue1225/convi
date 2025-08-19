@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주문 관리 - 와이어프레임</title>
+    <link rel="stylesheet" href="../styles/wireframe.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+    <style>
+        .orders-header {
+            background: white;
+            border-bottom: 1px solid #dee2e6;
+            padding: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .order-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .stat-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .filter-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            margin: 16px;
+            overflow: hidden;
+        }
+        
+        .filter-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: #6c757d;
+            transition: all 0.2s;
+            position: relative;
+        }
+        
+        .filter-tab.active {
+            background: white;
+            color: #495057;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tab-badge {
+            position: absolute;
+            top: 4px;
+            right: 8px;
+            background: #dc3545;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 8px;
+            min-width: 16px;
+            text-align: center;
+        }
+        
+        .orders-list {
+            padding: 0 16px;
+        }
+        
+        .order-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        
+        .order-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .order-card.urgent {
+            border-color: #dc3545;
+            background: #fff5f5;
+        }
+        
+        .order-card.ready {
+            border-color: #28a745;
+            background: #f8fff8;
+        }
+        
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .order-info {
+            flex: 1;
+        }
+        
+        .order-number {
+            font-size: 16px;
+            font-weight: bold;
+            color: #212529;
+            margin-bottom: 4px;
+        }
+        
+        .order-time {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .order-status {
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        
+        .status-new {
+            background: #f8d7da;
+            color: #721c24;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-confirmed {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-preparing {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .status-ready {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-completed {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .customer-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #495057;
+        }
+        
+        .pickup-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        
+        .pickup-type {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        .pickup-time {
+            color: #6c757d;
+        }
+        
+        .urgent-badge {
+            background: #dc3545;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        
+        .order-items {
+            margin-bottom: 12px;
+        }
+        
+        .item-list {
+            font-size: 14px;
+            color: #495057;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+        
+        .order-total {
+            font-size: 16px;
+            font-weight: bold;
+            color: #dc3545;
+            text-align: right;
+        }
+        
+        .order-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+        
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-confirm {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-prepare {
+            background: #fd7e14;
+            color: white;
+        }
+        
+        .btn-ready {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-cancel {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-contact {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .action-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        
+        .empty-orders {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        .sound-toggle {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .sound-toggle.muted {
+            background: #6c757d;
+        }
+        
+        .content-wrapper {
+            padding-bottom: 20px;
+        }
+        
+        .timer-display {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        .special-requests {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 8px;
+            margin: 8px 0;
+            font-size: 12px;
+            color: #856404;
+        }
+        
+        .order-details-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body style="background: #f8f9fa;">
+    <!-- 헤더 -->
+    <div class="orders-header">
+        <div class="header-actions">
+            <div style="display: flex; align-items: center;">
+                <button onclick="history.back()" style="background: none; border: none; font-size: 20px; cursor: pointer; margin-right: 12px;">←</button>
+                <h1 style="font-size: 18px; font-weight: bold; color: #212529; margin: 0;">주문 관리</h1>
+            </div>
+            <button class="sound-toggle" id="sound-toggle" onclick="toggleSound()">🔊 알림음</button>
+        </div>
+        
+        <div class="order-stats">
+            <div class="stat-item">
+                <div class="stat-dot" style="background: #dc3545;"></div>
+                <span>신규: 3건</span>
+            </div>
+            <div class="stat-item">
+                <div class="stat-dot" style="background: #fd7e14;"></div>
+                <span>준비중: 2건</span>
+            </div>
+            <div class="stat-item">
+                <div class="stat-dot" style="background: #28a745;"></div>
+                <span>픽업대기: 1건</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 필터 탭 -->
+    <div class="filter-tabs">
+        <button class="filter-tab active" data-status="all">
+            전체
+        </button>
+        <button class="filter-tab" data-status="new">
+            신규
+            <span class="tab-badge">3</span>
+        </button>
+        <button class="filter-tab" data-status="preparing">
+            준비중
+        </button>
+        <button class="filter-tab" data-status="ready">
+            픽업대기
+        </button>
+        <button class="filter-tab" data-status="completed">
+            완료
+        </button>
+    </div>
+
+    <div class="content-wrapper">
+        <!-- 주문 목록 -->
+        <div class="orders-list" id="orders-list">
+            <!-- 긴급 신규 주문 -->
+            <div class="order-card urgent" data-status="new" onclick="showOrderDetail('#2025011601')">
+                <div class="timer-display">15분 경과</div>
+                <div class="order-header">
+                    <div class="order-info">
+                        <div class="order-number">#2025011601</div>
+                        <div class="order-time">14:25 주문</div>
+                    </div>
+                    <div class="order-status status-new">신규 주문</div>
+                </div>
+                
+                <div class="customer-info">
+                    👤 김고객 (010-1234-5678)
+                </div>
+                
+                <div class="pickup-info">
+                    <span class="pickup-type">매장픽업</span>
+                    <span class="pickup-time">예정: 14:50</span>
+                    <span class="urgent-badge">긴급</span>
+                </div>
+                
+                <div class="special-requests">
+                    💬 특별 요청: 라면은 매운맛으로 부탁드립니다
+                </div>
+                
+                <div class="order-items">
+                    <div class="item-list">
+                        • 신라면 120g × 2개<br>
+                        • 코카콜라 355ml × 1개<br>
+                        • 허니버터칩 60g × 1개
+                    </div>
+                    <div class="order-total">7,200원</div>
+                </div>
+                
+                <div class="order-actions">
+                    <button class="action-btn btn-confirm" onclick="confirmOrder(event, '#2025011601')">주문확인</button>
+                    <button class="action-btn btn-contact" onclick="contactCustomer(event, '010-1234-5678')">고객연락</button>
+                    <button class="action-btn btn-cancel" onclick="cancelOrder(event, '#2025011601')">취소</button>
+                </div>
+            </div>
+
+            <!-- 준비중 주문 -->
+            <div class="order-card" data-status="preparing" onclick="showOrderDetail('#2025011602')">
+                <div class="order-header">
+                    <div class="order-info">
+                        <div class="order-number">#2025011602</div>
+                        <div class="order-time">14:15 주문</div>
+                    </div>
+                    <div class="order-status status-preparing">준비중</div>
+                </div>
+                
+                <div class="customer-info">
+                    👤 이고객 (010-9876-5432)
+                </div>
+                
+                <div class="pickup-info">
+                    <span class="pickup-type">배달</span>
+                    <span class="pickup-time">예정: 15:00</span>
+                </div>
+                
+                <div class="order-items">
+                    <div class="item-list">
+                        • 치킨마요 도시락 × 1개<br>
+                        • 바나나우유 240ml × 2개
+                    </div>
+                    <div class="order-total">8,500원</div>
+                </div>
+                
+                <div class="order-actions">
+                    <button class="action-btn btn-ready" onclick="markReady(event, '#2025011602')">준비완료</button>
+                    <button class="action-btn btn-contact" onclick="contactCustomer(event, '010-9876-5432')">고객연락</button>
+                </div>
+            </div>
+
+            <!-- 픽업 대기 주문 -->
+            <div class="order-card ready" data-status="ready" onclick="showOrderDetail('#2025011603')">
+                <div class="order-header">
+                    <div class="order-info">
+                        <div class="order-number">#2025011603</div>
+                        <div class="order-time">14:10 주문</div>
+                    </div>
+                    <div class="order-status status-ready">픽업 대기</div>
+                </div>
+                
+                <div class="customer-info">
+                    👤 박고객 (010-1111-2222)
+                </div>
+                
+                <div class="pickup-info">
+                    <span class="pickup-type">매장픽업</span>
+                    <span class="pickup-time">준비완료</span>
+                </div>
+                
+                <div class="order-items">
+                    <div class="item-list">
+                        • 새우깡 90g × 3개<br>
+                        • 아이스 아메리카노 × 1개
+                    </div>
+                    <div class="order-total">6,900원</div>
+                </div>
+                
+                <div class="order-actions">
+                    <button class="action-btn btn-ready" onclick="completeOrder(event, '#2025011603')">픽업완료</button>
+                    <button class="action-btn btn-contact" onclick="contactCustomer(event, '010-1111-2222')">고객연락</button>
+                </div>
+            </div>
+
+            <!-- 신규 주문 -->
+            <div class="order-card" data-status="new" onclick="showOrderDetail('#2025011604')">
+                <div class="order-header">
+                    <div class="order-info">
+                        <div class="order-number">#2025011604</div>
+                        <div class="order-time">14:30 주문</div>
+                    </div>
+                    <div class="order-status status-new">신규 주문</div>
+                </div>
+                
+                <div class="customer-info">
+                    👤 최고객 (010-3333-4444)
+                </div>
+                
+                <div class="pickup-info">
+                    <span class="pickup-type">매장픽업</span>
+                    <span class="pickup-time">예정: 15:00</span>
+                </div>
+                
+                <div class="order-items">
+                    <div class="item-list">
+                        • 참치마요 삼각김밥 × 2개<br>
+                        • 카페라떼 × 1개
+                    </div>
+                    <div class="order-total">4,200원</div>
+                </div>
+                
+                <div class="order-actions">
+                    <button class="action-btn btn-confirm" onclick="confirmOrder(event, '#2025011604')">주문확인</button>
+                    <button class="action-btn btn-cancel" onclick="cancelOrder(event, '#2025011604')">취소</button>
+                </div>
+            </div>
+
+            <!-- 완료된 주문 -->
+            <div class="order-card" data-status="completed" onclick="showOrderDetail('#2025011605')">
+                <div class="order-header">
+                    <div class="order-info">
+                        <div class="order-number">#2025011605</div>
+                        <div class="order-time">13:45 주문</div>
+                    </div>
+                    <div class="order-status status-completed">완료</div>
+                </div>
+                
+                <div class="customer-info">
+                    👤 정고객 (010-5555-6666)
+                </div>
+                
+                <div class="pickup-info">
+                    <span class="pickup-type">매장픽업</span>
+                    <span class="pickup-time">14:05 완료</span>
+                </div>
+                
+                <div class="order-items">
+                    <div class="item-list">
+                        • 농심 육개장사발면 × 1개<br>
+                        • 사이다 500ml × 1개
+                    </div>
+                    <div class="order-total">3,300원</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 빈 목록 (숨겨짐) -->
+        <div id="empty-orders" class="empty-orders" style="display: none;">
+            <div class="empty-icon">📋</div>
+            <h3 style="margin-bottom: 8px; color: #495057;">주문이 없습니다</h3>
+            <p style="margin-bottom: 20px;">새로운 주문이 들어오면 알림을 받을 수 있습니다.</p>
+        </div>
+    </div>
+
+    <!-- 주문 상세 모달 -->
+    <div id="order-detail-modal" class="order-details-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin: 0; font-size: 18px; color: #212529;">주문 상세</h3>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div id="modal-body">
+                <!-- 동적으로 내용이 채워짐 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 와이어프레임 네비게이션 -->
+    <div style="position: fixed; top: 50%; right: 20px; transform: translateY(-50%); background: rgba(0,0,0,0.8); border-radius: 25px; padding: 8px;">
+        <a href="../index.html" style="color: white; text-decoration: none; font-size: 20px; display: block; padding: 8px;">🏠</a>
+    </div>
+
+    <script>
+        let soundEnabled = true;
+
+        // 필터 탭 전환
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                const status = this.dataset.status;
+                filterOrders(status);
+            });
+        });
+
+        function filterOrders(status) {
+            const orders = document.querySelectorAll('.order-card');
+            const emptyState = document.getElementById('empty-orders');
+            let visibleCount = 0;
+
+            orders.forEach(order => {
+                if (status === 'all' || order.dataset.status === status) {
+                    order.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    order.style.display = 'none';
+                }
+            });
+
+            if (visibleCount === 0) {
+                emptyState.style.display = 'block';
+            } else {
+                emptyState.style.display = 'none';
+            }
+        }
+
+        // 이벤트 버블링 방지
+        function stopEvent(event) {
+            event.stopPropagation();
+        }
+
+        // 주문 확인
+        function confirmOrder(event, orderNumber) {
+            stopEvent(event);
+            if (confirm(`${orderNumber} 주문을 확인하시겠습니까?\\n\\n주문이 확인되면 고객에게 알림이 전송됩니다.`)) {
+                alert('주문이 확인되었습니다.\\n\\n상태가 "준비중"으로 변경됩니다.');
+                updateOrderStatus(orderNumber, 'preparing');
+            }
+        }
+
+        // 준비 완료 처리
+        function markReady(event, orderNumber) {
+            stopEvent(event);
+            if (confirm(`${orderNumber} 주문 준비가 완료되었습니까?\\n\\n고객에게 픽업 준비 완료 알림이 전송됩니다.`)) {
+                alert('준비가 완료되었습니다.\\n\\n고객에게 픽업 알림이 전송됩니다.');
+                updateOrderStatus(orderNumber, 'ready');
+            }
+        }
+
+        // 픽업 완료 처리
+        function completeOrder(event, orderNumber) {
+            stopEvent(event);
+            if (confirm(`${orderNumber} 주문의 픽업이 완료되었습니까?`)) {
+                alert('주문이 완료되었습니다.\\n\\n감사합니다!');
+                updateOrderStatus(orderNumber, 'completed');
+            }
+        }
+
+        // 주문 취소
+        function cancelOrder(event, orderNumber) {
+            stopEvent(event);
+            const reason = prompt(`${orderNumber} 주문을 취소하는 이유를 입력해주세요:`);
+            if (reason) {
+                alert(`주문이 취소되었습니다.\\n\\n취소 사유: ${reason}\\n고객에게 취소 알림이 전송됩니다.`);
+                updateOrderStatus(orderNumber, 'cancelled');
+            }
+        }
+
+        // 고객 연락
+        function contactCustomer(event, phoneNumber) {
+            stopEvent(event);
+            if (confirm(`고객에게 전화를 걸까요?\\n\\n전화번호: ${phoneNumber}`)) {
+                alert('전화 앱이 실행됩니다.\\n\\n(와이어프레임 시뮬레이션)');
+            }
+        }
+
+        // 주문 상태 업데이트
+        function updateOrderStatus(orderNumber, newStatus) {
+            const orderCard = document.querySelector(`[onclick*="${orderNumber}"]`);
+            if (orderCard) {
+                orderCard.dataset.status = newStatus;
+                
+                // 상태에 따른 스타일 업데이트
+                const statusElement = orderCard.querySelector('.order-status');
+                statusElement.className = `order-status status-${newStatus}`;
+                
+                switch(newStatus) {
+                    case 'preparing':
+                        statusElement.textContent = '준비중';
+                        break;
+                    case 'ready':
+                        statusElement.textContent = '픽업 대기';
+                        orderCard.classList.add('ready');
+                        break;
+                    case 'completed':
+                        statusElement.textContent = '완료';
+                        orderCard.style.opacity = '0.7';
+                        break;
+                    case 'cancelled':
+                        orderCard.style.display = 'none';
+                        break;
+                }
+                
+                // 액션 버튼 업데이트
+                updateActionButtons(orderCard, newStatus);
+            }
+        }
+
+        // 액션 버튼 업데이트
+        function updateActionButtons(orderCard, status) {
+            const actionsDiv = orderCard.querySelector('.order-actions');
+            
+            switch(status) {
+                case 'preparing':
+                    actionsDiv.innerHTML = `
+                        <button class="action-btn btn-ready" onclick="markReady(event, '${orderCard.querySelector('.order-number').textContent}')">준비완료</button>
+                        <button class="action-btn btn-contact" onclick="contactCustomer(event, '010-0000-0000')">고객연락</button>
+                    `;
+                    break;
+                case 'ready':
+                    actionsDiv.innerHTML = `
+                        <button class="action-btn btn-ready" onclick="completeOrder(event, '${orderCard.querySelector('.order-number').textContent}')">픽업완료</button>
+                        <button class="action-btn btn-contact" onclick="contactCustomer(event, '010-0000-0000')">고객연락</button>
+                    `;
+                    break;
+                case 'completed':
+                    actionsDiv.innerHTML = '';
+                    break;
+            }
+        }
+
+        // 알림음 토글
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const button = document.getElementById('sound-toggle');
+            
+            if (soundEnabled) {
+                button.textContent = '🔊 알림음';
+                button.classList.remove('muted');
+            } else {
+                button.textContent = '🔇 무음';
+                button.classList.add('muted');
+            }
+        }
+
+        // 주문 상세 보기
+        function showOrderDetail(orderNumber) {
+            const modal = document.getElementById('order-detail-modal');
+            const modalBody = document.getElementById('modal-body');
+            
+            modalBody.innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span style="font-weight: bold; font-size: 16px;">${orderNumber}</span>
+                        <span class="order-status status-new">신규 주문</span>
+                    </div>
+                    <div style="color: #6c757d; font-size: 14px;">주문시간: 2025.01.16 14:25</div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 12px;">고객 정보</h4>
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px;">
+                        <div style="font-weight: bold; margin-bottom: 4px;">김고객</div>
+                        <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">📞 010-1234-5678</div>
+                        <div style="font-size: 14px; color: #6c757d;">📍 매장 픽업 (예정: 14:50)</div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 12px;">주문 상품</h4>
+                    <div style="border: 1px solid #dee2e6; border-radius: 6px; padding: 12px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span>신라면 120g × 2</span>
+                            <span>2,800원</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span>코카콜라 355ml × 1</span>
+                            <span>1,800원</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>허니버터칩 60g × 1</span>
+                            <span>2,600원</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 12px;">특별 요청</h4>
+                    <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 12px;">
+                        라면은 매운맛으로 부탁드립니다
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 12px;">결제 정보</h4>
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px;">
+                        <div style="display: flex; justify-content: space-between; font-weight: bold;">
+                            <span>총 결제 금액</span>
+                            <span style="color: #dc3545;">7,200원</span>
+                        </div>
+                        <div style="font-size: 12px; color: #6c757d; margin-top: 4px;">결제방법: 신용카드</div>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <button class="wireframe-button primary" onclick="confirmOrder(event, '${orderNumber}')">주문 확인</button>
+                    <button class="wireframe-button" onclick="contactCustomer(event, '010-1234-5678')">고객 연락</button>
+                </div>
+            `;
+            
+            modal.style.display = 'flex';
+        }
+
+        // 모달 닫기
+        function closeModal() {
+            document.getElementById('order-detail-modal').style.display = 'none';
+        }
+
+        // 모달 외부 클릭 시 닫기
+        document.getElementById('order-detail-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // 새 주문 알림 시뮬레이션
+        setInterval(() => {
+            if (Math.random() < 0.05 && soundEnabled) { // 5% 확률
+                if (Notification.permission === 'granted') {
+                    new Notification('새로운 주문!', {
+                        body: '신규 주문이 접수되었습니다.',
+                        icon: '🔔'
+                    });
+                }
+                
+                // 알림음 재생 (시뮬레이션)
+                console.log('새 주문 알림음 재생');
+            }
+        }, 10000);
+
+        // 알림 권한 요청
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    </script>
+</body>
+</html>

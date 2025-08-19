@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주문 내역 - 와이어프레임</title>
+    <link rel="stylesheet" href="../styles/wireframe.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+    <style>
+        .orders-header {
+            background: white;
+            border-bottom: 1px solid #dee2e6;
+            padding: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .filter-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            margin: 16px;
+            overflow: hidden;
+        }
+        
+        .filter-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: #6c757d;
+            transition: all 0.2s;
+        }
+        
+        .filter-tab.active {
+            background: white;
+            color: #495057;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .orders-list {
+            padding: 0 16px;
+        }
+        
+        .order-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .order-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .order-info {
+            flex: 1;
+        }
+        
+        .order-number {
+            font-size: 14px;
+            font-weight: bold;
+            color: #212529;
+            margin-bottom: 4px;
+        }
+        
+        .order-date {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .order-status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        
+        .order-status.completed {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .order-status.preparing {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .order-status.ready {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .order-status.cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .store-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .store-icon {
+            width: 24px;
+            height: 24px;
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        
+        .store-name {
+            font-size: 14px;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .order-items-preview {
+            font-size: 14px;
+            color: #6c757d;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        
+        .order-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .order-total {
+            font-size: 16px;
+            font-weight: bold;
+            color: #dc3545;
+        }
+        
+        .order-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            background: white;
+            color: #495057;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .action-btn:hover {
+            background: #f8f9fa;
+            border-color: #adb5bd;
+        }
+        
+        .action-btn.primary {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
+        .action-btn.primary:hover {
+            background: #0056b3;
+            border-color: #0056b3;
+        }
+        
+        .empty-orders {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        .search-section {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin: 16px;
+            padding: 16px;
+        }
+        
+        .search-bar {
+            position: relative;
+            margin-bottom: 12px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 10px 16px 10px 40px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+        
+        .date-filter {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+        
+        .date-chip {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .date-chip.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #dee2e6;
+            padding: 8px 0;
+            display: flex;
+            justify-content: space-around;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px;
+            text-decoration: none;
+            color: #6c757d;
+            font-size: 12px;
+        }
+        
+        .nav-item.active {
+            color: #007bff;
+        }
+        
+        .content-wrapper {
+            padding-bottom: 80px;
+        }
+        
+        .order-detail-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body style="background: #f8f9fa;">
+    <!-- 헤더 -->
+    <div class="orders-header">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center;">
+                <button onclick="history.back()" style="background: none; border: none; font-size: 20px; cursor: pointer; margin-right: 12px;">←</button>
+                <h1 style="font-size: 18px; font-weight: bold; color: #212529; margin: 0;">주문 내역</h1>
+            </div>
+            <button class="wireframe-button" style="font-size: 12px; padding: 6px 12px;" onclick="toggleSearch()">🔍</button>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <!-- 검색 섹션 (숨겨짐) -->
+        <div class="search-section" id="search-section" style="display: none;">
+            <div class="search-bar">
+                <div class="search-icon">🔍</div>
+                <input type="text" class="search-input" placeholder="주문번호, 매장명, 상품명으로 검색">
+            </div>
+            <div class="date-filter">
+                <div class="date-chip active">전체</div>
+                <div class="date-chip">1주일</div>
+                <div class="date-chip">1개월</div>
+                <div class="date-chip">3개월</div>
+                <div class="date-chip">6개월</div>
+            </div>
+        </div>
+
+        <!-- 필터 탭 -->
+        <div class="filter-tabs">
+            <button class="filter-tab active" data-status="all">전체</button>
+            <button class="filter-tab" data-status="preparing">진행중</button>
+            <button class="filter-tab" data-status="completed">완료</button>
+            <button class="filter-tab" data-status="cancelled">취소</button>
+        </div>
+
+        <!-- 주문 목록 -->
+        <div class="orders-list" id="orders-list">
+            <!-- 진행 중인 주문 -->
+            <div class="order-card" data-status="preparing" onclick="showOrderDetail('#2025011501')">
+                <div class="order-header">
+                    <div class="order-info">
+                        <div class="order-number">#2025011501</div>
+                        <div class="order-date">오늘 14:23</div>
+                    </div>
+                    <div class="order-status preparing">준비중</div>
+                </div>
+                
+                <div class="store-info">
+                    <div class="store-icon">🏪</div>
+                    <div class="store-name">GS25 강남점</div>
+                </div>
+                
+                <div class="order-items-preview">
+                    농심 육개장사발면 외 2개 상품
+                </div>
+                
+                <div class="order-footer">
+                    <div class="order-total">7,740원</div>
+                    <div class="order-actions">
+                        <button class="action-btn primary" onclick="trackOrder(event, '#2025011501')">추적</button>
+                        <button class="action-btn" onclick="cancelOrder(event, '#2025011501')">취소</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 완료된 주문들 -->
+            <div class="order-card" data-status="completed" onclick="showOrderDetail('#2025011401')">
+                <div class="order-header">
+                    <div class="order-info">
+                        <div class="order-number">#2025011401</div>
+                        <div class="order-date">어제 16:45</div>
+                    </div>
+                    <div class="order-status completed">완료</div>
+                </div>
+                
+                <div class="store-info">
+                    <div class="store-icon">🏪</div>
+                    <div class="store-name">CU 역삼점</div>
+                </div>
+                
+                <div class="order-items-preview">
+                    코카콜라 355ml 외 2개 상품
+                </div>
+                
+                <div class="order-footer">
+                    <div class="order-total">8,500원</div>
+                    <div class="order-actions">
+                        <button class="action-btn primary" onclick="reorderItems(event, '#2025011401')">재주문</button>
+                        <button class="action-btn" onclick="writeReview(event, '#2025011401')">리뷰</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="order-card" data-status="completed" onclick="showOrderDetail('#2025011301')">
+                <div class="order-header">
+                    <div class="order-info">
+                        <div class="order-number">#2025011301</div>
+                        <div class="order-date">3일 전 12:30</div>
+                    </div>
+                    <div class="order-status completed">완료</div>
+                </div>
+                
+                <div class="store-info">
+                    <div class="store-icon">🏪</div>
+                    <div class="store-name">세븐일레븐 선릉점</div>
+                </div>
+                
+                <div class="order-items-preview">
+                    삼각김밥 참치마요 외 1개 상품
+                </div>
+                
+                <div class="order-footer">
+                    <div class="order-total">3,200원</div>
+                    <div class="order-actions">
+                        <button class="action-btn primary" onclick="reorderItems(event, '#2025011301')">재주문</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 취소된 주문 -->
+            <div class="order-card" data-status="cancelled" onclick="showOrderDetail('#2025011201')">
+                <div class="order-header">
+                    <div class="order-info">
+                        <div class="order-number">#2025011201</div>
+                        <div class="order-date">5일 전 19:20</div>
+                    </div>
+                    <div class="order-status cancelled">취소</div>
+                </div>
+                
+                <div class="store-info">
+                    <div class="store-icon">🏪</div>
+                    <div class="store-name">GS25 대치점</div>
+                </div>
+                
+                <div class="order-items-preview">
+                    바나나우유 240ml 외 1개 상품
+                </div>
+                
+                <div class="order-footer">
+                    <div class="order-total">4,500원</div>
+                    <div class="order-actions">
+                        <button class="action-btn" onclick="viewRefund(event, '#2025011201')">환불내역</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 더 많은 과거 주문들 -->
+            <div class="order-card" data-status="completed" onclick="showOrderDetail('#2025010801')">
+                <div class="order-header">
+                    <div class="order-info">
+                        <div class="order-number">#2025010801</div>
+                        <div class="order-date">1주일 전 14:15</div>
+                    </div>
+                    <div class="order-status completed">완료</div>
+                </div>
+                
+                <div class="store-info">
+                    <div class="store-icon">🏪</div>
+                    <div class="store-name">CU 삼성점</div>
+                </div>
+                
+                <div class="order-items-preview">
+                    신라면 120g 외 3개 상품
+                </div>
+                
+                <div class="order-footer">
+                    <div class="order-total">12,340원</div>
+                    <div class="order-actions">
+                        <button class="action-btn primary" onclick="reorderItems(event, '#2025010801')">재주문</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 빈 목록 (숨겨짐) -->
+        <div id="empty-orders" class="empty-orders" style="display: none;">
+            <div class="empty-icon">📋</div>
+            <h3 style="margin-bottom: 8px; color: #495057;">주문 내역이 없습니다</h3>
+            <p style="margin-bottom: 20px;">첫 주문을 시작해보세요!</p>
+            <a href="product-catalog.html" class="wireframe-button primary" style="padding: 12px 24px;">쇼핑하러 가기</a>
+        </div>
+    </div>
+
+    <!-- 하단 네비게이션 -->
+    <div class="bottom-nav">
+        <a href="customer-home.html" class="nav-item">
+            <div>🏠</div>
+            <span>홈</span>
+        </a>
+        <a href="product-catalog.html" class="nav-item">
+            <div>🔍</div>
+            <span>검색</span>
+        </a>
+        <a href="cart-page.html" class="nav-item">
+            <div style="position: relative;">
+                🛒
+                <div style="position: absolute; top: -8px; right: -8px; background: #dc3545; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px;">2</div>
+            </div>
+            <span>장바구니</span>
+        </a>
+        <a href="#" class="nav-item active">
+            <div>📋</div>
+            <span>주문내역</span>
+        </a>
+        <a href="customer-profile.html" class="nav-item">
+            <div>👤</div>
+            <span>마이페이지</span>
+        </a>
+    </div>
+
+    <!-- 주문 상세 모달 -->
+    <div id="order-detail-modal" class="order-detail-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin: 0; font-size: 18px; color: #212529;">주문 상세</h3>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div id="modal-body">
+                <!-- 동적으로 내용이 채워짐 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 와이어프레임 네비게이션 -->
+    <div style="position: fixed; top: 50%; right: 20px; transform: translateY(-50%); background: rgba(0,0,0,0.8); border-radius: 25px; padding: 8px;">
+        <a href="../index.html" style="color: white; text-decoration: none; font-size: 20px; display: block; padding: 8px;">🏠</a>
+    </div>
+
+    <script>
+        // 필터 탭 전환
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                const status = this.dataset.status;
+                filterOrders(status);
+            });
+        });
+
+        function filterOrders(status) {
+            const orders = document.querySelectorAll('.order-card');
+            const emptyState = document.getElementById('empty-orders');
+            let visibleCount = 0;
+
+            orders.forEach(order => {
+                if (status === 'all' || order.dataset.status === status) {
+                    order.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    order.style.display = 'none';
+                }
+            });
+
+            // 빈 상태 표시
+            if (visibleCount === 0) {
+                emptyState.style.display = 'block';
+            } else {
+                emptyState.style.display = 'none';
+            }
+        }
+
+        // 검색 토글
+        function toggleSearch() {
+            const searchSection = document.getElementById('search-section');
+            const isVisible = searchSection.style.display !== 'none';
+            searchSection.style.display = isVisible ? 'none' : 'block';
+            
+            if (!isVisible) {
+                searchSection.querySelector('.search-input').focus();
+            }
+        }
+
+        // 검색 기능
+        document.querySelector('.search-input').addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            const orders = document.querySelectorAll('.order-card');
+            
+            orders.forEach(order => {
+                const orderNumber = order.querySelector('.order-number').textContent.toLowerCase();
+                const storeName = order.querySelector('.store-name').textContent.toLowerCase();
+                const items = order.querySelector('.order-items-preview').textContent.toLowerCase();
+                
+                if (orderNumber.includes(query) || storeName.includes(query) || items.includes(query)) {
+                    order.style.display = 'block';
+                } else {
+                    order.style.display = query === '' ? 'block' : 'none';
+                }
+            });
+        });
+
+        // 날짜 필터
+        document.querySelectorAll('.date-chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                document.querySelectorAll('.date-chip').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                
+                // 실제로는 날짜 필터링 로직 구현
+                alert(`${this.textContent} 필터가 적용되었습니다.`);
+            });
+        });
+
+        // 이벤트 버블링 방지를 위한 헬퍼 함수
+        function stopEvent(event) {
+            event.stopPropagation();
+        }
+
+        // 주문 추적
+        function trackOrder(event, orderNumber) {
+            stopEvent(event);
+            alert(`${orderNumber} 주문을 추적합니다.\\n\\n주문 추적 페이지로 이동합니다.`);
+        }
+
+        // 주문 취소
+        function cancelOrder(event, orderNumber) {
+            stopEvent(event);
+            if (confirm(`${orderNumber} 주문을 취소하시겠습니까?`)) {
+                alert('주문이 취소되었습니다.\\n환불은 1-3일 내에 처리됩니다.');
+            }
+        }
+
+        // 재주문
+        function reorderItems(event, orderNumber) {
+            stopEvent(event);
+            if (confirm(`${orderNumber}과 같은 상품으로 재주문하시겠습니까?`)) {
+                alert('장바구니에 상품이 추가되었습니다.\\n주문 페이지로 이동합니다.');
+            }
+        }
+
+        // 리뷰 작성
+        function writeReview(event, orderNumber) {
+            stopEvent(event);
+            alert(`${orderNumber} 주문에 대한 리뷰를 작성합니다.\\n\\n리뷰 페이지로 이동합니다.`);
+        }
+
+        // 환불 내역 보기
+        function viewRefund(event, orderNumber) {
+            stopEvent(event);
+            alert(`${orderNumber} 주문의 환불 내역을 확인합니다.\\n\\n환불 상태: 완료\\n환불 금액: 4,500원\\n환불 일시: 5일 전`);
+        }
+
+        // 주문 상세 보기
+        function showOrderDetail(orderNumber) {
+            const modal = document.getElementById('order-detail-modal');
+            const modalBody = document.getElementById('modal-body');
+            
+            // 샘플 상세 데이터
+            modalBody.innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span style="font-weight: bold; font-size: 16px;">${orderNumber}</span>
+                        <span class="order-status preparing">준비중</span>
+                    </div>
+                    <div style="color: #6c757d; font-size: 14px;">주문일시: 오늘 14:23</div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 12px;">매장 정보</h4>
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px;">
+                        <div style="font-weight: bold;">GS25 강남점</div>
+                        <div style="font-size: 14px; color: #6c757d;">서울시 강남구 강남대로 123</div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 12px;">주문 상품</h4>
+                    <div style="border: 1px solid #dee2e6; border-radius: 6px; padding: 12px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span>농심 육개장사발면 86g × 2</span>
+                            <span>3,000원</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span>코카콜라 355ml × 1</span>
+                            <span>1,800원</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>신라면 120g × 3</span>
+                            <span>2,940원</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 12px;">결제 정보</h4>
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span>상품 총액</span>
+                            <span>9,600원</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span>할인 금액</span>
+                            <span style="color: #dc3545;">-1,860원</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-weight: bold; border-top: 1px solid #dee2e6; padding-top: 8px; margin-top: 8px;">
+                            <span>최종 결제 금액</span>
+                            <span>7,740원</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <button class="wireframe-button primary" onclick="trackOrder(event, '${orderNumber}')">주문 추적</button>
+                    <button class="wireframe-button" onclick="cancelOrder(event, '${orderNumber}')">주문 취소</button>
+                </div>
+            `;
+            
+            modal.style.display = 'flex';
+        }
+
+        // 모달 닫기
+        function closeModal() {
+            document.getElementById('order-detail-modal').style.display = 'none';
+        }
+
+        // 모달 외부 클릭 시 닫기
+        document.getElementById('order-detail-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // 네비게이션 활성화
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                if (this.getAttribute('href') === '#') {
+                    e.preventDefault();
+                }
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

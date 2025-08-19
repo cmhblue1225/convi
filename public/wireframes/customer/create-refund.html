@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>환불 신청 - 와이어프레임</title>
+    <link rel="stylesheet" href="../styles/wireframe.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+    <style>
+        .refund-header {
+            background: white;
+            border-bottom: 1px solid #dee2e6;
+            padding: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .form-section {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin: 16px;
+            padding: 20px;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .order-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .order-number {
+            font-size: 16px;
+            font-weight: bold;
+            color: #212529;
+        }
+        
+        .order-status {
+            background: #d4edda;
+            color: #155724;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        .order-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 14px;
+            color: #6c757d;
+        }
+        
+        .product-list {
+            margin-top: 16px;
+        }
+        
+        .product-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .product-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .product-item.selected {
+            border-color: #007bff;
+            background: #f8f9ff;
+        }
+        
+        .product-checkbox {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+        }
+        
+        .product-image {
+            width: 50px;
+            height: 50px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #6c757d;
+            flex-shrink: 0;
+        }
+        
+        .product-info {
+            flex: 1;
+        }
+        
+        .product-name {
+            font-size: 14px;
+            font-weight: bold;
+            color: #212529;
+            margin-bottom: 4px;
+        }
+        
+        .product-details {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .product-price {
+            font-size: 14px;
+            font-weight: bold;
+            color: #dc3545;
+        }
+        
+        .reason-options {
+            display: grid;
+            gap: 8px;
+        }
+        
+        .reason-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .reason-option:hover,
+        .reason-option.selected {
+            border-color: #007bff;
+            background: #f8f9ff;
+        }
+        
+        .reason-radio {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+        }
+        
+        .reason-content {
+            flex: 1;
+        }
+        
+        .reason-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 2px;
+        }
+        
+        .reason-description {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .custom-reason {
+            margin-top: 12px;
+            display: none;
+        }
+        
+        .photo-upload {
+            border: 2px dashed #dee2e6;
+            border-radius: 6px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .photo-upload:hover {
+            border-color: #007bff;
+            background: #f8f9ff;
+        }
+        
+        .photo-upload.has-files {
+            border-color: #28a745;
+            background: #f8fff8;
+        }
+        
+        .upload-icon {
+            font-size: 32px;
+            color: #6c757d;
+            margin-bottom: 8px;
+        }
+        
+        .upload-text {
+            font-size: 14px;
+            color: #495057;
+            margin-bottom: 4px;
+        }
+        
+        .upload-hint {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .photo-preview {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .photo-item {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .photo-remove {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 20px;
+            height: 20px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .refund-summary {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 16px;
+            margin-top: 20px;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .summary-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .summary-row.total {
+            font-size: 16px;
+            font-weight: bold;
+            color: #212529;
+            padding-top: 8px;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        .submit-section {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #dee2e6;
+            padding: 16px;
+        }
+        
+        .submit-button {
+            width: 100%;
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .submit-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .content-wrapper {
+            padding-bottom: 80px;
+        }
+        
+        .terms-section {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 16px;
+        }
+        
+        .terms-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .terms-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .help-text {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 12px;
+            font-size: 14px;
+            color: #1976d2;
+        }
+        
+        .estimated-time {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body style="background: #f8f9fa;">
+    <!-- 헤더 -->
+    <div class="refund-header">
+        <div style="display: flex; align-items: center;">
+            <button onclick="history.back()" style="background: none; border: none; font-size: 20px; cursor: pointer; margin-right: 12px;">←</button>
+            <h1 style="font-size: 18px; font-weight: bold; color: #212529; margin: 0;">환불 신청</h1>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <!-- 주문 정보 -->
+        <div class="form-section">
+            <div class="section-title">
+                📦 주문 정보
+            </div>
+            
+            <div class="order-info">
+                <div class="order-header">
+                    <div class="order-number">#2025011201</div>
+                    <div class="order-status">주문완료</div>
+                </div>
+                <div class="order-details">
+                    <div><strong>주문일시:</strong> 2025.01.12 19:20</div>
+                    <div><strong>픽업일시:</strong> 2025.01.12 19:45</div>
+                    <div><strong>매장:</strong> GS25 대치점</div>
+                    <div><strong>결제금액:</strong> 4,500원</div>
+                </div>
+            </div>
+
+            <div class="help-text">
+                💡 완료된 주문에 대해서만 환불 신청이 가능합니다. 주문 후 7일 이내에 신청해주세요.
+            </div>
+        </div>
+
+        <!-- 환불 상품 선택 -->
+        <div class="form-section">
+            <div class="section-title">
+                🛒 환불 상품 선택
+            </div>
+            
+            <div class="product-list">
+                <div class="product-item selected" onclick="toggleProduct(this)">
+                    <input type="checkbox" class="product-checkbox" checked>
+                    <div class="product-image">📦</div>
+                    <div class="product-info">
+                        <div class="product-name">바나나우유 240ml</div>
+                        <div class="product-details">수량: 2개</div>
+                    </div>
+                    <div class="product-price">3,000원</div>
+                </div>
+                
+                <div class="product-item" onclick="toggleProduct(this)">
+                    <input type="checkbox" class="product-checkbox">
+                    <div class="product-image">📦</div>
+                    <div class="product-info">
+                        <div class="product-name">허니버터칩 60g</div>
+                        <div class="product-details">수량: 1개</div>
+                    </div>
+                    <div class="product-price">1,500원</div>
+                </div>
+            </div>
+
+            <div class="help-text">
+                💡 환불하려는 상품을 선택해주세요. 부분 환불도 가능합니다.
+            </div>
+        </div>
+
+        <!-- 환불 사유 -->
+        <div class="form-section">
+            <div class="section-title">
+                📝 환불 사유
+            </div>
+            
+            <div class="reason-options">
+                <div class="reason-option" onclick="selectReason(this, 'defective')">
+                    <input type="radio" name="reason" value="defective" class="reason-radio">
+                    <div class="reason-content">
+                        <div class="reason-title">상품 불량</div>
+                        <div class="reason-description">유통기한 임박, 포장 파손, 변질 등</div>
+                    </div>
+                </div>
+                
+                <div class="reason-option" onclick="selectReason(this, 'missing')">
+                    <input type="radio" name="reason" value="missing" class="reason-radio">
+                    <div class="reason-content">
+                        <div class="reason-title">상품 누락</div>
+                        <div class="reason-description">주문한 상품이 누락되었을 때</div>
+                    </div>
+                </div>
+                
+                <div class="reason-option" onclick="selectReason(this, 'wrong')">
+                    <input type="radio" name="reason" value="wrong" class="reason-radio">
+                    <div class="reason-content">
+                        <div class="reason-title">잘못된 상품</div>
+                        <div class="reason-description">주문과 다른 상품을 받았을 때</div>
+                    </div>
+                </div>
+                
+                <div class="reason-option" onclick="selectReason(this, 'change')">
+                    <input type="radio" name="reason" value="change" class="reason-radio">
+                    <div class="reason-content">
+                        <div class="reason-title">단순 변심</div>
+                        <div class="reason-description">고객 사정으로 인한 취소</div>
+                    </div>
+                </div>
+                
+                <div class="reason-option" onclick="selectReason(this, 'other')">
+                    <input type="radio" name="reason" value="other" class="reason-radio">
+                    <div class="reason-content">
+                        <div class="reason-title">기타</div>
+                        <div class="reason-description">기타 사유 (직접 입력)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="custom-reason" id="custom-reason">
+                <label class="wireframe-form-label">상세 사유를 입력해주세요</label>
+                <textarea class="wireframe-form-input" placeholder="환불 사유를 자세히 설명해주세요" rows="4" style="resize: vertical;"></textarea>
+            </div>
+        </div>
+
+        <!-- 증빙 사진 -->
+        <div class="form-section">
+            <div class="section-title">
+                📷 증빙 사진 (선택)
+            </div>
+            
+            <div class="photo-upload" onclick="document.getElementById('photo-input').click()">
+                <div class="upload-icon">📷</div>
+                <div class="upload-text">사진을 업로드해주세요</div>
+                <div class="upload-hint">상품 불량, 누락, 잘못된 상품의 경우 사진을 첨부하면 빠른 처리가 가능합니다</div>
+                <input type="file" id="photo-input" multiple accept="image/*" style="display: none;" onchange="handlePhotoUpload(this)">
+            </div>
+            
+            <div class="photo-preview" id="photo-preview"></div>
+        </div>
+
+        <!-- 환불 방법 -->
+        <div class="form-section">
+            <div class="section-title">
+                💳 환불 방법
+            </div>
+            
+            <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-weight: bold; color: #495057;">신용카드 취소</span>
+                    <span class="estimated-time">⏱ 1-3일</span>
+                </div>
+                <div style="font-size: 14px; color: #6c757d; margin-bottom: 8px;">결제에 사용한 카드로 자동 환불</div>
+                <div style="font-size: 12px; color: #6c757d;">카드번호: ****-****-****-1234</div>
+            </div>
+
+            <div class="help-text">
+                💡 환불은 원래 결제 방법으로만 가능합니다. 카드사에 따라 환불 처리 시간이 다를 수 있습니다.
+            </div>
+        </div>
+
+        <!-- 환불 금액 요약 -->
+        <div class="form-section">
+            <div class="section-title">
+                💰 환불 금액
+            </div>
+            
+            <div class="refund-summary">
+                <div class="summary-row">
+                    <span>선택한 상품 금액</span>
+                    <span id="selected-amount">3,000원</span>
+                </div>
+                <div class="summary-row">
+                    <span>환불 수수료</span>
+                    <span id="refund-fee">0원</span>
+                </div>
+                <div class="summary-row total">
+                    <span>총 환불 금액</span>
+                    <span id="total-refund" style="color: #dc3545;">3,000원</span>
+                </div>
+            </div>
+
+            <div class="help-text">
+                💡 상품 불량이나 누락의 경우 수수료 없이 전액 환불됩니다.
+            </div>
+        </div>
+
+        <!-- 약관 동의 -->
+        <div class="form-section">
+            <div class="section-title">
+                📋 환불 약관
+            </div>
+            
+            <div class="terms-section">
+                <div class="terms-item">
+                    <input type="checkbox" id="terms-refund" required>
+                    <label for="terms-refund" style="font-size: 14px; color: #495057;">
+                        [필수] 환불 처리 약관에 동의합니다
+                        <a href="#" style="color: #007bff; margin-left: 4px;">보기</a>
+                    </label>
+                </div>
+                <div class="terms-item">
+                    <input type="checkbox" id="terms-privacy">
+                    <label for="terms-privacy" style="font-size: 14px; color: #495057;">
+                        [선택] 개인정보 처리 동의 (빠른 처리를 위한 연락)
+                    </label>
+                </div>
+            </div>
+
+            <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 12px; margin-top: 12px;">
+                <div style="font-size: 14px; color: #495057; margin-bottom: 8px;"><strong>환불 처리 안내</strong></div>
+                <div style="font-size: 12px; color: #6c757d; line-height: 1.5;">
+                    • 환불 신청 후 매장에서 1-2시간 내 확인<br>
+                    • 승인 완료 후 1-3일 내 환불 처리<br>
+                    • 환불 진행상황은 알림으로 안내<br>
+                    • 문의사항은 고객센터 1588-1234
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 제출 버튼 -->
+    <div class="submit-section">
+        <button class="submit-button" onclick="submitRefund()" id="submit-btn" disabled>
+            환불 신청하기
+        </button>
+    </div>
+
+    <!-- 와이어프레임 네비게이션 -->
+    <div style="position: fixed; top: 50%; right: 20px; transform: translateY(-50%); background: rgba(0,0,0,0.8); border-radius: 25px; padding: 8px;">
+        <a href="../index.html" style="color: white; text-decoration: none; font-size: 20px; display: block; padding: 8px;">🏠</a>
+    </div>
+
+    <script>
+        let selectedProducts = new Set(['product-0']); // 기본적으로 첫 번째 상품 선택됨
+        let uploadedPhotos = [];
+
+        // 상품 선택/해제
+        function toggleProduct(element) {
+            const checkbox = element.querySelector('.product-checkbox');
+            const isChecked = !checkbox.checked;
+            
+            checkbox.checked = isChecked;
+            
+            if (isChecked) {
+                element.classList.add('selected');
+            } else {
+                element.classList.remove('selected');
+            }
+            
+            updateRefundAmount();
+            updateSubmitButton();
+        }
+
+        // 환불 사유 선택
+        function selectReason(element, value) {
+            // 모든 옵션 선택 해제
+            document.querySelectorAll('.reason-option').forEach(option => {
+                option.classList.remove('selected');
+                option.querySelector('.reason-radio').checked = false;
+            });
+            
+            // 선택된 옵션 활성화
+            element.classList.add('selected');
+            element.querySelector('.reason-radio').checked = true;
+            
+            // 기타 사유인 경우 텍스트 입력란 표시
+            const customReason = document.getElementById('custom-reason');
+            if (value === 'other') {
+                customReason.style.display = 'block';
+            } else {
+                customReason.style.display = 'none';
+            }
+            
+            updateSubmitButton();
+        }
+
+        // 사진 업로드 처리
+        function handlePhotoUpload(input) {
+            const files = Array.from(input.files);
+            const preview = document.getElementById('photo-preview');
+            const uploadArea = document.querySelector('.photo-upload');
+            
+            files.forEach((file, index) => {
+                if (uploadedPhotos.length < 5) { // 최대 5장
+                    uploadedPhotos.push(file);
+                    
+                    const photoItem = document.createElement('div');
+                    photoItem.className = 'photo-item';
+                    photoItem.innerHTML = `
+                        <span style="font-size: 12px; color: #6c757d;">📷 ${file.name.substring(0, 10)}...</span>
+                        <button class="photo-remove" onclick="removePhoto(${uploadedPhotos.length - 1})">×</button>
+                    `;
+                    
+                    preview.appendChild(photoItem);
+                }
+            });
+            
+            if (uploadedPhotos.length > 0) {
+                uploadArea.classList.add('has-files');
+                uploadArea.querySelector('.upload-text').textContent = `${uploadedPhotos.length}장의 사진이 선택됨`;
+            }
+            
+            // 파일 입력 초기화
+            input.value = '';
+        }
+
+        // 사진 제거
+        function removePhoto(index) {
+            uploadedPhotos.splice(index, 1);
+            
+            const preview = document.getElementById('photo-preview');
+            preview.innerHTML = '';
+            
+            uploadedPhotos.forEach((file, i) => {
+                const photoItem = document.createElement('div');
+                photoItem.className = 'photo-item';
+                photoItem.innerHTML = `
+                    <span style="font-size: 12px; color: #6c757d;">📷 ${file.name.substring(0, 10)}...</span>
+                    <button class="photo-remove" onclick="removePhoto(${i})">×</button>
+                `;
+                preview.appendChild(photoItem);
+            });
+            
+            const uploadArea = document.querySelector('.photo-upload');
+            if (uploadedPhotos.length === 0) {
+                uploadArea.classList.remove('has-files');
+                uploadArea.querySelector('.upload-text').textContent = '사진을 업로드해주세요';
+            } else {
+                uploadArea.querySelector('.upload-text').textContent = `${uploadedPhotos.length}장의 사진이 선택됨`;
+            }
+        }
+
+        // 환불 금액 업데이트
+        function updateRefundAmount() {
+            const selectedItems = document.querySelectorAll('.product-item.selected');
+            let totalAmount = 0;
+            
+            selectedItems.forEach(item => {
+                const priceText = item.querySelector('.product-price').textContent;
+                const price = parseInt(priceText.replace(/[^0-9]/g, ''));
+                totalAmount += price;
+            });
+            
+            document.getElementById('selected-amount').textContent = totalAmount.toLocaleString() + '원';
+            document.getElementById('total-refund').textContent = totalAmount.toLocaleString() + '원';
+        }
+
+        // 제출 버튼 활성화/비활성화 업데이트
+        function updateSubmitButton() {
+            const hasSelectedProducts = document.querySelectorAll('.product-item.selected').length > 0;
+            const hasSelectedReason = document.querySelector('.reason-option.selected') !== null;
+            const hasAgreedTerms = document.getElementById('terms-refund').checked;
+            
+            const submitBtn = document.getElementById('submit-btn');
+            if (hasSelectedProducts && hasSelectedReason && hasAgreedTerms) {
+                submitBtn.disabled = false;
+            } else {
+                submitBtn.disabled = true;
+            }
+        }
+
+        // 약관 동의 체크 이벤트
+        document.getElementById('terms-refund').addEventListener('change', updateSubmitButton);
+
+        // 환불 신청 제출
+        function submitRefund() {
+            const selectedProducts = Array.from(document.querySelectorAll('.product-item.selected'));
+            const selectedReason = document.querySelector('.reason-option.selected');
+            const customReasonText = document.querySelector('#custom-reason textarea').value;
+            const totalAmount = document.getElementById('total-refund').textContent;
+            
+            let reasonText = selectedReason.querySelector('.reason-title').textContent;
+            if (selectedReason.querySelector('.reason-radio').value === 'other' && customReasonText) {
+                reasonText += ': ' + customReasonText;
+            }
+            
+            const productNames = selectedProducts.map(item => 
+                item.querySelector('.product-name').textContent
+            ).join(', ');
+            
+            let confirmMessage = `환불 신청 정보를 확인해주세요:\\n\\n`;
+            confirmMessage += `• 환불 상품: ${productNames}\\n`;
+            confirmMessage += `• 환불 사유: ${reasonText}\\n`;
+            confirmMessage += `• 환불 금액: ${totalAmount}\\n`;
+            
+            if (uploadedPhotos.length > 0) {
+                confirmMessage += `• 첨부 사진: ${uploadedPhotos.length}장\\n`;
+            }
+            
+            confirmMessage += `\\n환불 신청을 진행하시겠습니까?`;
+            
+            if (confirm(confirmMessage)) {
+                // 제출 버튼 비활성화
+                const submitBtn = document.getElementById('submit-btn');
+                submitBtn.disabled = true;
+                submitBtn.textContent = '신청 처리중...';
+                
+                // 2초 후 완료 처리 (시뮬레이션)
+                setTimeout(() => {
+                    alert('환불 신청이 완료되었습니다!\\n\\n환불번호: RF2025011501\\n예상 처리시간: 1-3일\\n\\n환불 진행상황은 알림으로 안내드립니다.');
+                    
+                    // 환불 내역 페이지로 이동 (시뮬레이션)
+                    if (confirm('환불 내역 페이지로 이동하시겠습니까?')) {
+                        window.location.href = 'customer-refunds.html';
+                    }
+                }, 2000);
+            }
+        }
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            updateRefundAmount();
+            updateSubmitButton();
+        });
+
+        // 약관 링크 클릭 처리
+        document.querySelectorAll('.terms-section a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                alert('환불 처리 약관:\\n\\n• 신청 후 24시간 내 매장 확인\\n• 상품 불량/누락 시 수수료 없음\\n• 단순 변심 시 배송비 차감 가능\\n• 환불 완료까지 1-3일 소요');
+            });
+        });
+    </script>
+</body>
+</html>

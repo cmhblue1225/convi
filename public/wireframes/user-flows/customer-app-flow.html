@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>고객 앱 User Flow - 편의점 POS</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+        }
+
+        .btn-print {
+            background: #27ae60;
+        }
+
+        .btn-print:hover {
+            background: #229954;
+        }
+
+        .diagram-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: auto;
+        }
+
+        #customer-flow {
+            width: 100%;
+            min-height: 800px;
+        }
+
+        .legend {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .legend h3 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .legend-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        .shape-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border: 2px solid #3498db;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .shape-start { border-radius: 50%; background: #e8f5e8; }
+        .shape-process { border-radius: 4px; background: #e1f5fe; }
+        .shape-decision { 
+            transform: rotate(45deg); 
+            background: #fff3e0;
+            width: 16px;
+            height: 16px;
+        }
+        .shape-end { border-radius: 50%; background: #ffebee; }
+
+        .scenarios {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .scenario-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .scenario-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #e74c3c;
+        }
+
+        .scenario-card h4 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+
+        .scenario-steps {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .scenario-steps li {
+            margin: 8px 0;
+            padding: 5px 0;
+            color: #7f8c8d;
+            font-size: 14px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .scenario-steps li:last-child {
+            border-bottom: none;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .controls, .legend, .scenarios {
+                display: none;
+            }
+            .header {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+            .diagram-container {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+        }
+
+        .mermaid {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>고객 앱 User Flow</h1>
+        <p><strong>편의점 종합 솔루션 - 고객 사용자 여정</strong></p>
+        <p>앱 실행부터 주문 완료까지의 전체 플로우</p>
+        <p>생성일: <span id="current-date"></span> | 버전: 1.0 | 작성: 개발팀</p>
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="zoomIn()">🔍 확대</button>
+        <button class="btn" onclick="zoomOut()">🔍 축소</button>
+        <button class="btn" onclick="resetZoom()">↻ 원래크기</button>
+        <button class="btn btn-print" onclick="printDiagram()">🖨️ 인쇄하기</button>
+        <button class="btn" onclick="downloadSVG()">💾 SVG 다운로드</button>
+    </div>
+
+    <div class="diagram-container">
+        <div id="customer-flow">
+            <div class="mermaid">
+flowchart TD
+    %% 앱 시작 및 인증
+    Start([📱 앱 실행]) --> Check{로그인 상태 확인}
+    Check -->|로그인됨| Home[🏠 홈 화면]
+    Check -->|로그인 안됨| Auth[🔐 로그인/회원가입]
+    
+    Auth --> AuthChoice{인증 방법 선택}
+    AuthChoice -->|회원가입| Register[✍️ 회원가입 폼]
+    AuthChoice -->|로그인| Login[🔑 로그인 폼]
+    AuthChoice -->|소셜 로그인| Social[📱 소셜 로그인]
+    
+    Register --> Profile[👤 프로필 설정]
+    Login --> Home
+    Social --> Home
+    Profile --> Home
+
+    %% 홈 화면에서 점포 선택
+    Home --> StoreList[🏪 주변 점포 목록]
+    Home --> Search[🔍 점포 검색]
+    Home --> Recent[📍 최근 방문 점포]
+    
+    StoreList --> StoreSelect{점포 선택}
+    Search --> StoreSelect
+    Recent --> StoreSelect
+    
+    StoreSelect -->|점포 클릭| StoreDetail[🏪 점포 상세 정보]
+    
+    %% 점포 확인 및 상품 선택
+    StoreDetail --> StoreCheck{점포 운영 상태}
+    StoreCheck -->|운영중| ProductList[📦 상품 목록]
+    StoreCheck -->|운영 종료| StoreError[❌ 운영시간 안내]
+    StoreError --> StoreList
+    
+    ProductList --> Category[📂 카테고리 선택]
+    ProductList --> ProductSearch[🔍 상품 검색]
+    Category --> ProductView[👀 상품 상세보기]
+    ProductSearch --> ProductView
+    
+    ProductView --> AddCart{장바구니 추가}
+    AddCart -->|추가| CartAnimation[✨ 장바구니 애니메이션]
+    AddCart -->|취소| ProductList
+    CartAnimation --> ContinueShop{쇼핑 계속?}
+    
+    ContinueShop -->|계속 쇼핑| ProductList
+    ContinueShop -->|장바구니 확인| Cart[🛒 장바구니]
+
+    %% 장바구니 및 주문
+    Cart --> CartReview{장바구니 검토}
+    CartReview -->|수량 변경| CartEdit[✏️ 수량 조정]
+    CartReview -->|상품 삭제| CartDelete[🗑️ 상품 삭제]
+    CartReview -->|쇼핑 계속| ProductList
+    CartReview -->|주문하기| OrderType{주문 유형 선택}
+    
+    CartEdit --> Cart
+    CartDelete --> Cart
+    
+    OrderType -->|픽업| Pickup[📍 픽업 시간 선택]
+    OrderType -->|배달| Delivery[🚗 배달 주소 입력]
+    
+    Pickup --> OrderReview[📋 주문 내역 확인]
+    Delivery --> DeliveryCheck{배달 가능 지역}
+    DeliveryCheck -->|가능| OrderReview
+    DeliveryCheck -->|불가능| DeliveryError[❌ 배달 불가 안내]
+    DeliveryError --> OrderType
+
+    %% 결제 과정
+    OrderReview --> PaymentMethod{결제 방법 선택}
+    PaymentMethod -->|카드 결제| CardPay[💳 카드 결제]
+    PaymentMethod -->|간편 결제| EasyPay[📱 간편 결제]
+    PaymentMethod -->|포인트/쿠폰| PointPay[🎫 포인트/쿠폰 사용]
+    
+    CardPay --> PaymentProcess[💰 결제 처리]
+    EasyPay --> PaymentProcess
+    PointPay --> PaymentProcess
+    
+    PaymentProcess --> PaymentResult{결제 결과}
+    PaymentResult -->|성공| OrderSuccess[✅ 주문 완료]
+    PaymentResult -->|실패| PaymentError[❌ 결제 실패]
+    PaymentError --> PaymentMethod
+
+    %% 주문 완료 후
+    OrderSuccess --> OrderConfirm[📧 주문 확인 알림]
+    OrderConfirm --> TrackOrder[📍 주문 추적]
+    TrackOrder --> OrderStatus{주문 상태 확인}
+    
+    OrderStatus -->|준비중| Preparing[👨‍🍳 주문 준비중]
+    OrderStatus -->|픽업 대기| PickupReady[📦 픽업 준비 완료]
+    OrderStatus -->|배달중| InDelivery[🚗 배달중]
+    OrderStatus -->|완료| OrderComplete[🎉 주문 완료]
+    
+    Preparing --> TrackOrder
+    PickupReady --> PickupNotification[📱 픽업 알림]
+    InDelivery --> DeliveryNotification[📱 배달 알림]
+    
+    PickupNotification --> OrderComplete
+    DeliveryNotification --> OrderComplete
+    OrderComplete --> Review[⭐ 리뷰 작성]
+    Review --> End([🎯 앱 사용 완료])
+
+    %% 스타일 클래스 정의
+    classDef startEnd fill:#e8f5e8,stroke:#4caf50,stroke-width:3px
+    classDef process fill:#e1f5fe,stroke:#2196f3,stroke-width:2px
+    classDef decision fill:#fff3e0,stroke:#ff9800,stroke-width:2px
+    classDef error fill:#ffebee,stroke:#f44336,stroke-width:2px
+    classDef success fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
+
+    %% 클래스 적용
+    class Start,End startEnd
+    class Home,StoreList,ProductList,Cart,OrderReview,TrackOrder process
+    class Check,AuthChoice,StoreSelect,StoreCheck,AddCart,ContinueShop,CartReview,OrderType,DeliveryCheck,PaymentMethod,PaymentResult,OrderStatus decision
+    class StoreError,DeliveryError,PaymentError error
+    class OrderSuccess,OrderComplete,PickupReady success
+            </div>
+        </div>
+    </div>
+
+    <div class="legend">
+        <h3>📊 User Flow 범례</h3>
+        <div class="legend-grid">
+            <div class="legend-section">
+                <h4>🔹 노드 유형</h4>
+                <div class="legend-item">
+                    <div class="shape-icon shape-start">S</div>
+                    <span><strong>시작/종료:</strong> 사용자 여정의 시작점과 끝점</span>
+                </div>
+                <div class="legend-item">
+                    <div class="shape-icon shape-process">P</div>
+                    <span><strong>프로세스:</strong> 사용자가 수행하는 작업이나 화면</span>
+                </div>
+                <div class="legend-item">
+                    <div class="shape-icon shape-decision"></div>
+                    <span><strong>의사결정:</strong> 분기점이나 선택 상황</span>
+                </div>
+                <div class="legend-item">
+                    <div class="shape-icon shape-end">E</div>
+                    <span><strong>결과:</strong> 성공, 실패, 오류 상태</span>
+                </div>
+            </div>
+            
+            <div class="legend-section">
+                <h4>🎯 주요 여정</h4>
+                <div class="legend-item">
+                    <span><strong>1단계:</strong> 앱 실행 및 인증 (Start → Home)</span>
+                </div>
+                <div class="legend-item">
+                    <span><strong>2단계:</strong> 점포 선택 (Home → StoreDetail)</span>
+                </div>
+                <div class="legend-item">
+                    <span><strong>3단계:</strong> 상품 선택 및 장바구니 (ProductList → Cart)</span>
+                </div>
+                <div class="legend-item">
+                    <span><strong>4단계:</strong> 주문 및 결제 (OrderReview → OrderSuccess)</span>
+                </div>
+                <div class="legend-item">
+                    <span><strong>5단계:</strong> 주문 추적 및 완료 (TrackOrder → End)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="scenarios">
+        <h3>🎭 주요 사용자 시나리오</h3>
+        <div class="scenario-grid">
+            <div class="scenario-card">
+                <h4>🏃‍♂️ 신규 사용자 - 첫 주문</h4>
+                <ul class="scenario-steps">
+                    <li>앱 다운로드 및 실행</li>
+                    <li>회원가입 및 프로필 설정</li>
+                    <li>위치 권한 허용 및 주변 점포 확인</li>
+                    <li>점포 선택 및 상품 둘러보기</li>
+                    <li>첫 상품 장바구니 추가</li>
+                    <li>픽업 주문 및 카드 결제</li>
+                    <li>주문 추적 및 픽업 완료</li>
+                </ul>
+            </div>
+            
+            <div class="scenario-card">
+                <h4>💨 기존 사용자 - 빠른 주문</h4>
+                <ul class="scenario-steps">
+                    <li>앱 실행 (자동 로그인)</li>
+                    <li>최근 방문 점포 선택</li>
+                    <li>즐겨찾기 상품 빠른 추가</li>
+                    <li>저장된 결제 방법으로 즉시 결제</li>
+                    <li>주문 완료 알림 수신</li>
+                </ul>
+            </div>
+            
+            <div class="scenario-card">
+                <h4>🚗 배달 주문 시나리오</h4>
+                <ul class="scenario-steps">
+                    <li>홈에서 배달 가능 점포 필터링</li>
+                    <li>최소 주문 금액 확인</li>
+                    <li>배달 주소 입력 및 검증</li>
+                    <li>배달비 포함 총액 확인</li>
+                    <li>배달 시간 선택</li>
+                    <li>결제 및 주문 확정</li>
+                    <li>실시간 배달 추적</li>
+                </ul>
+            </div>
+            
+            <div class="scenario-card">
+                <h4>❌ 오류 상황 처리</h4>
+                <ul class="scenario-steps">
+                    <li>점포 운영시간 외 접근</li>
+                    <li>품절 상품 주문 시도</li>
+                    <li>배달 불가 지역 주문</li>
+                    <li>결제 실패 상황</li>
+                    <li>네트워크 연결 오류</li>
+                    <li>주문 취소 요청</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 현재 날짜 설정
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('ko-KR');
+
+        // Mermaid 초기화
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            },
+            themeVariables: {
+                primaryColor: '#e1f5fe',
+                primaryTextColor: '#1976d2',
+                primaryBorderColor: '#2196f3',
+                lineColor: '#666',
+                secondaryColor: '#f3e5f5',
+                tertiaryColor: '#fff3e0'
+            }
+        });
+
+        let currentZoom = 1;
+
+        function zoomIn() {
+            currentZoom += 0.1;
+            applyZoom();
+        }
+
+        function zoomOut() {
+            currentZoom = Math.max(0.5, currentZoom - 0.1);
+            applyZoom();
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            applyZoom();
+        }
+
+        function applyZoom() {
+            const diagram = document.getElementById('customer-flow');
+            diagram.style.transform = `scale(${currentZoom})`;
+            diagram.style.transformOrigin = 'top left';
+        }
+
+        function printDiagram() {
+            window.print();
+        }
+
+        function downloadSVG() {
+            const svgElement = document.querySelector('#customer-flow svg');
+            if (svgElement) {
+                const svgData = new XMLSerializer().serializeToString(svgElement);
+                const blob = new Blob([svgData], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = '고객앱_사용자플로우_v1.0.svg';
+                link.click();
+                URL.revokeObjectURL(url);
+            } else {
+                alert('SVG 요소를 찾을 수 없습니다. 다이어그램이 완전히 로드된 후 다시 시도해주세요.');
+            }
+        }
+
+        // 다이어그램 로딩 완료 후 스타일 적용
+        setTimeout(() => {
+            const diagram = document.querySelector('#customer-flow .mermaid');
+            if (diagram) {
+                diagram.style.textAlign = 'center';
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

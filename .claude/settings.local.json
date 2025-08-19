@@ -20,7 +20,8 @@
       "mcp__supabase__list_tables",
       "Bash(rm:*)",
       "Bash(find:*)",
-      "Bash(open index.html)"
+      "Bash(open index.html)",
+      "Bash(npm run build:*)"
     ],
     "deny": []
   }

@@ -18,8 +18,10 @@ export default defineConfig({
           router: ['react-router-dom']
         }
       }
-    }
+    },
+    copyPublicDir: true
   },
+  publicDir: 'public',
   server: {
     port: 5173,
     host: true

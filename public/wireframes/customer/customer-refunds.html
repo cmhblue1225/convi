@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>환불/취소 내역 - 와이어프레임</title>
+    <link rel="stylesheet" href="../styles/wireframe.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+    <style>
+        .refunds-header {
+            background: white;
+            border-bottom: 1px solid #dee2e6;
+            padding: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .filter-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            margin: 16px;
+            overflow: hidden;
+        }
+        
+        .filter-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: #6c757d;
+            transition: all 0.2s;
+        }
+        
+        .filter-tab.active {
+            background: white;
+            color: #495057;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .refunds-list {
+            padding: 0 16px;
+        }
+        
+        .refund-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .refund-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .refund-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .refund-info {
+            flex: 1;
+        }
+        
+        .refund-number {
+            font-size: 14px;
+            font-weight: bold;
+            color: #212529;
+            margin-bottom: 4px;
+        }
+        
+        .refund-date {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .refund-status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        
+        .refund-status.processing {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .refund-status.completed {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .refund-status.rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .refund-status.pending {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .refund-details {
+            margin-bottom: 12px;
+        }
+        
+        .original-order {
+            font-size: 14px;
+            color: #495057;
+            margin-bottom: 4px;
+        }
+        
+        .refund-reason {
+            font-size: 12px;
+            color: #6c757d;
+            padding: 6px 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+        
+        .refund-amount {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .amount {
+            font-size: 16px;
+            font-weight: bold;
+            color: #dc3545;
+        }
+        
+        .refund-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            background: white;
+            color: #495057;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .action-btn:hover {
+            background: #f8f9fa;
+            border-color: #adb5bd;
+        }
+        
+        .action-btn.primary {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
+        .action-btn.primary:hover {
+            background: #0056b3;
+            border-color: #0056b3;
+        }
+        
+        .empty-refunds {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        .refund-guide {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin: 16px;
+            padding: 20px;
+        }
+        
+        .guide-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .guide-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .guide-number {
+            width: 24px;
+            height: 24px;
+            background: #007bff;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .guide-content {
+            flex: 1;
+        }
+        
+        .guide-title {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 4px;
+        }
+        
+        .guide-description {
+            font-size: 14px;
+            color: #6c757d;
+            line-height: 1.4;
+        }
+        
+        .content-wrapper {
+            padding-bottom: 20px;
+        }
+        
+        .refund-timeline {
+            margin-top: 12px;
+            padding-left: 16px;
+            border-left: 2px solid #dee2e6;
+            position: relative;
+        }
+        
+        .timeline-item {
+            position: relative;
+            padding-bottom: 12px;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -7px;
+            top: 4px;
+            width: 10px;
+            height: 10px;
+            background: #dee2e6;
+            border-radius: 50%;
+        }
+        
+        .timeline-item.completed::before {
+            background: #28a745;
+        }
+        
+        .timeline-item.active::before {
+            background: #007bff;
+        }
+        
+        .timeline-time {
+            font-size: 11px;
+            color: #6c757d;
+            margin-bottom: 2px;
+        }
+        
+        .timeline-text {
+            font-size: 13px;
+            color: #495057;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6c757d;
+        }
+        
+        .summary-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .summary-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .summary-row.total {
+            font-weight: bold;
+            padding-top: 8px;
+            border-top: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+<body style="background: #f8f9fa;">
+    <!-- 헤더 -->
+    <div class="refunds-header">
+        <div style="display: flex; align-items: center;">
+            <button onclick="history.back()" style="background: none; border: none; font-size: 20px; cursor: pointer; margin-right: 12px;">←</button>
+            <h1 style="font-size: 18px; font-weight: bold; color: #212529; margin: 0;">환불/취소 내역</h1>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <!-- 필터 탭 -->
+        <div class="filter-tabs">
+            <button class="filter-tab active" data-status="all">전체</button>
+            <button class="filter-tab" data-status="pending">신청완료</button>
+            <button class="filter-tab" data-status="processing">처리중</button>
+            <button class="filter-tab" data-status="completed">완료</button>
+        </div>
+
+        <!-- 환불 내역 목록 -->
+        <div class="refunds-list" id="refunds-list">
+            <!-- 처리중인 환불 -->
+            <div class="refund-card" data-status="processing" onclick="showRefundDetail('RF2025011501')">
+                <div class="refund-header">
+                    <div class="refund-info">
+                        <div class="refund-number">환불번호: RF2025011501</div>
+                        <div class="refund-date">신청일: 2025.01.14</div>
+                    </div>
+                    <div class="refund-status processing">처리중</div>
+                </div>
+                
+                <div class="refund-details">
+                    <div class="original-order">원본 주문: #2025011201</div>
+                    <div class="refund-reason">
+                        <strong>환불 사유:</strong> 상품 불량 (유통기한 임박)
+                    </div>
+                </div>
+                
+                <div class="refund-timeline">
+                    <div class="timeline-item completed">
+                        <div class="timeline-time">01.14 15:30</div>
+                        <div class="timeline-text">환불 신청 접수</div>
+                    </div>
+                    <div class="timeline-item completed">
+                        <div class="timeline-time">01.14 16:45</div>
+                        <div class="timeline-text">매장 확인 완료</div>
+                    </div>
+                    <div class="timeline-item active">
+                        <div class="timeline-time">처리중</div>
+                        <div class="timeline-text">환불 승인 대기</div>
+                    </div>
+                </div>
+                
+                <div class="refund-amount">
+                    <div class="amount">4,500원</div>
+                    <div class="refund-actions">
+                        <button class="action-btn primary" onclick="trackRefund(event, 'RF2025011501')">진행상황</button>
+                        <button class="action-btn" onclick="cancelRefund(event, 'RF2025011501')">취소</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 완료된 환불 -->
+            <div class="refund-card" data-status="completed" onclick="showRefundDetail('RF2025011301')">
+                <div class="refund-header">
+                    <div class="refund-info">
+                        <div class="refund-number">환불번호: RF2025011301</div>
+                        <div class="refund-date">신청일: 2025.01.13</div>
+                    </div>
+                    <div class="refund-status completed">완료</div>
+                </div>
+                
+                <div class="refund-details">
+                    <div class="original-order">원본 주문: #2025011101</div>
+                    <div class="refund-reason">
+                        <strong>환불 사유:</strong> 고객 변심
+                    </div>
+                </div>
+                
+                <div class="refund-amount">
+                    <div class="amount">8,200원</div>
+                    <div class="refund-actions">
+                        <button class="action-btn" onclick="viewRefundReceipt(event, 'RF2025011301')">영수증</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 신청 완료 상태 -->
+            <div class="refund-card" data-status="pending" onclick="showRefundDetail('RF2025011401')">
+                <div class="refund-header">
+                    <div class="refund-info">
+                        <div class="refund-number">환불번호: RF2025011401</div>
+                        <div class="refund-date">신청일: 2025.01.14</div>
+                    </div>
+                    <div class="refund-status pending">신청완료</div>
+                </div>
+                
+                <div class="refund-details">
+                    <div class="original-order">원본 주문: #2025011401</div>
+                    <div class="refund-reason">
+                        <strong>환불 사유:</strong> 배송 지연
+                    </div>
+                </div>
+                
+                <div class="refund-timeline">
+                    <div class="timeline-item completed">
+                        <div class="timeline-time">01.14 18:20</div>
+                        <div class="timeline-text">환불 신청 접수</div>
+                    </div>
+                    <div class="timeline-item active">
+                        <div class="timeline-time">대기중</div>
+                        <div class="timeline-text">매장 확인 대기</div>
+                    </div>
+                </div>
+                
+                <div class="refund-amount">
+                    <div class="amount">12,500원</div>
+                    <div class="refund-actions">
+                        <button class="action-btn primary" onclick="editRefund(event, 'RF2025011401')">수정</button>
+                        <button class="action-btn" onclick="cancelRefund(event, 'RF2025011401')">취소</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 과거 완료된 환불들 -->
+            <div class="refund-card" data-status="completed" onclick="showRefundDetail('RF2025010801')">
+                <div class="refund-header">
+                    <div class="refund-info">
+                        <div class="refund-number">환불번호: RF2025010801</div>
+                        <div class="refund-date">신청일: 2025.01.08</div>
+                    </div>
+                    <div class="refund-status completed">완료</div>
+                </div>
+                
+                <div class="refund-details">
+                    <div class="original-order">원본 주문: #2025010701</div>
+                    <div class="refund-reason">
+                        <strong>환불 사유:</strong> 상품 누락
+                    </div>
+                </div>
+                
+                <div class="refund-amount">
+                    <div class="amount">3,200원</div>
+                    <div class="refund-actions">
+                        <button class="action-btn" onclick="viewRefundReceipt(event, 'RF2025010801')">영수증</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 빈 목록 (숨겨짐) -->
+        <div id="empty-refunds" class="empty-refunds" style="display: none;">
+            <div class="empty-icon">💰</div>
+            <h3 style="margin-bottom: 8px; color: #495057;">환불 내역이 없습니다</h3>
+            <p style="margin-bottom: 20px;">환불이 필요한 주문이 있으시면 주문 내역에서 신청해주세요.</p>
+            <a href="customer-orders.html" class="wireframe-button primary" style="padding: 12px 24px;">주문 내역 보기</a>
+        </div>
+
+        <!-- 환불 가이드 -->
+        <div class="refund-guide">
+            <h3 style="margin-bottom: 16px; font-size: 16px; color: #495057;">📝 환불 신청 안내</h3>
+            <div class="guide-item">
+                <div class="guide-number">1</div>
+                <div class="guide-content">
+                    <div class="guide-title">환불 신청</div>
+                    <div class="guide-description">주문 내역에서 환불하고자 하는 주문을 선택하여 신청</div>
+                </div>
+            </div>
+            <div class="guide-item">
+                <div class="guide-number">2</div>
+                <div class="guide-content">
+                    <div class="guide-title">매장 확인</div>
+                    <div class="guide-description">매장에서 환불 사유 및 상품 상태를 확인 (1-2시간 소요)</div>
+                </div>
+            </div>
+            <div class="guide-item">
+                <div class="guide-number">3</div>
+                <div class="guide-content">
+                    <div class="guide-title">환불 처리</div>
+                    <div class="guide-description">승인 후 1-3일 내에 결제수단으로 환불 완료</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 환불 상세 모달 -->
+    <div id="refund-detail-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin: 0; font-size: 18px; color: #212529;">환불 상세</h3>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div id="modal-body">
+                <!-- 동적으로 내용이 채워짐 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 와이어프레임 네비게이션 -->
+    <div style="position: fixed; top: 50%; right: 20px; transform: translateY(-50%); background: rgba(0,0,0,0.8); border-radius: 25px; padding: 8px;">
+        <a href="../index.html" style="color: white; text-decoration: none; font-size: 20px; display: block; padding: 8px;">🏠</a>
+    </div>
+
+    <script>
+        // 필터 탭 전환
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                const status = this.dataset.status;
+                filterRefunds(status);
+            });
+        });
+
+        function filterRefunds(status) {
+            const refunds = document.querySelectorAll('.refund-card');
+            const emptyState = document.getElementById('empty-refunds');
+            let visibleCount = 0;
+
+            refunds.forEach(refund => {
+                if (status === 'all' || refund.dataset.status === status) {
+                    refund.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    refund.style.display = 'none';
+                }
+            });
+
+            // 빈 상태 표시
+            if (visibleCount === 0) {
+                emptyState.style.display = 'block';
+            } else {
+                emptyState.style.display = 'none';
+            }
+        }
+
+        // 이벤트 버블링 방지
+        function stopEvent(event) {
+            event.stopPropagation();
+        }
+
+        // 환불 진행상황 추적
+        function trackRefund(event, refundNumber) {
+            stopEvent(event);
+            alert(`${refundNumber} 환불 진행상황:\\n\\n1. ✅ 환불 신청 접수 (01.14 15:30)\\n2. ✅ 매장 확인 완료 (01.14 16:45)\\n3. 🔄 환불 승인 대기 (처리중)\\n4. ⏳ 환불 완료 (예상: 1-2일)`);
+        }
+
+        // 환불 신청 취소
+        function cancelRefund(event, refundNumber) {
+            stopEvent(event);
+            if (confirm(`${refundNumber} 환불 신청을 취소하시겠습니까?\\n\\n취소 후에는 다시 신청해야 합니다.`)) {
+                alert('환불 신청이 취소되었습니다.\\n\\n필요시 주문 내역에서 다시 신청해주세요.');
+            }
+        }
+
+        // 환불 신청 수정
+        function editRefund(event, refundNumber) {
+            stopEvent(event);
+            alert(`${refundNumber} 환불 신청을 수정합니다.\\n\\n수정 가능한 항목:\\n- 환불 사유\\n- 환불 상품\\n- 기타 요청사항\\n\\n환불 신청 수정 페이지로 이동합니다.`);
+        }
+
+        // 환불 영수증 보기
+        function viewRefundReceipt(event, refundNumber) {
+            stopEvent(event);
+            alert(`${refundNumber} 환불 영수증:\\n\\n환불 완료일: 2025.01.13\\n환불 금액: 8,200원\\n환불 방법: 신용카드 취소\\n\\n영수증을 다운로드하거나 이메일로 발송할 수 있습니다.`);
+        }
+
+        // 환불 상세 보기
+        function showRefundDetail(refundNumber) {
+            const modal = document.getElementById('refund-detail-modal');
+            const modalBody = document.getElementById('modal-body');
+            
+            // 샘플 상세 데이터
+            modalBody.innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span style="font-weight: bold; font-size: 16px;">${refundNumber}</span>
+                        <span class="refund-status processing">처리중</span>
+                    </div>
+                    <div style="color: #6c757d; font-size: 14px;">신청일시: 2025.01.14 15:30</div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 12px;">원본 주문 정보</h4>
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px;">
+                        <div style="font-weight: bold; margin-bottom: 8px;">주문번호: #2025011201</div>
+                        <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">주문일시: 2025.01.12 19:20</div>
+                        <div style="font-size: 14px; color: #6c757d;">매장: GS25 대치점</div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 12px;">환불 상품</h4>
+                    <div style="border: 1px solid #dee2e6; border-radius: 6px; padding: 12px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span>바나나우유 240ml × 2</span>
+                            <span>3,000원</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>허니버터칩 60g × 1</span>
+                            <span>1,500원</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 12px;">환불 사유</h4>
+                    <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 12px;">
+                        <div style="font-weight: bold; margin-bottom: 4px;">상품 불량 (유통기한 임박)</div>
+                        <div style="font-size: 14px; color: #6c757d;">바나나우유의 유통기한이 당일까지로 매우 임박한 상태였습니다. 신선한 상품으로 교환 또는 환불을 요청합니다.</div>
+                    </div>
+                </div>
+                
+                <div class="summary-section">
+                    <div class="summary-row">
+                        <span>환불 상품 금액</span>
+                        <span>4,500원</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>환불 수수료</span>
+                        <span>0원</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>총 환불 금액</span>
+                        <span style="color: #dc3545;">4,500원</span>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 12px;">처리 현황</h4>
+                    <div class="refund-timeline">
+                        <div class="timeline-item completed">
+                            <div class="timeline-time">01.14 15:30</div>
+                            <div class="timeline-text">환불 신청 접수</div>
+                        </div>
+                        <div class="timeline-item completed">
+                            <div class="timeline-time">01.14 16:45</div>
+                            <div class="timeline-text">매장 확인 완료</div>
+                        </div>
+                        <div class="timeline-item active">
+                            <div class="timeline-time">처리중</div>
+                            <div class="timeline-text">환불 승인 대기</div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-time">예상</div>
+                            <div class="timeline-text">환불 완료 (1-2일 소요)</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <button class="wireframe-button primary" onclick="trackRefund(event, '${refundNumber}')">진행상황</button>
+                    <button class="wireframe-button" onclick="cancelRefund(event, '${refundNumber}')">신청취소</button>
+                </div>
+            `;
+            
+            modal.style.display = 'flex';
+        }
+
+        // 모달 닫기
+        function closeModal() {
+            document.getElementById('refund-detail-modal').style.display = 'none';
+        }
+
+        // 모달 외부 클릭 시 닫기
+        document.getElementById('refund-detail-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>

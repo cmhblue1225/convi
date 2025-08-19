@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>점주 대시보드 - 와이어프레임</title>
+    <link rel="stylesheet" href="../styles/wireframe.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+    <style>
+        .dashboard-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 16px;
+            position: relative;
+        }
+        
+        .store-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .store-avatar {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        .store-details h2 {
+            font-size: 20px;
+            margin: 0 0 4px 0;
+        }
+        
+        .store-details p {
+            font-size: 14px;
+            margin: 0;
+            opacity: 0.9;
+        }
+        
+        .status-indicator {
+            position: absolute;
+            top: 20px;
+            right: 16px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .status-indicator.open {
+            background: rgba(40, 167, 69, 0.8);
+        }
+        
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 12px 8px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            font-size: 10px;
+            opacity: 0.8;
+        }
+        
+        .alerts-section {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            margin: 16px;
+            padding: 16px;
+        }
+        
+        .alert-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .alert-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .alert-icon {
+            width: 32px;
+            height: 32px;
+            background: #fd7e14;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        
+        .alert-content {
+            flex: 1;
+        }
+        
+        .alert-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #856404;
+            margin-bottom: 2px;
+        }
+        
+        .alert-message {
+            font-size: 12px;
+            color: #856404;
+        }
+        
+        .section-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin: 16px;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .section-action {
+            font-size: 14px;
+            color: #007bff;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .orders-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .order-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid #f8f9fa;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .order-item:last-child {
+            border-bottom: none;
+        }
+        
+        .order-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .order-status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .status-new {
+            background: #dc3545;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-preparing {
+            background: #fd7e14;
+        }
+        
+        .status-ready {
+            background: #28a745;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .order-info {
+            flex: 1;
+        }
+        
+        .order-number {
+            font-size: 14px;
+            font-weight: bold;
+            color: #212529;
+            margin-bottom: 2px;
+        }
+        
+        .order-details {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .order-time {
+            font-size: 12px;
+            color: #6c757d;
+            text-align: right;
+        }
+        
+        .sales-chart {
+            padding: 20px 16px;
+            text-align: center;
+        }
+        
+        .chart-placeholder {
+            height: 200px;
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            margin-bottom: 16px;
+        }
+        
+        .sales-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        
+        .summary-item {
+            text-align: center;
+        }
+        
+        .summary-amount {
+            font-size: 18px;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 4px;
+        }
+        
+        .summary-label {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .low-stock-list {
+            padding: 0;
+        }
+        
+        .stock-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        
+        .stock-item:last-child {
+            border-bottom: none;
+        }
+        
+        .stock-info {
+            flex: 1;
+        }
+        
+        .product-name {
+            font-size: 14px;
+            font-weight: bold;
+            color: #212529;
+            margin-bottom: 2px;
+        }
+        
+        .stock-level {
+            font-size: 12px;
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .reorder-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 16px;
+        }
+        
+        .action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 16px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .action-btn:hover {
+            background: #f8f9fa;
+            transform: translateY(-2px);
+        }
+        
+        .action-icon {
+            width: 48px;
+            height: 48px;
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .action-label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #495057;
+            text-align: center;
+        }
+        
+        .content-wrapper {
+            padding-bottom: 20px;
+        }
+        
+        .floating-orders {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(220,53,69,0.3);
+            cursor: pointer;
+            animation: bounce 2s infinite;
+        }
+        
+        .order-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #ffc107;
+            color: #212529;
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            min-width: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+    </style>
+</head>
+<body style="background: #f8f9fa;">
+    <!-- 대시보드 헤더 -->
+    <div class="dashboard-header">
+        <div class="status-indicator open">🟢 영업중</div>
+        
+        <div class="store-info">
+            <div class="store-avatar">🏪</div>
+            <div class="store-details">
+                <h2>GS25 강남점</h2>
+                <p>이점주님, 좋은 하루 보내세요!</p>
+                <p style="font-size: 12px; opacity: 0.8;">영업시간: 06:00 - 24:00</p>
+            </div>
+        </div>
+        
+        <div class="quick-stats">
+            <div class="stat-item">
+                <div class="stat-number">8</div>
+                <div class="stat-label">신규주문</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">156,800</div>
+                <div class="stat-label">오늘매출</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">23</div>
+                <div class="stat-label">완료주문</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">4.8★</div>
+                <div class="stat-label">고객평점</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <!-- 알림 섹션 -->
+        <div class="alerts-section">
+            <div class="alert-item">
+                <div class="alert-icon">⚠️</div>
+                <div class="alert-content">
+                    <div class="alert-title">재고 부족 알림</div>
+                    <div class="alert-message">바나나우유 외 3개 상품의 재고가 부족합니다</div>
+                </div>
+            </div>
+            <div class="alert-item">
+                <div class="alert-icon">📦</div>
+                <div class="alert-content">
+                    <div class="alert-title">발주 승인 완료</div>
+                    <div class="alert-message">어제 신청한 발주가 승인되어 내일 배송됩니다</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 실시간 주문 현황 -->
+        <div class="section-card">
+            <div class="section-header">
+                <div class="section-title">🔔 실시간 주문</div>
+                <a href="store-orders.html" class="section-action">전체보기</a>
+            </div>
+            <div class="orders-list">
+                <div class="order-item" onclick="viewOrder('#2025011601')">
+                    <div class="order-status-dot status-new"></div>
+                    <div class="order-info">
+                        <div class="order-number">#2025011601</div>
+                        <div class="order-details">라면 2개, 음료 1개 • 픽업</div>
+                    </div>
+                    <div class="order-time">
+                        <div>방금 전</div>
+                        <div style="font-weight: bold; color: #dc3545;">신규</div>
+                    </div>
+                </div>
+                
+                <div class="order-item" onclick="viewOrder('#2025011602')">
+                    <div class="order-status-dot status-preparing"></div>
+                    <div class="order-info">
+                        <div class="order-number">#2025011602</div>
+                        <div class="order-details">도시락 1개, 음료 2개 • 픽업</div>
+                    </div>
+                    <div class="order-time">
+                        <div>3분 전</div>
+                        <div style="font-weight: bold; color: #fd7e14;">준비중</div>
+                    </div>
+                </div>
+                
+                <div class="order-item" onclick="viewOrder('#2025011603')">
+                    <div class="order-status-dot status-ready"></div>
+                    <div class="order-info">
+                        <div class="order-number">#2025011603</div>
+                        <div class="order-details">과자 3개, 아이스크림 1개 • 픽업</div>
+                    </div>
+                    <div class="order-time">
+                        <div>5분 전</div>
+                        <div style="font-weight: bold; color: #28a745;">준비완료</div>
+                    </div>
+                </div>
+                
+                <div class="order-item" onclick="viewOrder('#2025011604')">
+                    <div class="order-status-dot status-preparing"></div>
+                    <div class="order-info">
+                        <div class="order-number">#2025011604</div>
+                        <div class="order-details">삼각김밥 2개, 커피 1개 • 배달</div>
+                    </div>
+                    <div class="order-time">
+                        <div>8분 전</div>
+                        <div style="font-weight: bold; color: #fd7e14;">준비중</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 오늘 매출 현황 -->
+        <div class="section-card">
+            <div class="section-header">
+                <div class="section-title">📊 오늘 매출</div>
+                <a href="store-analytics.html" class="section-action">상세보기</a>
+            </div>
+            <div class="sales-chart">
+                <div class="chart-placeholder">
+                    <div>
+                        <div style="font-size: 32px; margin-bottom: 8px;">📈</div>
+                        <div>시간별 매출 차트</div>
+                    </div>
+                </div>
+                <div class="sales-summary">
+                    <div class="summary-item">
+                        <div class="summary-amount">156,800원</div>
+                        <div class="summary-label">총 매출</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-amount">31건</div>
+                        <div class="summary-label">주문 수</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-amount">5,061원</div>
+                        <div class="summary-label">평균 주문액</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 재고 부족 상품 -->
+        <div class="section-card">
+            <div class="section-header">
+                <div class="section-title">⚠️ 재고 부족</div>
+                <a href="store-inventory.html" class="section-action">재고관리</a>
+            </div>
+            <div class="low-stock-list">
+                <div class="stock-item">
+                    <div class="stock-info">
+                        <div class="product-name">바나나우유 240ml</div>
+                        <div class="stock-level">재고 2개 (최소 10개)</div>
+                    </div>
+                    <button class="reorder-btn" onclick="reorderProduct('바나나우유')">발주</button>
+                </div>
+                <div class="stock-item">
+                    <div class="stock-info">
+                        <div class="product-name">허니버터칩 60g</div>
+                        <div class="stock-level">재고 3개 (최소 15개)</div>
+                    </div>
+                    <button class="reorder-btn" onclick="reorderProduct('허니버터칩')">발주</button>
+                </div>
+                <div class="stock-item">
+                    <div class="stock-info">
+                        <div class="product-name">참치마요 삼각김밥</div>
+                        <div class="stock-level">재고 1개 (최소 20개)</div>
+                    </div>
+                    <button class="reorder-btn" onclick="reorderProduct('참치마요 삼각김밥')">발주</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 빠른 기능 -->
+        <div class="section-card">
+            <div class="section-header">
+                <div class="section-title">⚡ 빠른 기능</div>
+            </div>
+            <div class="quick-actions">
+                <a href="store-orders.html" class="action-btn">
+                    <div class="action-icon">📋</div>
+                    <div class="action-label">주문 관리</div>
+                </a>
+                <a href="store-inventory.html" class="action-btn">
+                    <div class="action-icon">📦</div>
+                    <div class="action-label">재고 관리</div>
+                </a>
+                <a href="store-analytics.html" class="action-btn">
+                    <div class="action-icon">📊</div>
+                    <div class="action-label">매출 분석</div>
+                </a>
+                <a href="store-settings.html" class="action-btn">
+                    <div class="action-icon">⚙️</div>
+                    <div class="action-label">매장 설정</div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 플로팅 주문 알림 -->
+    <button class="floating-orders" onclick="goToOrders()">
+        📋
+        <div class="order-badge" id="new-orders">3</div>
+    </button>
+
+    <!-- 와이어프레임 네비게이션 -->
+    <div style="position: fixed; top: 50%; right: 20px; transform: translateY(-50%); background: rgba(0,0,0,0.8); border-radius: 25px; padding: 8px;">
+        <a href="../index.html" style="color: white; text-decoration: none; font-size: 20px; display: block; padding: 8px;">🏠</a>
+    </div>
+
+    <script>
+        // 주문 상세 보기
+        function viewOrder(orderNumber) {
+            alert(`${orderNumber} 주문 상세 정보:\\n\\n상태: 처리 대기중\\n고객: 김고객\\n상품: 라면 2개, 음료 1개\\n픽업 예정: 15분 후\\n총 금액: 4,500원\\n\\n주문 처리 페이지로 이동합니다.`);
+        }
+
+        // 재고 발주
+        function reorderProduct(productName) {
+            if (confirm(`${productName} 상품을 발주하시겠습니까?\\n\\n권장 발주량: 50개\\n예상 배송: 1-2일`)) {
+                alert(`${productName} 발주 신청이 완료되었습니다.\\n\\n발주 번호: PO2025011601\\n승인 대기 중입니다.`);
+            }
+        }
+
+        // 플로팅 주문 버튼 클릭
+        function goToOrders() {
+            alert('새로운 주문이 3건 있습니다!\\n\\n주문 관리 페이지로 이동합니다.');
+        }
+
+        // 실시간 주문 업데이트 시뮬레이션
+        let orderCount = 3;
+        setInterval(() => {
+            if (Math.random() < 0.1) { // 10% 확률로 새 주문
+                orderCount++;
+                document.getElementById('new-orders').textContent = orderCount;
+                
+                // 새 주문 알림
+                if (Notification.permission === 'granted') {
+                    new Notification('새로운 주문!', {
+                        body: `주문번호 #202501160${orderCount + 1}이 접수되었습니다.`,
+                        icon: '🔔'
+                    });
+                }
+            }
+        }, 30000); // 30초마다 체크
+
+        // 영업 상태 토글
+        document.querySelector('.status-indicator').addEventListener('click', function() {
+            if (this.textContent.includes('영업중')) {
+                this.textContent = '🔴 영업종료';
+                this.classList.remove('open');
+                this.style.background = 'rgba(220, 53, 69, 0.8)';
+                alert('영업을 종료했습니다.\\n\\n새로운 주문 접수가 중단됩니다.');
+            } else {
+                this.textContent = '🟢 영업중';
+                this.classList.add('open');
+                this.style.background = 'rgba(40, 167, 69, 0.8)';
+                alert('영업을 시작했습니다.\\n\\n새로운 주문을 받을 수 있습니다.');
+            }
+        });
+
+        // 알림 권한 요청
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        // 페이지 로드 시 환영 메시지
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentHour = new Date().getHours();
+            let greeting = '좋은 하루';
+            
+            if (currentHour < 12) {
+                greeting = '좋은 아침';
+            } else if (currentHour < 18) {
+                greeting = '좋은 오후';
+            } else {
+                greeting = '좋은 저녁';
+            }
+            
+            document.querySelector('.store-details p').textContent = `이점주님, ${greeting} 보내세요!`;
+        });
+
+        // 주문 아이템 클릭 효과
+        document.querySelectorAll('.order-item').forEach(item => {
+            item.addEventListener('click', function() {
+                // 클릭 효과
+                this.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    this.style.transform = 'scale(1)';
+                }, 150);
+            });
+        });
+
+        // 매출 요약 클릭 시 상세 정보
+        document.querySelectorAll('.summary-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const label = this.querySelector('.summary-label').textContent;
+                alert(`${label} 상세 정보:\\n\\n지난주 대비: +12.3%\\n지난달 대비: +8.7%\\n\\n매출 분석 페이지에서 자세한 정보를 확인하세요.`);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1925 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>보안 시스템 Flow Chart - 편의점 POS</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            background: #d32f2f;
+        }
+
+        .btn-print {
+            background: #424242;
+        }
+
+        .btn-print:hover {
+            background: #212121;
+        }
+
+        .diagram-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: auto;
+        }
+
+        #security-flow {
+            width: 100%;
+            min-height: 800px;
+        }
+
+        .technical-details {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .technical-details h3 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .tech-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #f44336;
+        }
+
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        .alert-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #ff9800;
+        }
+
+        .mermaid {
+            text-align: center;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .controls, .technical-details {
+                display: none;
+            }
+            .header {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+            .diagram-container {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔒 보안 시스템 Flow Chart</h1>
+        <p><strong>편의점 종합 솔루션 - 다층 보안 시스템 및 위협 감지</strong></p>
+        <p>인증 보안, 데이터 암호화, 접근 제어, 침입 탐지, 보안 감사</p>
+        <p>생성일: <span id="current-date"></span> | 버전: 1.0 | 작성: 개발팀</p>
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="zoomIn()">🔍 확대</button>
+        <button class="btn" onclick="zoomOut()">🔍 축소</button>
+        <button class="btn" onclick="resetZoom()">↻ 원래크기</button>
+        <button class="btn btn-print" onclick="printDiagram()">🖨️ 인쇄하기</button>
+        <button class="btn" onclick="downloadSVG()">💾 SVG 다운로드</button>
+    </div>
+
+    <div class="diagram-container">
+        <div id="security-flow">
+            <div class="mermaid">
+flowchart TD
+    %% 보안 요청 시작점
+    Start([보안 요청 수신]) --> SecurityEventType{보안 이벤트 유형}
+    SecurityEventType -->|인증 요청| AuthenticationRequest[인증 요청]
+    SecurityEventType -->|권한 검증| AuthorizationRequest[권한 검증 요청]
+    SecurityEventType -->|데이터 접근| DataAccessRequest[데이터 접근 요청]
+    SecurityEventType -->|API 호출| APICallRequest[API 호출 요청]
+    SecurityEventType -->|의심 활동| SuspiciousActivity[의심스러운 활동]
+    SecurityEventType -->|보안 감사| SecurityAudit[보안 감사]
+    
+    %% 인증 보안 플로우
+    AuthenticationRequest --> ValidateAuthRequest{인증 요청 유효성 검증}
+    ValidateAuthRequest -->|유효하지 않음| InvalidAuthRequest[잘못된 인증 요청]
+    ValidateAuthRequest -->|유효함| CheckAuthAttempts{인증 시도 횟수 확인}
+    
+    InvalidAuthRequest --> LogSecurityEvent[보안 이벤트 로그]
+    LogSecurityEvent --> BlockRequest[요청 차단]
+    BlockRequest --> SecurityEnd([보안 처리 종료])
+    
+    CheckAuthAttempts -->|허용 범위| AllowedAttempts[허용된 시도]
+    CheckAuthAttempts -->|임계값 초과| ExceedAttempts[시도 횟수 초과]
+    
+    ExceedAttempts --> TriggerAccountLock[계정 잠금 트리거]
+    TriggerAccountLock --> NotifyAccountLock[계정 잠금 알림]
+    NotifyAccountLock --> LogAccountLock[계정 잠금 로그]
+    LogAccountLock --> SecurityEnd
+    
+    AllowedAttempts --> ValidateCredentials{자격 증명 검증}
+    ValidateCredentials -->|실패| AuthenticationFailed[인증 실패]
+    ValidateCredentials -->|성공| AuthenticationSuccess[인증 성공]
+    
+    AuthenticationFailed --> IncrementFailedAttempts[실패 시도 증가]
+    IncrementFailedAttempts --> LogFailedAuth[인증 실패 로그]
+    LogFailedAuth --> SecurityEnd
+    
+    AuthenticationSuccess --> GenerateSecureToken[보안 토큰 생성]
+    GenerateSecureToken --> SetupSession[세션 설정]
+    SetupSession --> LogSuccessfulAuth[인증 성공 로그]
+    LogSuccessfulAuth --> Success([보안 처리 완료])
+    
+    %% 권한 검증 플로우
+    AuthorizationRequest --> ValidateToken{토큰 유효성 검증}
+    ValidateToken -->|유효하지 않음| InvalidToken[유효하지 않은 토큰]
+    ValidateToken -->|만료됨| ExpiredToken[만료된 토큰]
+    ValidateToken -->|유효함| ValidToken[유효한 토큰]
+    
+    InvalidToken --> LogInvalidToken[유효하지 않은 토큰 로그]
+    ExpiredToken --> LogExpiredToken[만료된 토큰 로그]
+    LogInvalidToken --> BlockRequest
+    LogExpiredToken --> RequireReauth[재인증 요구]
+    RequireReauth --> SecurityEnd
+    
+    ValidToken --> ExtractUserInfo[사용자 정보 추출]
+    ExtractUserInfo --> CheckUserPermissions{사용자 권한 확인}
+    CheckUserPermissions -->|권한 없음| AccessDenied[접근 거부]
+    CheckUserPermissions -->|권한 있음| AccessGranted[접근 허용]
+    
+    AccessDenied --> LogAccessDenied[접근 거부 로그]
+    LogAccessDenied --> SecurityEnd
+    
+    AccessGranted --> CheckResourcePermissions{리소스별 권한 확인}
+    CheckResourcePermissions -->|권한 없음| ResourceAccessDenied[리소스 접근 거부]
+    CheckResourcePermissions -->|권한 있음| ResourceAccessGranted[리소스 접근 허용]
+    
+    ResourceAccessDenied --> LogResourceDenied[리소스 접근 거부 로그]
+    LogResourceDenied --> SecurityEnd
+    
+    ResourceAccessGranted --> LogAuthorizedAccess[권한 부여된 접근 로그]
+    LogAuthorizedAccess --> Success
+    
+    %% 데이터 접근 보안 플로우
+    DataAccessRequest --> ClassifyDataSensitivity{데이터 민감도 분류}
+    ClassifyDataSensitivity -->|공개 데이터| PublicData[공개 데이터]
+    ClassifyDataSensitivity -->|내부 데이터| InternalData[내부 데이터]
+    ClassifyDataSensitivity -->|기밀 데이터| ConfidentialData[기밀 데이터]
+    ClassifyDataSensitivity -->|극비 데이터| TopSecretData[극비 데이터]
+    
+    PublicData --> BasicAccessCheck[기본 접근 검사]
+    InternalData --> EnhancedAccessCheck[향상된 접근 검사]
+    ConfidentialData --> StrictAccessCheck[엄격한 접근 검사]
+    TopSecretData --> MaximumSecurityCheck[최고 보안 검사]
+    
+    BasicAccessCheck --> CheckBasicAuth{기본 인증 확인}
+    EnhancedAccessCheck --> CheckEnhancedAuth{향상된 인증 확인}
+    StrictAccessCheck --> CheckStrictAuth{엄격한 인증 확인}
+    MaximumSecurityCheck --> CheckMaxAuth{최고 보안 인증 확인}
+    
+    CheckBasicAuth -->|통과| EncryptData[데이터 암호화]
+    CheckEnhancedAuth -->|통과| EncryptData
+    CheckStrictAuth -->|통과| RequireMFA[다중 인증 요구]
+    CheckMaxAuth -->|통과| RequireApproval[승인 요구]
+    
+    CheckBasicAuth -->|실패| DataAccessDenied[데이터 접근 거부]
+    CheckEnhancedAuth -->|실패| DataAccessDenied
+    CheckStrictAuth -->|실패| DataAccessDenied
+    CheckMaxAuth -->|실패| DataAccessDenied
+    
+    DataAccessDenied --> LogDataAccessDenied[데이터 접근 거부 로그]
+    LogDataAccessDenied --> SecurityEnd
+    
+    RequireMFA --> ValidateMFA{다중 인증 검증}
+    ValidateMFA -->|실패| MFAFailed[다중 인증 실패]
+    ValidateMFA -->|성공| MFASuccess[다중 인증 성공]
+    
+    MFAFailed --> LogMFAFailure[다중 인증 실패 로그]
+    LogMFAFailure --> SecurityEnd
+    
+    MFASuccess --> EncryptData
+    
+    RequireApproval --> RequestApproval[승인 요청]
+    RequestApproval --> WaitForApproval[승인 대기]
+    WaitForApproval --> CheckApprovalResult{승인 결과 확인}
+    CheckApprovalResult -->|거부| ApprovalDenied[승인 거부]
+    CheckApprovalResult -->|승인| ApprovalGranted[승인 허용]
+    
+    ApprovalDenied --> LogApprovalDenied[승인 거부 로그]
+    LogApprovalDenied --> SecurityEnd
+    
+    ApprovalGranted --> EncryptData
+    
+    EncryptData --> ApplyDataMasking[데이터 마스킹 적용]
+    ApplyDataMasking --> LogDataAccess[데이터 접근 로그]
+    LogDataAccess --> Success
+    
+    %% API 호출 보안 플로우
+    APICallRequest --> ValidateAPIKey{API 키 검증}
+    ValidateAPIKey -->|유효하지 않음| InvalidAPIKey[유효하지 않은 API 키]
+    ValidateAPIKey -->|유효함| ValidAPIKey[유효한 API 키]
+    
+    InvalidAPIKey --> LogInvalidAPIKey[유효하지 않은 API 키 로그]
+    LogInvalidAPIKey --> BlockRequest
+    
+    ValidAPIKey --> CheckRateLimit{요청 속도 제한 확인}
+    CheckRateLimit -->|한도 초과| RateLimitExceeded[속도 제한 초과]
+    CheckRateLimit -->|허용 범위| RateLimitOK[속도 제한 허용]
+    
+    RateLimitExceeded --> LogRateLimitExceeded[속도 제한 초과 로그]
+    LogRateLimitExceeded --> BlockRequest
+    
+    RateLimitOK --> ValidateAPIRequest{API 요청 검증}
+    ValidateAPIRequest -->|유효하지 않음| InvalidAPIRequest[유효하지 않은 API 요청]
+    ValidateAPIRequest -->|유효함| ValidAPIRequest[유효한 API 요청]
+    
+    InvalidAPIRequest --> LogInvalidAPIRequest[유효하지 않은 API 요청 로그]
+    LogInvalidAPIRequest --> BlockRequest
+    
+    ValidAPIRequest --> CheckAPIPermissions{API 권한 확인}
+    CheckAPIPermissions -->|권한 없음| APIAccessDenied[API 접근 거부]
+    CheckAPIPermissions -->|권한 있음| APIAccessGranted[API 접근 허용]
+    
+    APIAccessDenied --> LogAPIAccessDenied[API 접근 거부 로그]
+    LogAPIAccessDenied --> SecurityEnd
+    
+    APIAccessGranted --> ProcessAPIRequest[API 요청 처리]
+    ProcessAPIRequest --> LogAPIAccess[API 접근 로그]
+    LogAPIAccess --> Success
+    
+    %% 의심 활동 감지 플로우
+    SuspiciousActivity --> AnalyzeActivity{활동 분석}
+    AnalyzeActivity -->|정상 활동| NormalActivity[정상 활동]
+    AnalyzeActivity -->|의심스러운 패턴| SuspiciousPattern[의심스러운 패턴]
+    AnalyzeActivity -->|악성 활동| MaliciousActivity[악성 활동]
+    
+    NormalActivity --> LogNormalActivity[정상 활동 로그]
+    LogNormalActivity --> Success
+    
+    SuspiciousPattern --> IncreaseSecurity[보안 수준 증가]
+    IncreaseSecurity --> AdditionalMonitoring[추가 모니터링]
+    AdditionalMonitoring --> LogSuspiciousActivity[의심 활동 로그]
+    LogSuspiciousActivity --> NotifySecurityTeam[보안팀 알림]
+    NotifySecurityTeam --> Success
+    
+    MaliciousActivity --> ImmediateBlock[즉시 차단]
+    ImmediateBlock --> QuarantineSource[소스 격리]
+    QuarantineSource --> AlertSecurityTeam[보안팀 즉시 알림]
+    AlertSecurityTeam --> InitiateIncidentResponse[사고 대응 시작]
+    InitiateIncidentResponse --> LogSecurityIncident[보안 사고 로그]
+    LogSecurityIncident --> Success
+    
+    %% 보안 감사 플로우
+    SecurityAudit --> DetermineAuditType{감사 유형 결정}
+    DetermineAuditType -->|접근 로그 감사| AccessLogAudit[접근 로그 감사]
+    DetermineAuditType -->|권한 감사| PermissionAudit[권한 감사]
+    DetermineAuditType -->|설정 감사| ConfigurationAudit[설정 감사]
+    DetermineAuditType -->|취약점 스캔| VulnerabilityScan[취약점 스캔]
+    
+    AccessLogAudit --> AnalyzeAccessLogs[접근 로그 분석]
+    PermissionAudit --> AnalyzePermissions[권한 분석]
+    ConfigurationAudit --> AnalyzeConfigurations[설정 분석]
+    VulnerabilityScan --> ScanForVulnerabilities[취약점 스캔 실행]
+    
+    AnalyzeAccessLogs --> CheckAccessPatterns{접근 패턴 확인}
+    AnalyzePermissions --> CheckPermissionCompliance{권한 규정 준수 확인}
+    AnalyzeConfigurations --> CheckSecuritySettings{보안 설정 확인}
+    ScanForVulnerabilities --> IdentifyVulnerabilities{취약점 식별}
+    
+    CheckAccessPatterns -->|이상 없음| AccessAuditClean[접근 감사 정상]
+    CheckAccessPatterns -->|이상 발견| AccessAuditIssues[접근 감사 이슈]
+    
+    CheckPermissionCompliance -->|준수| PermissionAuditClean[권한 감사 정상]
+    CheckPermissionCompliance -->|위반| PermissionAuditIssues[권한 감사 이슈]
+    
+    CheckSecuritySettings -->|안전| ConfigAuditClean[설정 감사 정상]
+    CheckSecuritySettings -->|취약| ConfigAuditIssues[설정 감사 이슈]
+    
+    IdentifyVulnerabilities -->|취약점 없음| VulnScanClean[취약점 스캔 정상]
+    IdentifyVulnerabilities -->|취약점 발견| VulnScanIssues[취약점 발견]
+    
+    AccessAuditClean --> GenerateAuditReport[감사 보고서 생성]
+    PermissionAuditClean --> GenerateAuditReport
+    ConfigAuditClean --> GenerateAuditReport
+    VulnScanClean --> GenerateAuditReport
+    
+    AccessAuditIssues --> CreateRemediationPlan[해결 계획 생성]
+    PermissionAuditIssues --> CreateRemediationPlan
+    ConfigAuditIssues --> CreateRemediationPlan
+    VulnScanIssues --> CreateRemediationPlan
+    
+    CreateRemediationPlan --> PrioritizeIssues[이슈 우선순위 지정]
+    PrioritizeIssues --> AssignResponsibilities[책임 할당]
+    AssignResponsibilities --> SetRemediationTimeline[해결 일정 설정]
+    SetRemediationTimeline --> GenerateAuditReport
+    
+    GenerateAuditReport --> DistributeReport[보고서 배포]
+    DistributeReport --> ScheduleFollowUp[후속 조치 스케줄링]
+    ScheduleFollowUp --> Success
+    
+    %% 보안 모니터링 및 대응
+    SecurityMonitoring([보안 모니터링]) --> ContinuousMonitoring[지속적 모니터링]
+    ContinuousMonitoring --> CollectSecurityMetrics[보안 메트릭 수집]
+    CollectSecurityMetrics --> AnalyzeSecurityTrends[보안 트렌드 분석]
+    AnalyzeSecurityTrends --> DetectAnomalies{이상 징후 감지}
+    
+    DetectAnomalies -->|정상| NormalSecurityState[정상 보안 상태]
+    DetectAnomalies -->|경고| SecurityWarning[보안 경고]
+    DetectAnomalies -->|위험| SecurityThreat[보안 위험]
+    DetectAnomalies -->|심각| SecurityCritical[보안 심각]
+    
+    NormalSecurityState --> UpdateSecurityDashboard[보안 대시보드 업데이트]
+    SecurityWarning --> TriggerWarningAlert[경고 알림 발송]
+    SecurityThreat --> TriggerThreatAlert[위험 알림 발송]
+    SecurityCritical --> TriggerCriticalAlert[심각 알림 발송]
+    
+    TriggerWarningAlert --> UpdateSecurityDashboard
+    TriggerThreatAlert --> ActivateResponseTeam[대응팀 활성화]
+    TriggerCriticalAlert --> ActivateEmergencyResponse[비상 대응 활성화]
+    
+    ActivateResponseTeam --> AssessSecurityThreat[보안 위험 평가]
+    ActivateEmergencyResponse --> ImmediateContainment[즉시 격리]
+    
+    AssessSecurityThreat --> ImplementCountermeasures[대응 조치 실행]
+    ImmediateContainment --> EmergencyNotification[비상 알림]
+    
+    ImplementCountermeasures --> MonitorEffectiveness[효과성 모니터링]
+    EmergencyNotification --> CrisisManagement[위기 관리]
+    
+    MonitorEffectiveness --> UpdateSecurityDashboard
+    CrisisManagement --> PostIncidentAnalysis[사고 후 분석]
+    PostIncidentAnalysis --> UpdateSecurityDashboard
+    UpdateSecurityDashboard --> MonitoringComplete([모니터링 완료])
+    
+    %% 스타일 클래스 정의
+    classDef startEnd fill:#ffebee,stroke:#f44336,stroke-width:3px
+    classDef process fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
+    classDef decision fill:#fff3e0,stroke:#ff9800,stroke-width:2px
+    classDef security fill:#e8eaf6,stroke:#3f51b5,stroke-width:2px
+    classDef threat fill:#fce4ec,stroke:#e91e63,stroke-width:2px
+    classDef blocked fill:#f3e5f5,stroke:#9c27b0,stroke-width:2px
+    classDef audit fill:#e0f2f1,stroke:#009688,stroke-width:2px
+    classDef monitoring fill:#fff8e1,stroke:#ffc107,stroke-width:2px
+    classDef critical fill:#ff5722,stroke:#ffffff,stroke-width:3px,color:#ffffff
+    
+    %% 클래스 적용
+    class Start,Success,SecurityEnd,SecurityMonitoring,MonitoringComplete startEnd
+    class GenerateSecureToken,SetupSession,ExtractUserInfo,EncryptData,ApplyDataMasking,ProcessAPIRequest,AnalyzeAccessLogs,AnalyzePermissions,AnalyzeConfigurations,ScanForVulnerabilities,CollectSecurityMetrics process
+    class SecurityEventType,ValidateAuthRequest,CheckAuthAttempts,ValidateCredentials,ValidateToken,CheckUserPermissions,CheckResourcePermissions,ClassifyDataSensitivity,CheckBasicAuth,CheckEnhancedAuth,CheckStrictAuth,CheckMaxAuth,ValidateMFA,CheckApprovalResult,ValidateAPIKey,CheckRateLimit,ValidateAPIRequest,CheckAPIPermissions,AnalyzeActivity,DetermineAuditType,CheckAccessPatterns,CheckPermissionCompliance,CheckSecuritySettings,IdentifyVulnerabilities,DetectAnomalies decision
+    class AllowedAttempts,AuthenticationSuccess,ValidToken,AccessGranted,ResourceAccessGranted,PublicData,InternalData,ConfidentialData,TopSecretData,ValidAPIKey,RateLimitOK,ValidAPIRequest,APIAccessGranted security
+    class SuspiciousActivity,SuspiciousPattern,MaliciousActivity,SecurityWarning,SecurityThreat threat
+    class InvalidAuthRequest,ExceedAttempts,AuthenticationFailed,InvalidToken,ExpiredToken,AccessDenied,ResourceAccessDenied,DataAccessDenied,MFAFailed,ApprovalDenied,InvalidAPIKey,RateLimitExceeded,InvalidAPIRequest,APIAccessDenied,ImmediateBlock,QuarantineSource,BlockRequest blocked
+    class SecurityAudit,AccessLogAudit,PermissionAudit,ConfigurationAudit,VulnerabilityScan,GenerateAuditReport,CreateRemediationPlan audit
+    class ContinuousMonitoring,AnalyzeSecurityTrends,UpdateSecurityDashboard,TriggerWarningAlert,TriggerThreatAlert,ActivateResponseTeam,AssessSecurityThreat,ImplementCountermeasures,MonitorEffectiveness monitoring
+    class SecurityCritical,TriggerCriticalAlert,ActivateEmergencyResponse,ImmediateContainment,EmergencyNotification,CrisisManagement critical
+            </div>
+        </div>
+    </div>
+
+    <div class="technical-details">
+        <h3>🔧 보안 시스템 기술 구현</h3>
+        <div class="tech-grid">
+            <div class="tech-section">
+                <h4>다층 인증 시스템</h4>
+                <div class="code-block">
+// 다층 인증 보안 시스템
+class MultiLayerAuthenticationSystem {
+  private authProviders: Map<string, AuthProvider>;
+  private mfaManager: MFAManager;
+  private securityRules: SecurityRuleEngine;
+  private threatDetector: ThreatDetector;
+
+  constructor(config: AuthSecurityConfig) {
+    this.authProviders = new Map();
+    this.mfaManager = new MFAManager(config.mfaConfig);
+    this.securityRules = new SecurityRuleEngine(config.securityRules);
+    this.threatDetector = new ThreatDetector(config.threatConfig);
+    this.initializeAuthProviders(config.providers);
+  }
+
+  // 보안 강화된 인증 처리
+  async authenticateUser(credentials: AuthCredentials, context: AuthContext): Promise<AuthResult> {
+    try {
+      // 1. 보안 컨텍스트 분석
+      const securityAnalysis = await this.analyzeSecurityContext(context);
+      
+      // 2. 위험도 평가
+      const riskLevel = await this.assessRiskLevel(credentials, context, securityAnalysis);
+      
+      // 3. 자격 증명 검증
+      const baseAuth = await this.validateCredentials(credentials);
+      if (!baseAuth.success) {
+        await this.handleAuthFailure(credentials, context, baseAuth.reason);
+        return baseAuth;
+      }
+
+      // 4. 위험도에 따른 추가 인증 요구
+      if (riskLevel.level >= RiskLevel.MEDIUM) {
+        const mfaResult = await this.requireMFA(baseAuth.user, riskLevel);
+        if (!mfaResult.success) {
+          return mfaResult;
+        }
+      }
+
+      // 5. 세션 보안 설정
+      const secureSession = await this.createSecureSession(baseAuth.user, riskLevel);
+      
+      // 6. 보안 이벤트 로깅
+      await this.logSecurityEvent({
+        type: 'authentication_success',
+        user: baseAuth.user,
+        context,
+        riskLevel,
+        sessionId: secureSession.id
+      });
+
+      return {
+        success: true,
+        user: baseAuth.user,
+        session: secureSession,
+        securityLevel: riskLevel.level
+      };
+
+    } catch (error) {
+      await this.handleAuthError(error, credentials, context);
+      throw new AuthenticationError('인증 처리 중 오류가 발생했습니다.');
+    }
+  }
+
+  // 위험도 평가 시스템
+  private async assessRiskLevel(
+    credentials: AuthCredentials, 
+    context: AuthContext, 
+    analysis: SecurityAnalysis
+  ): Promise<RiskAssessment> {
+    const riskFactors = [];
+    let riskScore = 0;
+
+    // IP 주소 위험도
+    const ipRisk = await this.assessIPRisk(context.ipAddress);
+    riskScore += ipRisk.score;
+    if (ipRisk.isHighRisk) {
+      riskFactors.push('suspicious_ip');
+    }
+
+    // 장치 위험도
+    const deviceRisk = await this.assessDeviceRisk(context.deviceFingerprint);
+    riskScore += deviceRisk.score;
+    if (deviceRisk.isNewDevice) {
+      riskFactors.push('new_device');
+    }
+
+    // 로그인 패턴 위험도
+    const patternRisk = await this.assessLoginPattern(credentials.username, context);
+    riskScore += patternRisk.score;
+    if (patternRisk.isAnomalous) {
+      riskFactors.push('anomalous_pattern');
+    }
+
+    // 지리적 위험도
+    const geoRisk = await this.assessGeographicRisk(context.location, credentials.username);
+    riskScore += geoRisk.score;
+    if (geoRisk.isImpossibleTravel) {
+      riskFactors.push('impossible_travel');
+    }
+
+    // 시간 기반 위험도
+    const timeRisk = await this.assessTimeRisk(context.timestamp, credentials.username);
+    riskScore += timeRisk.score;
+    if (timeRisk.isOffHours) {
+      riskFactors.push('off_hours_access');
+    }
+
+    // 위험도 수준 결정
+    let level = RiskLevel.LOW;
+    if (riskScore >= 80) level = RiskLevel.CRITICAL;
+    else if (riskScore >= 60) level = RiskLevel.HIGH;
+    else if (riskScore >= 40) level = RiskLevel.MEDIUM;
+
+    return {
+      level,
+      score: riskScore,
+      factors: riskFactors,
+      assessment: {
+        ip: ipRisk,
+        device: deviceRisk,
+        pattern: patternRisk,
+        geography: geoRisk,
+        time: timeRisk
+      }
+    };
+  }
+
+  // 다중 인증 처리
+  private async requireMFA(user: User, riskLevel: RiskAssessment): Promise<AuthResult> {
+    // 사용자의 MFA 설정 확인
+    const mfaMethods = await this.mfaManager.getUserMFAMethods(user.id);
+    if (mfaMethods.length === 0) {
+      return {
+        success: false,
+        reason: 'MFA가 설정되지 않았습니다. 계정 보안을 위해 MFA를 설정해주세요.',
+        requireMFASetup: true
+      };
+    }
+
+    // 위험도에 따른 MFA 방법 선택
+    const requiredMethods = this.selectMFAMethods(mfaMethods, riskLevel);
+    
+    for (const method of requiredMethods) {
+      const mfaResult = await this.verifyMFAMethod(user, method);
+      if (!mfaResult.success) {
+        await this.logSecurityEvent({
+          type: 'mfa_failure',
+          user,
+          method: method.type,
+          riskLevel: riskLevel.level
+        });
+        return mfaResult;
+      }
+    }
+
+    return { success: true };
+  }
+
+  // MFA 방법 검증
+  private async verifyMFAMethod(user: User, method: MFAMethod): Promise<AuthResult> {
+    switch (method.type) {
+      case 'totp':
+        return await this.verifyTOTP(user, method);
+      case 'sms':
+        return await this.verifySMS(user, method);
+      case 'email':
+        return await this.verifyEmail(user, method);
+      case 'push':
+        return await this.verifyPushNotification(user, method);
+      case 'biometric':
+        return await this.verifyBiometric(user, method);
+      default:
+        throw new Error(`지원되지 않는 MFA 방법: ${method.type}`);
+    }
+  }
+
+  // TOTP 검증
+  private async verifyTOTP(user: User, method: MFAMethod): Promise<AuthResult> {
+    const totpCode = await this.promptForTOTP(user);
+    
+    try {
+      const isValid = await this.mfaManager.verifyTOTP(
+        user.id, 
+        totpCode, 
+        method.secret
+      );
+
+      if (isValid) {
+        return { success: true };
+      } else {
+        return {
+          success: false,
+          reason: 'TOTP 코드가 올바르지 않습니다.'
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        reason: 'TOTP 검증 중 오류가 발생했습니다.'
+      };
+    }
+  }
+
+  // 보안 세션 생성
+  private async createSecureSession(user: User, riskLevel: RiskAssessment): Promise<SecureSession> {
+    const sessionConfig = this.getSessionConfigForRiskLevel(riskLevel.level);
+    
+    const session: SecureSession = {
+      id: this.generateSecureSessionId(),
+      userId: user.id,
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + sessionConfig.ttl),
+      securityLevel: riskLevel.level,
+      ipAddress: riskLevel.assessment.ip.address,
+      deviceFingerprint: riskLevel.assessment.device.fingerprint,
+      permissions: await this.getUserPermissions(user),
+      securityFlags: {
+        requirePeriodicReauth: riskLevel.level >= RiskLevel.HIGH,
+        limitedAccess: riskLevel.level >= RiskLevel.CRITICAL,
+        enhancedLogging: riskLevel.level >= RiskLevel.MEDIUM
+      }
+    };
+
+    // 세션 저장 (암호화)
+    await this.storeSecureSession(session);
+    
+    return session;
+  }
+}</div>
+                <p><strong>위험도 평가:</strong> 다중 요소 기반 실시간 위험도 계산</p>
+                <p><strong>적응형 MFA:</strong> 위험도에 따른 다중 인증 요구</p>
+                <p><strong>보안 세션:</strong> 위험도별 세션 보안 정책 적용</p>
+            </div>
+            
+            <div class="tech-section">
+                <h4>접근 제어 시스템</h4>
+                <div class="code-block">
+// 역할 기반 접근 제어 (RBAC) 시스템
+class AccessControlSystem {
+  private roleManager: RoleManager;
+  private permissionEngine: PermissionEngine;
+  private policyEvaluator: PolicyEvaluator;
+  private auditLogger: AuditLogger;
+
+  constructor(config: AccessControlConfig) {
+    this.roleManager = new RoleManager(config.roleConfig);
+    this.permissionEngine = new PermissionEngine(config.permissionConfig);
+    this.policyEvaluator = new PolicyEvaluator(config.policyConfig);
+    this.auditLogger = new AuditLogger(config.auditConfig);
+  }
+
+  // 접근 권한 검증
+  async checkAccess(request: AccessRequest): Promise<AccessDecision> {
+    try {
+      // 1. 요청 유효성 검증
+      const validation = await this.validateAccessRequest(request);
+      if (!validation.isValid) {
+        return this.denyAccess('invalid_request', validation.errors);
+      }
+
+      // 2. 사용자 권한 로드
+      const userPermissions = await this.getUserPermissions(request.userId);
+      
+      // 3. 리소스 요구사항 확인
+      const resourceRequirements = await this.getResourceRequirements(request.resource);
+      
+      // 4. 컨텍스트 기반 정책 평가
+      const policyDecision = await this.evaluateContextualPolicies(
+        request, 
+        userPermissions, 
+        resourceRequirements
+      );
+
+      if (!policyDecision.allowed) {
+        return this.denyAccess('policy_violation', policyDecision.violations);
+      }
+
+      // 5. 시간 기반 접근 제어
+      const timeBasedCheck = await this.checkTimeBasedAccess(
+        request.userId, 
+        request.resource, 
+        request.timestamp
+      );
+
+      if (!timeBasedCheck.allowed) {
+        return this.denyAccess('time_restriction', timeBasedCheck.reason);
+      }
+
+      // 6. 위치 기반 접근 제어
+      const locationCheck = await this.checkLocationBasedAccess(
+        request.userId, 
+        request.resource, 
+        request.location
+      );
+
+      if (!locationCheck.allowed) {
+        return this.denyAccess('location_restriction', locationCheck.reason);
+      }
+
+      // 7. 동적 권한 평가
+      const dynamicPermissions = await this.evaluateDynamicPermissions(
+        request, 
+        userPermissions
+      );
+
+      // 8. 접근 허용
+      const decision = await this.grantAccess(request, dynamicPermissions);
+      
+      // 9. 접근 로그 기록
+      await this.auditLogger.logAccessAttempt(request, decision);
+      
+      return decision;
+
+    } catch (error) {
+      await this.auditLogger.logAccessError(request, error);
+      return this.denyAccess('system_error', 'システムエラーが発生しました');
+    }
+  }
+
+  // 컨텍스트 기반 정책 평가
+  private async evaluateContextualPolicies(
+    request: AccessRequest,
+    userPermissions: UserPermissions,
+    resourceRequirements: ResourceRequirements
+  ): Promise<PolicyDecision> {
+    const context = {
+      user: await this.getUserContext(request.userId),
+      resource: request.resource,
+      action: request.action,
+      environment: {
+        timestamp: request.timestamp,
+        ipAddress: request.ipAddress,
+        userAgent: request.userAgent,
+        location: request.location
+      }
+    };
+
+    const policies = await this.getApplicablePolicies(context);
+    const evaluationResults = [];
+
+    for (const policy of policies) {
+      const result = await this.policyEvaluator.evaluate(policy, context);
+      evaluationResults.push(result);
+    }
+
+    // 정책 결과 종합
+    const decision = this.aggregatePolicyResults(evaluationResults);
+    
+    return {
+      allowed: decision.effect === 'ALLOW',
+      effect: decision.effect,
+      violations: decision.violations,
+      appliedPolicies: policies.map(p => p.id),
+      confidence: decision.confidence
+    };
+  }
+
+  // 동적 권한 평가
+  private async evaluateDynamicPermissions(
+    request: AccessRequest,
+    staticPermissions: UserPermissions
+  ): Promise<DynamicPermissions> {
+    const dynamicRules = await this.getDynamicRules(request.resource);
+    const context = await this.buildPermissionContext(request);
+    
+    const dynamicPermissions = { ...staticPermissions };
+
+    for (const rule of dynamicRules) {
+      const ruleResult = await this.evaluateDynamicRule(rule, context);
+      
+      if (ruleResult.applies) {
+        if (ruleResult.effect === 'GRANT') {
+          dynamicPermissions.granted.push(...ruleResult.permissions);
+        } else if (ruleResult.effect === 'REVOKE') {
+          dynamicPermissions.granted = dynamicPermissions.granted.filter(
+            p => !ruleResult.permissions.includes(p)
+          );
+        }
+      }
+    }
+
+    return dynamicPermissions;
+  }
+
+  // 세밀한 권한 제어
+  async checkFieldLevelAccess(
+    userId: string, 
+    resource: string, 
+    field: string, 
+    operation: 'read' | 'write'
+  ): Promise<FieldAccessDecision> {
+    // 필드 수준 권한 확인
+    const fieldPermissions = await this.getFieldPermissions(userId, resource);
+    
+    const fieldAccess = fieldPermissions.fields[field];
+    if (!fieldAccess) {
+      return {
+        allowed: false,
+        reason: 'field_not_accessible',
+        masking: null
+      };
+    }
+
+    if (operation === 'read' && !fieldAccess.read) {
+      return {
+        allowed: false,
+        reason: 'read_not_permitted',
+        masking: null
+      };
+    }
+
+    if (operation === 'write' && !fieldAccess.write) {
+      return {
+        allowed: false,
+        reason: 'write_not_permitted',
+        masking: null
+      };
+    }
+
+    // 데이터 마스킹 규칙 확인
+    const maskingRule = await this.getMaskingRule(userId, resource, field);
+    
+    return {
+      allowed: true,
+      masking: maskingRule,
+      conditions: fieldAccess.conditions
+    };
+  }
+
+  // 권한 상속 및 위임
+  async delegatePermissions(
+    delegatorId: string,
+    delegateeId: string,
+    permissions: string[],
+    constraints: DelegationConstraints
+  ): Promise<DelegationResult> {
+    // 위임자 권한 확인
+    const delegatorPermissions = await this.getUserPermissions(delegatorId);
+    const canDelegate = permissions.every(p => 
+      delegatorPermissions.granted.includes(p) && 
+      delegatorPermissions.delegatable.includes(p)
+    );
+
+    if (!canDelegate) {
+      return {
+        success: false,
+        reason: 'insufficient_delegation_rights'
+      };
+    }
+
+    // 위임 제약 조건 적용
+    const delegation: PermissionDelegation = {
+      id: this.generateDelegationId(),
+      delegatorId,
+      delegateeId,
+      permissions,
+      constraints,
+      createdAt: new Date(),
+      expiresAt: constraints.expiresAt,
+      status: 'active'
+    };
+
+    await this.storeDelegation(delegation);
+    
+    // 위임 이벤트 로깅
+    await this.auditLogger.logPermissionDelegation(delegation);
+
+    return {
+      success: true,
+      delegationId: delegation.id,
+      effectivePermissions: await this.calculateEffectivePermissions(delegateeId)
+    };
+  }
+
+  // 권한 회수
+  async revokePermissions(
+    userId: string,
+    permissions: string[],
+    reason: string
+  ): Promise<RevocationResult> {
+    const currentPermissions = await this.getUserPermissions(userId);
+    
+    // 회수할 수 있는 권한인지 확인
+    const revocablePermissions = permissions.filter(p => 
+      currentPermissions.granted.includes(p) && 
+      currentPermissions.revocable.includes(p)
+    );
+
+    if (revocablePermissions.length === 0) {
+      return {
+        success: false,
+        reason: 'no_revocable_permissions'
+      };
+    }
+
+    // 권한 회수 실행
+    await this.removeUserPermissions(userId, revocablePermissions);
+    
+    // 활성 세션에서 권한 무효화
+    await this.invalidateSessionPermissions(userId, revocablePermissions);
+    
+    // 회수 이벤트 로깅
+    await this.auditLogger.logPermissionRevocation({
+      userId,
+      revokedPermissions: revocablePermissions,
+      reason,
+      timestamp: new Date()
+    });
+
+    return {
+      success: true,
+      revokedPermissions: revocablePermissions,
+      remainingPermissions: currentPermissions.granted.filter(
+        p => !revocablePermissions.includes(p)
+      )
+    };
+  }
+}</div>
+                <p><strong>RBAC 구현:</strong> 역할 기반 세밀한 접근 제어</p>
+                <p><strong>동적 권한:</strong> 컨텍스트 기반 실시간 권한 평가</p>
+                <p><strong>필드 수준 제어:</strong> 데이터 필드별 접근 권한 관리</p>
+            </div>
+
+            <div class="tech-section">
+                <h4>데이터 암호화 시스템</h4>
+                <div class="code-block">
+// 종합 데이터 암호화 관리 시스템
+class DataEncryptionSystem {
+  private keyManager: KeyManager;
+  private encryptionEngine: EncryptionEngine;
+  private tokenVault: TokenVault;
+  private hsm: HSMManager;
+
+  constructor(config: EncryptionConfig) {
+    this.keyManager = new KeyManager(config.keyConfig);
+    this.encryptionEngine = new EncryptionEngine(config.algorithmConfig);
+    this.tokenVault = new TokenVault(config.tokenConfig);
+    this.hsm = new HSMManager(config.hsmConfig);
+  }
+
+  // 민감 데이터 암호화
+  async encryptSensitiveData(data: any, context: EncryptionContext): Promise<EncryptedData> {
+    try {
+      // 1. 데이터 민감도 분류
+      const sensitivity = await this.classifyDataSensitivity(data, context);
+      
+      // 2. 암호화 정책 결정
+      const policy = await this.getEncryptionPolicy(sensitivity.level);
+      
+      // 3. 암호화 키 선택/생성
+      const encryptionKey = await this.getEncryptionKey(policy, context);
+      
+      // 4. 데이터 전처리
+      const preprocessedData = await this.preprocessData(data, policy);
+      
+      // 5. 암호화 실행
+      const encryptedResult = await this.performEncryption(
+        preprocessedData, 
+        encryptionKey, 
+        policy
+      );
+      
+      // 6. 키 래핑 (필요한 경우)
+      const wrappedKey = await this.wrapEncryptionKey(encryptionKey, policy);
+      
+      // 7. 암호화 메타데이터 생성
+      const metadata = this.createEncryptionMetadata(
+        sensitivity, 
+        policy, 
+        encryptedResult
+      );
+
+      return {
+        encryptedData: encryptedResult.ciphertext,
+        keyId: encryptionKey.id,
+        algorithm: policy.algorithm,
+        iv: encryptedResult.iv,
+        tag: encryptedResult.tag,
+        metadata,
+        wrappedKey
+      };
+
+    } catch (error) {
+      await this.logEncryptionError(error, context);
+      throw new EncryptionError('데이터 암호화 중 오류가 발생했습니다.');
+    }
+  }
+
+  // 암호화된 데이터 복호화
+  async decryptSensitiveData(
+    encryptedData: EncryptedData, 
+    context: DecryptionContext
+  ): Promise<any> {
+    try {
+      // 1. 접근 권한 확인
+      const accessCheck = await this.checkDecryptionAccess(encryptedData, context);
+      if (!accessCheck.allowed) {
+        throw new DecryptionAccessError('복호화 권한이 없습니다.');
+      }
+
+      // 2. 암호화 키 복구
+      const decryptionKey = await this.recoverDecryptionKey(
+        encryptedData.keyId, 
+        encryptedData.wrappedKey, 
+        context
+      );
+
+      // 3. 복호화 실행
+      const decryptedData = await this.performDecryption(
+        encryptedData.encryptedData,
+        decryptionKey,
+        {
+          algorithm: encryptedData.algorithm,
+          iv: encryptedData.iv,
+          tag: encryptedData.tag
+        }
+      );
+
+      // 4. 데이터 후처리
+      const postprocessedData = await this.postprocessData(
+        decryptedData, 
+        encryptedData.metadata
+      );
+
+      // 5. 복호화 감사 로그
+      await this.logDecryptionAccess(encryptedData, context);
+
+      return postprocessedData;
+
+    } catch (error) {
+      await this.logDecryptionError(error, encryptedData, context);
+      throw error;
+    }
+  }
+
+  // 토큰화 (Tokenization)
+  async tokenizeData(sensitiveData: string, tokenFormat?: TokenFormat): Promise<TokenResult> {
+    // 1. 민감 데이터 검증
+    const validation = await this.validateSensitiveData(sensitiveData);
+    if (!validation.isValid) {
+      throw new ValidationError('유효하지 않은 민감 데이터입니다.');
+    }
+
+    // 2. 토큰 생성
+    const token = await this.generateToken(sensitiveData, tokenFormat);
+    
+    // 3. 토큰-데이터 매핑 저장 (보안 볼트)
+    await this.tokenVault.storeMapping(token, sensitiveData);
+    
+    // 4. 토큰화 로그
+    await this.logTokenization(token, validation.dataType);
+
+    return {
+      token,
+      format: tokenFormat || TokenFormat.ALPHANUMERIC,
+      preservedFormat: this.preserveOriginalFormat(sensitiveData, token)
+    };
+  }
+
+  // 토큰 해제 (Detokenization)
+  async detokenizeData(token: string, context: DetokenizationContext): Promise<string> {
+    // 1. 토큰 유효성 검증
+    const tokenValidation = await this.validateToken(token);
+    if (!tokenValidation.isValid) {
+      throw new InvalidTokenError('유효하지 않은 토큰입니다.');
+    }
+
+    // 2. 접근 권한 확인
+    const accessCheck = await this.checkDetokenizationAccess(token, context);
+    if (!accessCheck.allowed) {
+      throw new DetokenizationAccessError('토큰 해제 권한이 없습니다.');
+    }
+
+    // 3. 원본 데이터 복구
+    const originalData = await this.tokenVault.retrieveOriginalData(token);
+    if (!originalData) {
+      throw new TokenNotFoundError('토큰에 해당하는 데이터를 찾을 수 없습니다.');
+    }
+
+    // 4. 토큰 해제 로그
+    await this.logDetokenization(token, context);
+
+    return originalData;
+  }
+
+  // 키 로테이션
+  async rotateEncryptionKeys(keyIds?: string[]): Promise<KeyRotationResult> {
+    const keysToRotate = keyIds || await this.getKeysForRotation();
+    const rotationResults = [];
+
+    for (const keyId of keysToRotate) {
+      try {
+        // 1. 새 키 생성
+        const newKey = await this.keyManager.generateKey({
+          algorithm: 'AES-256-GCM',
+          usage: ['encrypt', 'decrypt'],
+          extractable: false
+        });
+
+        // 2. 기존 키로 암호화된 데이터 식별
+        const encryptedDataRecords = await this.findDataEncryptedWithKey(keyId);
+
+        // 3. 데이터 재암호화
+        const reencryptionResults = await this.reencryptDataWithNewKey(
+          encryptedDataRecords, 
+          keyId, 
+          newKey
+        );
+
+        // 4. 키 메타데이터 업데이트
+        await this.updateKeyMetadata(keyId, newKey.id, reencryptionResults);
+
+        // 5. 기존 키 폐기 스케줄링
+        await this.scheduleKeyRetirement(keyId);
+
+        rotationResults.push({
+          oldKeyId: keyId,
+          newKeyId: newKey.id,
+          reencryptedRecords: reencryptionResults.length,
+          success: true
+        });
+
+      } catch (error) {
+        rotationResults.push({
+          oldKeyId: keyId,
+          newKeyId: null,
+          reencryptedRecords: 0,
+          success: false,
+          error: error.message
+        });
+      }
+    }
+
+    return {
+      totalKeys: keysToRotate.length,
+      successfulRotations: rotationResults.filter(r => r.success).length,
+      failedRotations: rotationResults.filter(r => !r.success).length,
+      results: rotationResults
+    };
+  }
+
+  // 암호화 성능 최적화
+  async optimizeEncryptionPerformance(): Promise<OptimizationResult> {
+    // 1. 암호화 성능 메트릭 수집
+    const metrics = await this.collectEncryptionMetrics();
+    
+    // 2. 병목 지점 식별
+    const bottlenecks = await this.identifyPerformanceBottlenecks(metrics);
+    
+    // 3. 최적화 전략 결정
+    const strategies = await this.determineOptimizationStrategies(bottlenecks);
+    
+    const optimizations = [];
+
+    for (const strategy of strategies) {
+      switch (strategy.type) {
+        case 'hardware_acceleration':
+          await this.enableHardwareAcceleration(strategy.config);
+          optimizations.push('하드웨어 가속 활성화');
+          break;
+          
+        case 'key_caching':
+          await this.optimizeKeyCaching(strategy.config);
+          optimizations.push('키 캐싱 최적화');
+          break;
+          
+        case 'batch_processing':
+          await this.enableBatchEncryption(strategy.config);
+          optimizations.push('배치 암호화 활성화');
+          break;
+          
+        case 'algorithm_selection':
+          await this.optimizeAlgorithmSelection(strategy.config);
+          optimizations.push('알고리즘 선택 최적화');
+          break;
+      }
+    }
+
+    // 4. 최적화 후 성능 측정
+    const postOptimizationMetrics = await this.collectEncryptionMetrics();
+    
+    return {
+      appliedOptimizations: optimizations,
+      performanceImprovement: this.calculatePerformanceImprovement(
+        metrics, 
+        postOptimizationMetrics
+      ),
+      recommendations: await this.generateFurtherRecommendations(postOptimizationMetrics)
+    };
+  }
+}</div>
+                <p><strong>다층 암호화:</strong> 민감도별 차등 암호화 정책</p>
+                <p><strong>토큰화:</strong> 신용카드 등 민감 정보 토큰 대체</p>
+                <p><strong>키 로테이션:</strong> 정기적 암호화 키 교체 자동화</p>
+            </div>
+
+            <div class="tech-section">
+                <h4>침입 탐지 시스템</h4>
+                <div class="code-block">
+// 지능형 침입 탐지 및 대응 시스템
+class IntrusionDetectionSystem {
+  private anomalyDetector: AnomalyDetector;
+  private signatureEngine: SignatureEngine;
+  private behaviorAnalyzer: BehaviorAnalyzer;
+  private responseEngine: ResponseEngine;
+  private threatIntelligence: ThreatIntelligence;
+
+  constructor(config: IDSConfig) {
+    this.anomalyDetector = new AnomalyDetector(config.anomalyConfig);
+    this.signatureEngine = new SignatureEngine(config.signatureConfig);
+    this.behaviorAnalyzer = new BehaviorAnalyzer(config.behaviorConfig);
+    this.responseEngine = new ResponseEngine(config.responseConfig);
+    this.threatIntelligence = new ThreatIntelligence(config.threatConfig);
+    this.initializeDetection();
+  }
+
+  // 실시간 침입 탐지
+  private initializeDetection(): void {
+    // 네트워크 트래픽 모니터링
+    this.monitorNetworkTraffic();
+    
+    // 사용자 행동 분석
+    this.monitorUserBehavior();
+    
+    // 시스템 이벤트 모니터링
+    this.monitorSystemEvents();
+    
+    // 파일 시스템 무결성 검사
+    this.monitorFileSystemIntegrity();
+  }
+
+  // 네트워크 트래픽 분석
+  private async monitorNetworkTraffic(): Promise<void> {
+    // 실시간 패킷 분석
+    this.networkMonitor.on('packet', async (packet) => {
+      // 1. 시그니처 기반 탐지
+      const signatureMatch = await this.signatureEngine.analyze(packet);
+      if (signatureMatch.detected) {
+        await this.handleThreatDetection({
+          type: 'signature_match',
+          severity: signatureMatch.severity,
+          source: packet.sourceIP,
+          details: signatureMatch
+        });
+      }
+
+      // 2. 이상 징후 탐지
+      const anomaly = await this.anomalyDetector.analyzePacket(packet);
+      if (anomaly.detected) {
+        await this.handleAnomalyDetection({
+          type: 'network_anomaly',
+          confidence: anomaly.confidence,
+          source: packet.sourceIP,
+          details: anomaly
+        });
+      }
+
+      // 3. 지리적 이상 탐지
+      const geoAnomaly = await this.detectGeographicAnomaly(packet);
+      if (geoAnomaly.detected) {
+        await this.handleGeoAnomaly(geoAnomaly);
+      }
+    });
+  }
+
+  // 사용자 행동 분석
+  private async monitorUserBehavior(): Promise<void> {
+    this.userActivityMonitor.on('activity', async (activity) => {
+      // 사용자 행동 패턴 분석
+      const behaviorAnalysis = await this.behaviorAnalyzer.analyze({
+        userId: activity.userId,
+        action: activity.action,
+        resource: activity.resource,
+        timestamp: activity.timestamp,
+        context: activity.context
+      });
+
+      // 이상 행동 탐지
+      if (behaviorAnalysis.isAnomalous) {
+        await this.handleBehaviorAnomaly({
+          type: 'behavior_anomaly',
+          userId: activity.userId,
+          anomalyScore: behaviorAnalysis.anomalyScore,
+          details: behaviorAnalysis.anomalies
+        });
+      }
+
+      // 내부자 위협 탐지
+      const insiderThreat = await this.detectInsiderThreat(activity, behaviorAnalysis);
+      if (insiderThreat.detected) {
+        await this.handleInsiderThreat(insiderThreat);
+      }
+    });
+  }
+
+  // 내부자 위협 탐지
+  private async detectInsiderThreat(
+    activity: UserActivity, 
+    behaviorAnalysis: BehaviorAnalysis
+  ): Promise<InsiderThreatDetection> {
+    const riskFactors = [];
+    let riskScore = 0;
+
+    // 비정상적인 시간대 접근
+    if (this.isOffHoursAccess(activity.timestamp, activity.userId)) {
+      riskFactors.push('off_hours_access');
+      riskScore += 20;
+    }
+
+    // 대량 데이터 접근
+    if (this.isBulkDataAccess(activity)) {
+      riskFactors.push('bulk_data_access');
+      riskScore += 30;
+    }
+
+    // 권한 상승 시도
+    if (this.isPrivilegeEscalation(activity)) {
+      riskFactors.push('privilege_escalation');
+      riskScore += 40;
+    }
+
+    // 민감 시스템 접근
+    if (this.isSensitiveSystemAccess(activity)) {
+      riskFactors.push('sensitive_system_access');
+      riskScore += 25;
+    }
+
+    // 비정상적인 데이터 다운로드
+    if (this.isAbnormalDownload(activity)) {
+      riskFactors.push('abnormal_download');
+      riskScore += 35;
+    }
+
+    // 행동 패턴 변화
+    if (behaviorAnalysis.hasSignificantChange) {
+      riskFactors.push('behavior_change');
+      riskScore += behaviorAnalysis.changeScore;
+    }
+
+    const detected = riskScore >= 50; // 임계값
+
+    return {
+      detected,
+      riskScore,
+      riskFactors,
+      userId: activity.userId,
+      activity,
+      recommendation: this.getInsiderThreatRecommendation(riskScore, riskFactors)
+    };
+  }
+
+  // 위협 대응 처리
+  private async handleThreatDetection(threat: ThreatDetection): Promise<void> {
+    // 1. 위협 심각도 평가
+    const severity = await this.evaluateThreatSeverity(threat);
+    
+    // 2. 대응 정책 결정
+    const responsePolicy = await this.getResponsePolicy(severity);
+    
+    // 3. 즉시 대응 조치
+    if (responsePolicy.immediateResponse) {
+      await this.executeImmediateResponse(threat, responsePolicy);
+    }
+
+    // 4. 위협 정보 수집
+    const threatContext = await this.gatherThreatContext(threat);
+    
+    // 5. 보안팀 알림
+    await this.notifySecurityTeam({
+      threat,
+      severity,
+      context: threatContext,
+      responsePolicy
+    });
+
+    // 6. 위협 로깅
+    await this.logThreatDetection(threat, severity, threatContext);
+  }
+
+  // 자동 대응 시스템
+  private async executeImmediateResponse(
+    threat: ThreatDetection, 
+    policy: ResponsePolicy
+  ): Promise<void> {
+    const responses = [];
+
+    // IP 차단
+    if (policy.blockIP && threat.source) {
+      await this.blockIPAddress(threat.source, policy.blockDuration);
+      responses.push(`IP ${threat.source} 차단`);
+    }
+
+    // 사용자 계정 잠금
+    if (policy.lockAccount && threat.userId) {
+      await this.lockUserAccount(threat.userId, policy.lockReason);
+      responses.push(`사용자 계정 ${threat.userId} 잠금`);
+    }
+
+    // 세션 종료
+    if (policy.terminateSession && threat.sessionId) {
+      await this.terminateUserSession(threat.sessionId);
+      responses.push(`세션 ${threat.sessionId} 종료`);
+    }
+
+    // 네트워크 격리
+    if (policy.isolateNetwork && threat.source) {
+      await this.isolateNetworkSegment(threat.source);
+      responses.push(`네트워크 세그먼트 격리`);
+    }
+
+    // 서비스 차단
+    if (policy.blockService && threat.service) {
+      await this.blockServiceAccess(threat.service, threat.source);
+      responses.push(`서비스 ${threat.service} 접근 차단`);
+    }
+
+    // 대응 조치 로그
+    await this.logAutomatedResponse(threat, responses);
+  }
+
+  // 머신러닝 기반 이상 탐지
+  async updateAnomalyDetectionModel(): Promise<ModelUpdateResult> {
+    // 1. 새로운 학습 데이터 수집
+    const trainingData = await this.collectTrainingData();
+    
+    // 2. 특성 엔지니어링
+    const features = await this.extractFeatures(trainingData);
+    
+    // 3. 모델 학습
+    const model = await this.trainAnomalyModel(features);
+    
+    // 4. 모델 검증
+    const validation = await this.validateModel(model);
+    
+    if (validation.accuracy >= 0.95) {
+      // 5. 모델 배포
+      await this.deployModel(model);
+      
+      return {
+        success: true,
+        accuracy: validation.accuracy,
+        falsePositiveRate: validation.falsePositiveRate,
+        deployedAt: new Date()
+      };
+    } else {
+      return {
+        success: false,
+        reason: 'accuracy_threshold_not_met',
+        accuracy: validation.accuracy
+      };
+    }
+  }
+
+  // 위협 인텔리전스 통합
+  async updateThreatIntelligence(): Promise<ThreatIntelUpdate> {
+    // 외부 위협 인텔리전스 피드 수집
+    const threatFeeds = await this.threatIntelligence.collectFeeds();
+    
+    const updates = {
+      newSignatures: 0,
+      updatedRules: 0,
+      newIOCs: 0 // Indicators of Compromise
+    };
+
+    // 새로운 시그니처 업데이트
+    for (const signature of threatFeeds.signatures) {
+      if (await this.isNewSignature(signature)) {
+        await this.signatureEngine.addSignature(signature);
+        updates.newSignatures++;
+      }
+    }
+
+    // 탐지 규칙 업데이트
+    for (const rule of threatFeeds.rules) {
+      if (await this.shouldUpdateRule(rule)) {
+        await this.updateDetectionRule(rule);
+        updates.updatedRules++;
+      }
+    }
+
+    // IOC 업데이트
+    for (const ioc of threatFeeds.iocs) {
+      if (await this.isNewIOC(ioc)) {
+        await this.addIOC(ioc);
+        updates.newIOCs++;
+      }
+    }
+
+    return updates;
+  }
+}</div>
+                <p><strong>다차원 탐지:</strong> 시그니처, 이상 징후, 행동 분석</p>
+                <p><strong>자동 대응:</strong> 위협 감지 시 즉시 차단 및 격리</p>
+                <p><strong>ML 기반:</strong> 머신러닝을 통한 지능형 위협 탐지</p>
+            </div>
+
+            <div class="tech-section">
+                <h4>보안 감사 시스템</h4>
+                <div class="code-block">
+// 종합 보안 감사 및 컴플라이언스 시스템
+class SecurityAuditSystem {
+  private auditLogger: AuditLogger;
+  private complianceChecker: ComplianceChecker;
+  private reportGenerator: ReportGenerator;
+  private auditTrail: AuditTrail;
+
+  constructor(config: AuditConfig) {
+    this.auditLogger = new AuditLogger(config.loggerConfig);
+    this.complianceChecker = new ComplianceChecker(config.complianceConfig);
+    this.reportGenerator = new ReportGenerator(config.reportConfig);
+    this.auditTrail = new AuditTrail(config.trailConfig);
+  }
+
+  // 종합 보안 감사 실행
+  async executeComprehensiveAudit(auditScope: AuditScope): Promise<AuditResult> {
+    const auditId = this.generateAuditId();
+    
+    try {
+      // 1. 감사 초기화
+      await this.initializeAudit(auditId, auditScope);
+      
+      // 2. 다양한 감사 영역 병렬 실행
+      const auditTasks = await Promise.allSettled([
+        this.auditAccessControls(auditScope),
+        this.auditDataProtection(auditScope),
+        this.auditNetworkSecurity(auditScope),
+        this.auditApplicationSecurity(auditScope),
+        this.auditComplianceRequirements(auditScope),
+        this.auditSecurityPolicies(auditScope),
+        this.auditIncidentResponse(auditScope),
+        this.auditVulnerabilityManagement(auditScope)
+      ]);
+
+      // 3. 감사 결과 통합
+      const consolidatedResults = await this.consolidateAuditResults(auditTasks);
+      
+      // 4. 위험도 평가
+      const riskAssessment = await this.assessSecurityRisks(consolidatedResults);
+      
+      // 5. 개선 권고사항 생성
+      const recommendations = await this.generateRecommendations(
+        consolidatedResults, 
+        riskAssessment
+      );
+      
+      // 6. 감사 보고서 생성
+      const report = await this.generateAuditReport(
+        auditId,
+        consolidatedResults,
+        riskAssessment,
+        recommendations
+      );
+
+      return {
+        auditId,
+        status: 'completed',
+        results: consolidatedResults,
+        riskLevel: riskAssessment.overallRisk,
+        recommendations,
+        report,
+        completedAt: new Date()
+      };
+
+    } catch (error) {
+      await this.handleAuditError(auditId, error);
+      throw error;
+    }
+  }
+
+  // 접근 제어 감사
+  private async auditAccessControls(scope: AuditScope): Promise<AccessControlAuditResult> {
+    const findings = [];
+
+    // 1. 사용자 계정 검토
+    const userAccounts = await this.reviewUserAccounts(scope);
+    if (userAccounts.issues.length > 0) {
+      findings.push(...userAccounts.issues);
+    }
+
+    // 2. 권한 할당 검토
+    const permissionReview = await this.reviewPermissionAssignments(scope);
+    if (permissionReview.violations.length > 0) {
+      findings.push(...permissionReview.violations);
+    }
+
+    // 3. 역할 분리 검사
+    const segregationCheck = await this.checkDutySeparation(scope);
+    if (segregationCheck.conflicts.length > 0) {
+      findings.push(...segregationCheck.conflicts);
+    }
+
+    // 4. 최소 권한 원칙 검증
+    const leastPrivilegeCheck = await this.verifyLeastPrivilege(scope);
+    if (leastPrivilegeCheck.violations.length > 0) {
+      findings.push(...leastPrivilegeCheck.violations);
+    }
+
+    // 5. 계정 라이프사이클 검토
+    const lifecycleAudit = await this.auditAccountLifecycle(scope);
+    if (lifecycleAudit.issues.length > 0) {
+      findings.push(...lifecycleAudit.issues);
+    }
+
+    return {
+      area: 'access_controls',
+      status: findings.length === 0 ? 'compliant' : 'non_compliant',
+      findings,
+      score: this.calculateComplianceScore(findings, 'access_controls'),
+      recommendations: await this.generateAccessControlRecommendations(findings)
+    };
+  }
+
+  // 데이터 보호 감사
+  private async auditDataProtection(scope: AuditScope): Promise<DataProtectionAuditResult> {
+    const findings = [];
+
+    // 1. 데이터 분류 및 라벨링 검토
+    const classificationAudit = await this.auditDataClassification(scope);
+    findings.push(...classificationAudit.findings);
+
+    // 2. 암호화 상태 검증
+    const encryptionAudit = await this.auditEncryptionStatus(scope);
+    findings.push(...encryptionAudit.findings);
+
+    // 3. 데이터 마스킹 및 토큰화 검토
+    const maskingAudit = await this.auditDataMasking(scope);
+    findings.push(...maskingAudit.findings);
+
+    // 4. 데이터 보존 정책 준수 확인
+    const retentionAudit = await this.auditDataRetention(scope);
+    findings.push(...retentionAudit.findings);
+
+    // 5. 개인정보 처리 현황 검토
+    const privacyAudit = await this.auditPrivacyCompliance(scope);
+    findings.push(...privacyAudit.findings);
+
+    // 6. 데이터 유출 방지 시스템 검증
+    const dlpAudit = await this.auditDLPSystems(scope);
+    findings.push(...dlpAudit.findings);
+
+    return {
+      area: 'data_protection',
+      status: this.determineComplianceStatus(findings),
+      findings,
+      score: this.calculateComplianceScore(findings, 'data_protection'),
+      encryptionCoverage: encryptionAudit.coverage,
+      privacyScore: privacyAudit.score
+    };
+  }
+
+  // 보안 정책 감사
+  private async auditSecurityPolicies(scope: AuditScope): Promise<PolicyAuditResult> {
+    const policyAudits = [];
+
+    // 1. 보안 정책 문서 검토
+    const policyDocs = await this.auditPolicyDocuments(scope);
+    policyAudits.push(policyDocs);
+
+    // 2. 정책 구현 상태 확인
+    const implementationStatus = await this.auditPolicyImplementation(scope);
+    policyAudits.push(implementationStatus);
+
+    // 3. 정책 준수 모니터링
+    const complianceMonitoring = await this.auditComplianceMonitoring(scope);
+    policyAudits.push(complianceMonitoring);
+
+    // 4. 정책 업데이트 주기 검토
+    const updateCycles = await this.auditPolicyUpdateCycles(scope);
+    policyAudits.push(updateCycles);
+
+    return {
+      area: 'security_policies',
+      audits: policyAudits,
+      overallCompliance: this.calculateOverallPolicyCompliance(policyAudits),
+      gaps: this.identifyPolicyGaps(policyAudits),
+      recommendations: this.generatePolicyRecommendations(policyAudits)
+    };
+  }
+
+  // 컴플라이언스 자동 검사
+  async runComplianceCheck(standard: ComplianceStandard): Promise<ComplianceCheckResult> {
+    const checker = this.complianceChecker.getChecker(standard);
+    
+    // 표준별 요구사항 검사
+    const requirements = await checker.getRequirements();
+    const checkResults = [];
+
+    for (const requirement of requirements) {
+      const result = await checker.checkRequirement(requirement);
+      checkResults.push(result);
+    }
+
+    // 전체 컴플라이언스 상태 계산
+    const complianceScore = this.calculateComplianceScore(checkResults, standard);
+    const status = complianceScore >= 90 ? 'compliant' : 
+                   complianceScore >= 70 ? 'partially_compliant' : 'non_compliant';
+
+    return {
+      standard,
+      status,
+      score: complianceScore,
+      totalRequirements: requirements.length,
+      passedRequirements: checkResults.filter(r => r.status === 'pass').length,
+      failedRequirements: checkResults.filter(r => r.status === 'fail').length,
+      checkResults,
+      recommendations: await this.generateComplianceRecommendations(
+        standard, 
+        checkResults.filter(r => r.status === 'fail')
+      )
+    };
+  }
+
+  // 지속적 모니터링
+  async setupContinuousMonitoring(config: MonitoringConfig): Promise<void> {
+    // 실시간 보안 이벤트 모니터링
+    this.setupRealTimeMonitoring(config.realTimeConfig);
+    
+    // 정기 자동 감사 스케줄링
+    this.scheduleAutomaticAudits(config.scheduleConfig);
+    
+    // 임계값 기반 알림 설정
+    this.setupThresholdAlerts(config.alertConfig);
+    
+    // 대시보드 업데이트 설정
+    this.setupDashboardUpdates(config.dashboardConfig);
+  }
+
+  // 감사 보고서 생성
+  private async generateAuditReport(
+    auditId: string,
+    results: AuditResult[],
+    riskAssessment: RiskAssessment,
+    recommendations: Recommendation[]
+  ): Promise<AuditReport> {
+    const report = {
+      auditId,
+      executedAt: new Date(),
+      summary: this.generateExecutiveSummary(results, riskAssessment),
+      detailedFindings: this.categorizeFindings(results),
+      riskMatrix: this.generateRiskMatrix(riskAssessment),
+      complianceStatus: this.generateComplianceStatus(results),
+      recommendations: this.prioritizeRecommendations(recommendations),
+      actionPlan: this.generateActionPlan(recommendations),
+      appendices: {
+        technicalDetails: this.generateTechnicalDetails(results),
+            evidenceCollection: this.generateEvidenceCollection(results),
+        methodology: this.generateMethodologyDescription()
+      }
+    };
+
+    // 보고서 저장
+    await this.saveAuditReport(auditId, report);
+    
+    // 이해관계자별 맞춤 보고서 생성
+    await this.generateStakeholderReports(auditId, report);
+
+    return report;
+  }
+}</div>
+                <p><strong>종합 감사:</strong> 접근제어, 데이터보호, 정책 등 전방위 감사</p>
+                <p><strong>컴플라이언스:</strong> GDPR, ISO27001 등 규정 준수 자동 검사</p>
+                <p><strong>지속적 모니터링:</strong> 실시간 보안 상태 추적 및 알림</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert-box">
+        <h3>⚠️ 보안 시스템 주의사항</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+            <div>
+                <h4>🚨 중요 고려사항</h4>
+                <ul>
+                    <li><strong>다층 보안:</strong> 단일 보안 솔루션 의존 방지</li>
+                    <li><strong>성능 영향:</strong> 보안 강화로 인한 성능 저하 최소화</li>
+                    <li><strong>사용성:</strong> 과도한 보안이 사용자 경험 해치지 않도록</li>
+                    <li><strong>규정 준수:</strong> 개인정보보호법 등 법적 요구사항 준수</li>
+                </ul>
+            </div>
+            <div>
+                <h4>🛡️ 안전 장치</h4>
+                <ul>
+                    <li><strong>백업 인증:</strong> 주 인증 실패 시 대체 인증 방법</li>
+                    <li><strong>오탐 방지:</strong> 정상 활동의 오탐 최소화</li>
+                    <li><strong>재해 복구:</strong> 보안 사고 시 신속한 복구</li>
+                    <li><strong>정기 업데이트:</strong> 보안 위협 대응 지속적 업데이트</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 현재 날짜 설정
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('ko-KR');
+
+        // Mermaid 초기화
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            },
+            themeVariables: {
+                primaryColor: '#ffebee',
+                primaryTextColor: '#f44336',
+                primaryBorderColor: '#d32f2f',
+                lineColor: '#666',
+                secondaryColor: '#e8f5e8',
+                tertiaryColor: '#fff3e0'
+            }
+        });
+
+        let currentZoom = 1;
+
+        function zoomIn() {
+            currentZoom += 0.1;
+            applyZoom();
+        }
+
+        function zoomOut() {
+            currentZoom = Math.max(0.5, currentZoom - 0.1);
+            applyZoom();
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            applyZoom();
+        }
+
+        function applyZoom() {
+            const diagram = document.getElementById('security-flow');
+            diagram.style.transform = `scale(${currentZoom})`;
+            diagram.style.transformOrigin = 'top left';
+        }
+
+        function printDiagram() {
+            window.print();
+        }
+
+        function downloadSVG() {
+            const svgElement = document.querySelector('#security-flow svg');
+            if (svgElement) {
+                const svgData = new XMLSerializer().serializeToString(svgElement);
+                const blob = new Blob([svgData], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = '보안시스템_플로우차트_v1.0.svg';
+                link.click();
+                URL.revokeObjectURL(url);
+            } else {
+                alert('SVG 요소를 찾을 수 없습니다. 다이어그램이 완전히 로드된 후 다시 시도해주세요.');
+            }
+        }
+
+        // 다이어그램 로딩 완료 후 스타일 적용
+        setTimeout(() => {
+            const diagram = document.querySelector('#security-flow .mermaid');
+            if (diagram) {
+                diagram.style.textAlign = 'center';
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
