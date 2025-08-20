@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>편의점 종합 솔루션 v2.0 - 데이터베이스 ERD</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+        }
+
+        .btn-print {
+            background: #27ae60;
+        }
+
+        .btn-print:hover {
+            background: #229954;
+        }
+
+        .diagram-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: auto;
+        }
+
+        #erd-diagram {
+            width: 100%;
+            min-height: 800px;
+        }
+
+        .legend {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .legend h3 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+        }
+
+        .stats {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .stats h3 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .controls, .legend, .stats {
+                display: none;
+            }
+            .header {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+            .diagram-container {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>편의점 종합 솔루션 v2.0</h1>
+        <p><strong>데이터베이스 ERD (Entity Relationship Diagram)</strong></p>
+        <p>총 22개 테이블 | 완전한 관계형 데이터베이스 설계</p>
+        <p>생성일: <span id="current-date"></span> | 버전: 2.0 | 작성: 개발팀</p>
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="zoomIn()">🔍 확대</button>
+        <button class="btn" onclick="zoomOut()">🔍 축소</button>
+        <button class="btn" onclick="resetZoom()">↻ 원래크기</button>
+        <button class="btn btn-print" onclick="printDiagram()">🖨️ 인쇄하기</button>
+        <button class="btn" onclick="downloadSVG()">💾 SVG 다운로드</button>
+    </div>
+
+    <div class="diagram-container">
+        <div id="erd-diagram">
+            <div class="mermaid">
+erDiagram
+    %% 사용자 관리 (User Management) - 파란색
+    profiles {
+        UUID id PK
+        TEXT role "customer, store_owner, headquarters"
+        TEXT full_name
+        TEXT first_name
+        TEXT last_name
+        TEXT email
+        TEXT phone
+        DATE birth_date
+        TEXT gender
+        TEXT avatar_url
+        JSONB address
+        JSONB preferences
+        JSONB notification_settings
+        BOOLEAN is_active
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    %% 상품 관리 (Product Management) - 초록색  
+    categories {
+        UUID id PK
+        TEXT name UK
+        TEXT slug UK
+        UUID parent_id FK
+        TEXT icon_url
+        TEXT description
+        INTEGER display_order
+        BOOLEAN is_active
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    products {
+        UUID id PK
+        TEXT name
+        TEXT description
+        TEXT barcode UK
+        UUID category_id FK
+        TEXT brand
+        TEXT manufacturer
+        TEXT unit
+        TEXT[] image_urls
+        NUMERIC base_price
+        NUMERIC cost_price
+        NUMERIC tax_rate
+        BOOLEAN is_active
+        BOOLEAN requires_preparation
+        INTEGER preparation_time
+        JSONB nutritional_info
+        TEXT[] allergen_info
+        BOOLEAN is_wishlisted
+        INTEGER wishlist_count
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    %% 매장 관리 (Store Management) - 주황색
+    stores {
+        UUID id PK
+        TEXT name
+        UUID owner_id FK
+        TEXT address
+        TEXT phone
+        JSONB business_hours
+        GEOGRAPHY location
+        BOOLEAN delivery_available
+        BOOLEAN pickup_available
+        INTEGER delivery_radius
+        NUMERIC min_order_amount
+        NUMERIC delivery_fee
+        BOOLEAN is_active
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    store_products {
+        UUID id PK
+        UUID store_id FK
+        UUID product_id FK
+        NUMERIC price
+        INTEGER stock_quantity
+        INTEGER safety_stock
+        INTEGER max_stock
+        BOOLEAN is_available
+        NUMERIC discount_rate
+        TIMESTAMP promotion_start_date
+        TIMESTAMP promotion_end_date
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    %% 주문 관리 (Order Management) - 보라색
+    orders {
+        UUID id PK
+        TEXT order_number UK
+        UUID customer_id FK
+        UUID store_id FK
+        TEXT type "pickup, delivery"
+        TEXT status "pending, confirmed, preparing, ready, completed, cancelled"
+        NUMERIC subtotal
+        NUMERIC tax_amount
+        NUMERIC delivery_fee
+        NUMERIC discount_amount
+        NUMERIC coupon_discount_amount
+        INTEGER points_used
+        NUMERIC points_discount_amount
+        NUMERIC total_amount
+        JSONB delivery_address
+        TEXT delivery_notes
+        TEXT payment_method
+        TEXT payment_status
+        JSONB payment_data
+        TIMESTAMP pickup_time
+        INTEGER estimated_preparation_time
+        TIMESTAMP completed_at
+        TIMESTAMP cancelled_at
+        TEXT cancel_reason
+        TEXT notes
+        UUID applied_coupon_id FK
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    order_items {
+        UUID id PK
+        UUID order_id FK
+        UUID product_id FK
+        TEXT product_name
+        INTEGER quantity
+        NUMERIC unit_price
+        NUMERIC discount_amount
+        NUMERIC subtotal
+        JSONB options
+        TIMESTAMP created_at
+    }
+
+    order_status_history {
+        UUID id PK
+        UUID order_id FK
+        TEXT status
+        UUID changed_by FK
+        TEXT notes
+        TIMESTAMP created_at
+    }
+
+    %% 재고 관리 (Inventory Management) - 갈색
+    inventory_transactions {
+        UUID id PK
+        UUID store_product_id FK
+        TEXT transaction_type "in, out, adjustment, expired, damaged, returned"
+        INTEGER quantity
+        INTEGER previous_quantity
+        INTEGER new_quantity
+        TEXT reference_type
+        UUID reference_id
+        NUMERIC unit_cost
+        NUMERIC total_cost
+        TEXT reason
+        TEXT notes
+        UUID created_by FK
+        TIMESTAMP created_at
+    }
+
+    %% 물류 관리 (Supply Chain Management) - 회색
+    supply_requests {
+        UUID id PK
+        TEXT request_number UK
+        UUID store_id FK
+        UUID requested_by FK
+        TEXT status "draft, submitted, approved, rejected, shipped, delivered, cancelled"
+        TEXT priority "low, normal, high, urgent"
+        NUMERIC total_amount
+        NUMERIC approved_amount
+        DATE expected_delivery_date
+        DATE actual_delivery_date
+        UUID approved_by FK
+        TIMESTAMP approved_at
+        TEXT notes
+        TEXT rejection_reason
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    supply_request_items {
+        UUID id PK
+        UUID supply_request_id FK
+        UUID product_id FK
+        TEXT product_name
+        INTEGER requested_quantity
+        INTEGER approved_quantity
+        NUMERIC unit_cost
+        NUMERIC total_cost
+        TEXT reason
+        INTEGER current_stock
+        TIMESTAMP created_at
+    }
+
+    shipments {
+        UUID id PK
+        TEXT shipment_number UK
+        UUID supply_request_id FK
+        TEXT status "preparing, shipped, in_transit, delivered, failed"
+        TEXT carrier
+        TEXT tracking_number
+        TIMESTAMP shipped_at
+        TIMESTAMP estimated_delivery
+        TIMESTAMP delivered_at
+        TEXT notes
+        TEXT failure_reason
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    %% 프로모션 및 혜택 (Promotions & Benefits) - 빨간색
+    coupons {
+        UUID id PK
+        TEXT code UK
+        TEXT name
+        TEXT description
+        TEXT discount_type "percentage, fixed_amount"
+        NUMERIC discount_value
+        NUMERIC min_order_amount
+        NUMERIC max_discount_amount
+        INTEGER usage_limit
+        INTEGER used_count
+        BOOLEAN is_active
+        TIMESTAMP valid_from
+        TIMESTAMP valid_until
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    user_coupons {
+        UUID id PK
+        UUID user_id FK
+        UUID coupon_id FK
+        BOOLEAN is_used
+        TIMESTAMP used_at
+        UUID used_order_id FK
+        TIMESTAMP expires_at
+        TIMESTAMP created_at
+    }
+
+    points {
+        UUID id PK
+        UUID user_id FK
+        INTEGER amount
+        TEXT type "earned, used, expired, bonus"
+        TEXT description
+        UUID order_id FK
+        TIMESTAMP expires_at
+        TIMESTAMP created_at
+    }
+
+    point_settings {
+        UUID id PK
+        TEXT key UK
+        JSONB value
+        TEXT description
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    %% 위시리스트 (Wishlist) - 분홍색
+    wishlists {
+        UUID id PK
+        UUID user_id FK
+        UUID product_id FK
+        TIMESTAMP created_at
+    }
+
+    product_wishlists {
+        UUID id PK
+        UUID product_id FK
+        UUID user_id FK
+        TIMESTAMP created_at
+    }
+
+    %% 분석 및 리포팅 (Analytics & Reporting) - 청록색
+    daily_sales_summary {
+        UUID id PK
+        UUID store_id FK
+        DATE date
+        INTEGER total_orders
+        INTEGER pickup_orders
+        INTEGER delivery_orders
+        INTEGER cancelled_orders
+        NUMERIC total_revenue
+        INTEGER total_items_sold
+        NUMERIC avg_order_value
+        JSONB hourly_stats
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    product_sales_summary {
+        UUID id PK
+        UUID store_id FK
+        UUID product_id FK
+        DATE date
+        INTEGER quantity_sold
+        NUMERIC revenue
+        NUMERIC avg_price
+        TIMESTAMP created_at
+    }
+
+    %% 시스템 관리 (System Management) - 검정색
+    notifications {
+        UUID id PK
+        UUID user_id FK
+        TEXT type
+        TEXT title
+        TEXT message
+        JSONB data
+        TEXT priority "low, normal, high, urgent"
+        BOOLEAN is_read
+        TIMESTAMP read_at
+        TIMESTAMP expires_at
+        TIMESTAMP created_at
+    }
+
+    system_settings {
+        UUID id PK
+        TEXT key UK
+        JSONB value
+        TEXT description
+        TEXT category
+        BOOLEAN is_public
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    %% 관계 정의 (Relationships)
+    
+    %% 사용자-매장 관계
+    profiles ||--o{ stores : "owns (owner_id)"
+    
+    %% 카테고리 자기참조 관계
+    categories ||--o{ categories : "parent-child (parent_id)"
+    
+    %% 상품-카테고리 관계
+    categories ||--o{ products : "categorizes (category_id)"
+    
+    %% 매장-상품 관계
+    stores ||--o{ store_products : "sells"
+    products ||--o{ store_products : "sold_at"
+    
+    %% 주문 관계
+    profiles ||--o{ orders : "places (customer_id)"
+    stores ||--o{ orders : "receives"
+    orders ||--o{ order_items : "contains"
+    products ||--o{ order_items : "ordered"
+    orders ||--o{ order_status_history : "tracked"
+    profiles ||--o{ order_status_history : "updated_by (changed_by)"
+    
+    %% 재고 관리 관계
+    store_products ||--o{ inventory_transactions : "tracked"
+    profiles ||--o{ inventory_transactions : "recorded_by (created_by)"
+    
+    %% 물류 관리 관계
+    stores ||--o{ supply_requests : "requests"
+    profiles ||--o{ supply_requests : "requested_by"
+    profiles ||--o{ supply_requests : "approved_by"
+    supply_requests ||--o{ supply_request_items : "contains"
+    products ||--o{ supply_request_items : "requested"
+    supply_requests ||--|| shipments : "shipped_as"
+    
+    %% 쿠폰 및 포인트 관계
+    profiles ||--o{ user_coupons : "owns"
+    coupons ||--o{ user_coupons : "assigned"
+    orders ||--o{ user_coupons : "used_in (used_order_id)"
+    coupons ||--o{ orders : "applied_to (applied_coupon_id)"
+    profiles ||--o{ points : "earns"
+    orders ||--o{ points : "generates"
+    
+    %% 위시리스트 관계
+    profiles ||--o{ wishlists : "creates"
+    products ||--o{ wishlists : "wishlisted"
+    products ||--o{ product_wishlists : "tracked"
+    
+    %% 분석 관계
+    stores ||--o{ daily_sales_summary : "summarized"
+    stores ||--o{ product_sales_summary : "analyzed"
+    products ||--o{ product_sales_summary : "performance"
+    
+    %% 알림 관계
+    profiles ||--o{ notifications : "receives"
+            </div>
+        </div>
+    </div>
+
+    <div class="legend">
+        <h3>📊 테이블 분류 및 색상 범례</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+            <div>
+                <div class="legend-item">
+                    <div class="color-box" style="background: #E1F5FE;"></div>
+                    <span><strong>사용자 관리</strong> - profiles</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background: #E8F5E8;"></div>
+                    <span><strong>상품 관리</strong> - categories, products</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background: #FFF3E0;"></div>
+                    <span><strong>매장 관리</strong> - stores, store_products</span>
+                </div>
+            </div>
+            <div>
+                <div class="legend-item">
+                    <div class="color-box" style="background: #F3E5F5;"></div>
+                    <span><strong>주문 관리</strong> - orders, order_items, order_status_history</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background: #EFEBE9;"></div>
+                    <span><strong>재고 관리</strong> - inventory_transactions</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background: #F5F5F5;"></div>
+                    <span><strong>물류 관리</strong> - supply_requests, supply_request_items, shipments</span>
+                </div>
+            </div>
+            <div>
+                <div class="legend-item">
+                    <div class="color-box" style="background: #FFEBEE;"></div>
+                    <span><strong>프로모션</strong> - coupons, user_coupons, points, point_settings</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background: #FCE4EC;"></div>
+                    <span><strong>위시리스트</strong> - wishlists, product_wishlists</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background: #E0F2F1;"></div>
+                    <span><strong>분석/리포팅</strong> - daily_sales_summary, product_sales_summary</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background: #FAFAFA;"></div>
+                    <span><strong>시스템 관리</strong> - notifications, system_settings</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="stats">
+        <h3>📈 데이터베이스 통계</h3>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number">22</div>
+                <div class="stat-label">총 테이블 수</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">45+</div>
+                <div class="stat-label">관계 (FK)</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">10</div>
+                <div class="stat-label">기능 영역</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">200+</div>
+                <div class="stat-label">총 컬럼 수</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">3</div>
+                <div class="stat-label">사용자 역할</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">RBAC</div>
+                <div class="stat-label">보안 모델</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 현재 날짜 설정
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('ko-KR');
+
+        // Mermaid 초기화
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true
+            },
+            er: {
+                diagramPadding: 20,
+                layoutDirection: 'TB',
+                minEntityWidth: 100,
+                minEntityHeight: 75,
+                entityPadding: 15,
+                stroke: '#333333',
+                fill: '#ECECFF',
+                fontSize: 12
+            }
+        });
+
+        let currentZoom = 1;
+
+        function zoomIn() {
+            currentZoom += 0.1;
+            applyZoom();
+        }
+
+        function zoomOut() {
+            currentZoom = Math.max(0.5, currentZoom - 0.1);
+            applyZoom();
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            applyZoom();
+        }
+
+        function applyZoom() {
+            const diagram = document.getElementById('erd-diagram');
+            diagram.style.transform = `scale(${currentZoom})`;
+            diagram.style.transformOrigin = 'top left';
+        }
+
+        function printDiagram() {
+            window.print();
+        }
+
+        function downloadSVG() {
+            const svgElement = document.querySelector('#erd-diagram svg');
+            if (svgElement) {
+                const svgData = new XMLSerializer().serializeToString(svgElement);
+                const blob = new Blob([svgData], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = '편의점_솔루션_ERD_v2.0.svg';
+                link.click();
+                URL.revokeObjectURL(url);
+            } else {
+                alert('SVG 요소를 찾을 수 없습니다. 다이어그램이 완전히 로드된 후 다시 시도해주세요.');
+            }
+        }
+
+        // 다이어그램 로딩 완료 후 스타일 적용
+        setTimeout(() => {
+            const diagram = document.querySelector('#erd-diagram .mermaid');
+            if (diagram) {
+                diagram.style.textAlign = 'center';
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

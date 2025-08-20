@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>점주 메뉴구조도 - 편의점 종합 솔루션</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin: 0 0 10px 0;
+            font-size: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .header .subtitle {
+            color: #7f8c8d;
+            margin: 10px 0;
+            font-size: 1.1rem;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            background: rgba(39, 174, 96, 0.1);
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: 2px solid #27ae60;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #229954;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #34495e;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 5px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #229954;
+            transform: translateY(-2px);
+        }
+
+        .btn-print {
+            background: #f39c12;
+        }
+
+        .btn-print:hover {
+            background: #e67e22;
+        }
+
+        .btn-back {
+            background: #e74c3c;
+        }
+
+        .btn-back:hover {
+            background: #c0392b;
+        }
+
+        .diagram-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            overflow: auto;
+            margin-bottom: 30px;
+        }
+
+        #menu-diagram {
+            width: 100%;
+            min-height: 800px;
+        }
+
+        .description {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .description h3 {
+            color: #2c3e50;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .menu-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .feature-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #27ae60;
+        }
+
+        .feature-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .feature-desc {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .controls, .description {
+                display: none;
+            }
+            .header, .diagram-container {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .toggle-btn.active {
+            background: #229954 !important;
+            transform: translateY(-2px);
+        }
+
+        .view-toggle {
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 25px;
+            overflow: hidden;
+            display: inline-flex;
+        }
+
+        .view-toggle .btn {
+            border-radius: 0 !important;
+            margin: 0 !important;
+            border-right: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .view-toggle .btn:last-child {
+            border-right: none;
+        }
+
+        #original-image {
+            transition: transform 0.3s ease;
+            cursor: zoom-in;
+        }
+
+        #original-image.zoomed {
+            cursor: grab;
+        }
+
+        #original-image.zoomed:active {
+            cursor: grabbing;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            .menu-features {
+                grid-template-columns: 1fr;
+            }
+            .view-toggle {
+                display: flex;
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏪 점주 메뉴구조도</h1>
+            <p class="subtitle">Store Owner Menu Structure - 점주용 관리 시스템 네비게이션 구조</p>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number">6</div>
+                    <div class="stat-label">주요 섹션</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">25+</div>
+                    <div class="stat-label">세부 기능</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">4</div>
+                    <div class="stat-label">뎁스</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-back" onclick="window.location.href='index.html'">← 메뉴구조도 메인</button>
+            
+            <!-- 뷰 토글 버튼 -->
+            <div class="view-toggle" style="display: inline-block; margin: 0 20px;">
+                <button class="btn toggle-btn active" data-view="diagram" onclick="toggleView('diagram')">📊 다이어그램</button>
+                <button class="btn toggle-btn" data-view="image" onclick="toggleView('image')">🖼️ 원본 이미지</button>
+            </div>
+            
+            <button class="btn" onclick="zoomIn()">🔍 확대</button>
+            <button class="btn" onclick="zoomOut()">🔍 축소</button>
+            <button class="btn" onclick="resetZoom()">↻ 원래크기</button>
+            <button class="btn btn-print" onclick="printDiagram()">🖨️ 인쇄하기</button>
+            <button class="btn" onclick="downloadSVG()">💾 SVG 다운로드</button>
+        </div>
+
+        <div class="diagram-container">
+            <div id="menu-diagram">
+                <div class="mermaid">
+flowchart TD
+    A["🏪 점주"] --> B["📊 대시보드"]
+    A --> C["📋 주문 관리"]
+    A --> D["📦 재고 관리"]
+    A --> E["🚚 물류 관리"]
+    A --> F["📈 매출 분석"]
+    A --> G["⚙️ 설정"]
+    
+    %% 대시보드 섹션
+    B --> B1["📅 오늘 매출 현황"]
+    B --> B2["📋 주문 현황"]
+    B --> B3["📊 재고 부족 알림"]
+    B --> B4["📈 성과 지표"]
+    
+    %% 주문 관리 섹션
+    C --> C1["🆕 신규 주문"]
+    C --> C2["⏳ 처리 중 주문"]
+    C --> C3["✅ 완료된 주문"]
+    C --> C4["❌ 취소된 주문"]
+    
+    C1 --> C11["📋 재고 현황"]
+    C1 --> C12["💵 처리 중 주문"]
+    C2 --> C21["✅ 완료 신속 목록"]
+    C2 --> C22["❌ 완료 거부"]
+    C3 --> C31["📋 완료 상세"]
+    C3 --> C32["📊 완료 이력"]
+    C4 --> C41["📋 완료 처리"]
+    C4 --> C42["🔄 주문 이력"]
+    
+    %% 재고 관리 섹션
+    D --> D1["📦 재고 현황"]
+    D --> D2["➕ 재고 수정"]
+    D --> D3["⚠️ 안전 재고 설정"]
+    D --> D4["📋 재고 알림"]
+    
+    D1 --> D11["📊 재고 분석"]
+    D2 --> D21["📋 재고 내역"]
+    D3 --> D31["⚠️ 요청 내역"]
+    D4 --> D41["📋 재고 알림"]
+    
+    D2 --> D22["🔄 주문 이력"]
+    D3 --> D32["⚠️ 출고 관리"]
+    D4 --> D42["📋 입고 관리"]
+    D4 --> D43["📈 번호 요청"]
+    
+    %% 물류 관리 섹션
+    E --> E1["📤 일일 매출"]
+    E --> E2["🗓️ 상품별 매출"]
+    E --> E3["📅 시간대별 매출"]
+    E --> E4["👨‍💼 인기 상품 분석"]
+    
+    %% 매출 분석 섹션
+    F --> F1["📊 일일 매출"]
+    F --> F2["📈 보고 설정"]
+    F --> F3["📅 시스템 설정"]
+    
+    %% 설정 섹션
+    G --> G1["⚙️ 알림 설정"]
+    G --> G2["🔒 보안 설정"]
+    G --> G3["📈 시스템 설정"]
+    
+    %% 스타일링
+    classDef dashboardStyle fill:#e8f5e8,stroke:#27ae60,stroke-width:2px,color:#000
+    classDef orderStyle fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
+    classDef inventoryStyle fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
+    classDef logisticsStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
+    classDef salesStyle fill:#ffebee,stroke:#d32f2f,stroke-width:2px,color:#000
+    classDef settingsStyle fill:#fafafa,stroke:#616161,stroke-width:2px,color:#000
+    classDef rootStyle fill:#fff,stroke:#333,stroke-width:3px,color:#000
+    
+    class A rootStyle
+    class B,B1,B2,B3,B4 dashboardStyle
+    class C,C1,C2,C3,C4,C11,C12,C21,C22,C31,C32,C41,C42 orderStyle
+    class D,D1,D2,D3,D4,D11,D21,D22,D31,D32,D41,D42,D43 inventoryStyle
+    class E,E1,E2,E3,E4 logisticsStyle
+    class F,F1,F2,F3 salesStyle
+    class G,G1,G2,G3 settingsStyle
+                </div>
+            </div>
+            
+            <!-- 원본 이미지 -->
+            <div id="menu-image" class="hidden">
+                <img id="original-image" src="https://esbjgvnlqzseomhbsimz.supabase.co/storage/v1/object/public/menu-structures/store-menu.png" 
+                     alt="점주 메뉴구조도 원본 이미지" 
+                     style="width: 100%; height: auto; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+                <div class="image-controls" style="text-align: center; margin-top: 15px;">
+                    <button class="btn" onclick="zoomImageIn()">🔍 이미지 확대</button>
+                    <button class="btn" onclick="zoomImageOut()">🔍 이미지 축소</button>
+                    <button class="btn" onclick="resetImageZoom()">↻ 이미지 원래크기</button>
+                    <button class="btn" onclick="downloadOriginalImage()">💾 원본 다운로드</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="description">
+            <h3>🏪 점주용 관리 시스템 주요 기능</h3>
+            <div class="menu-features">
+                <div class="feature-item">
+                    <div class="feature-title">📊 대시보드</div>
+                    <div class="feature-desc">일일 매출, 주문 현황, 재고 알림 등 핵심 지표 모니터링</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-title">📋 주문 관리</div>
+                    <div class="feature-desc">신규/처리중/완료/취소 주문의 전체 생명주기 관리</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-title">📦 재고 관리</div>
+                    <div class="feature-desc">실시간 재고 현황, 안전 재고 설정, 자동 알림</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-title">🚚 물류 관리</div>
+                    <div class="feature-desc">본사 발주 요청, 입고 관리, 물류 요청 처리</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-title">📈 매출 분석</div>
+                    <div class="feature-desc">일일/상품별/시간대별 매출 분석 및 성과 리포트</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-title">⚙️ 설정</div>
+                    <div class="feature-desc">점포 운영 설정, 알림 설정, 보안 관리</div>
+                </div>
+            </div>
+            
+            <h3 style="margin-top: 30px;">🎯 점주 시스템 특징</h3>
+            <ul style="margin-left: 20px; line-height: 1.8;">
+                <li><strong>실시간 모니터링:</strong> 주문과 재고 상황을 실시간으로 추적</li>
+                <li><strong>효율적인 운영:</strong> 핵심 업무에 집중할 수 있는 직관적 구조</li>
+                <li><strong>자동화 기능:</strong> 재고 부족 알림, 자동 발주 제안 등</li>
+                <li><strong>데이터 기반 의사결정:</strong> 상세한 매출 분석과 인사이트 제공</li>
+                <li><strong>확장 가능한 구조:</strong> 다양한 점포 규모에 대응 가능</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Mermaid 초기화
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+
+        let currentZoom = 1;
+        let imageZoom = 1;
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let imageTranslateX = 0;
+        let imageTranslateY = 0;
+
+        // 뷰 토글 기능
+        function toggleView(viewType) {
+            const diagramContainer = document.getElementById('menu-diagram');
+            const imageContainer = document.getElementById('menu-image');
+            const toggleButtons = document.querySelectorAll('.toggle-btn');
+            
+            // 모든 토글 버튼 비활성화
+            toggleButtons.forEach(btn => btn.classList.remove('active'));
+            
+            if (viewType === 'diagram') {
+                diagramContainer.classList.remove('hidden');
+                imageContainer.classList.add('hidden');
+                document.querySelector('[data-view="diagram"]').classList.add('active');
+            } else {
+                diagramContainer.classList.add('hidden');
+                imageContainer.classList.remove('hidden');
+                document.querySelector('[data-view="image"]').classList.add('active');
+            }
+        }
+
+        // 다이어그램 줌 기능
+        function zoomIn() {
+            currentZoom += 0.1;
+            applyZoom();
+        }
+
+        function zoomOut() {
+            currentZoom = Math.max(0.5, currentZoom - 0.1);
+            applyZoom();
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            applyZoom();
+        }
+
+        function applyZoom() {
+            const diagram = document.getElementById('menu-diagram');
+            diagram.style.transform = `scale(${currentZoom})`;
+            diagram.style.transformOrigin = 'top left';
+        }
+
+        // 이미지 줌 기능
+        function zoomImageIn() {
+            imageZoom = Math.min(3, imageZoom + 0.2);
+            applyImageTransform();
+        }
+
+        function zoomImageOut() {
+            imageZoom = Math.max(0.5, imageZoom - 0.2);
+            applyImageTransform();
+        }
+
+        function resetImageZoom() {
+            imageZoom = 1;
+            imageTranslateX = 0;
+            imageTranslateY = 0;
+            applyImageTransform();
+        }
+
+        function applyImageTransform() {
+            const image = document.getElementById('original-image');
+            image.style.transform = `scale(${imageZoom}) translate(${imageTranslateX}px, ${imageTranslateY}px)`;
+            
+            if (imageZoom > 1) {
+                image.classList.add('zoomed');
+            } else {
+                image.classList.remove('zoomed');
+            }
+        }
+
+        // 이미지 드래그 기능
+        function setupImageDrag() {
+            const image = document.getElementById('original-image');
+            
+            image.addEventListener('mousedown', (e) => {
+                if (imageZoom > 1) {
+                    isDragging = true;
+                    dragStartX = e.clientX - imageTranslateX;
+                    dragStartY = e.clientY - imageTranslateY;
+                    e.preventDefault();
+                }
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging && imageZoom > 1) {
+                    imageTranslateX = e.clientX - dragStartX;
+                    imageTranslateY = e.clientY - dragStartY;
+                    applyImageTransform();
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+        }
+
+        // 원본 이미지 다운로드
+        function downloadOriginalImage() {
+            const link = document.createElement('a');
+            link.href = 'https://esbjgvnlqzseomhbsimz.supabase.co/storage/v1/object/public/menu-structures/store-menu.png';
+            link.download = '점주_메뉴구조도_원본.png';
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function printDiagram() {
+            window.print();
+        }
+
+        function downloadSVG() {
+            const svgElement = document.querySelector('#menu-diagram svg');
+            if (svgElement) {
+                const svgData = new XMLSerializer().serializeToString(svgElement);
+                const blob = new Blob([svgData], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = '점주_메뉴구조도_v2.0.svg';
+                link.click();
+                URL.revokeObjectURL(url);
+            } else {
+                alert('SVG 요소를 찾을 수 없습니다. 다이어그램이 완전히 로드된 후 다시 시도해주세요.');
+            }
+        }
+
+        // 다이어그램 로딩 완료 후 스타일 적용
+        setTimeout(() => {
+            const diagram = document.querySelector('#menu-diagram .mermaid');
+            if (diagram) {
+                diagram.style.textAlign = 'center';
+            }
+        }, 1000);
+
+        // 이미지 드래그 기능 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            setupImageDrag();
+        });
+    </script>
+</body>
+</html>

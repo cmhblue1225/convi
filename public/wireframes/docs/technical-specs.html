@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>기술 명세서 v2.0 - 편의점 종합 솔루션</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            padding: 30px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .header .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 15px;
+            text-align: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .nav-button {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .nav-button.active {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .spec-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .spec-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #f0f0f0;
+        }
+
+        .spec-header h2 {
+            color: #2c3e50;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .spec-header p {
+            color: #666;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .canva-embed-container {
+            margin: 20px 0;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .canva-embed-wrapper {
+            position: relative;
+            width: 100%;
+            height: 0;
+            padding-top: 100.0000%;
+            padding-bottom: 0;
+            box-shadow: 0 2px 8px 0 rgba(63,69,81,0.16);
+            margin-top: 1.6em;
+            margin-bottom: 0.9em;
+            overflow: hidden;
+            border-radius: 8px;
+            will-change: transform;
+        }
+
+        .canva-embed-iframe {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            border: none;
+            padding: 0;
+            margin: 0;
+            border-radius: 8px;
+        }
+
+        .canva-credit {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .canva-credit a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .canva-credit a:hover {
+            text-decoration: underline;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 5px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #495057;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+
+        .spec-info {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .info-item {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+
+        .info-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .info-content {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .loading-message {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 1.1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 40px;
+            color: #e74c3c;
+            font-size: 1.1rem;
+            background: #ffeaea;
+            border: 2px solid #e74c3c;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .navigation {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .stats {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .controls {
+                padding: 15px;
+            }
+            
+            .btn {
+                display: block;
+                margin: 10px auto;
+                width: 80%;
+                max-width: 300px;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .canva-embed-wrapper {
+                padding-top: 120%; /* 모바일에서는 세로 비율 증가 */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 기술 명세서 v2.0</h1>
+            <p class="subtitle">편의점 종합 솔루션 - 전체 시스템 기술 스펙 및 아키텍처 문서</p>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-number">React 19</span>
+                    <span class="stat-label">프론트엔드</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">Supabase</span>
+                    <span class="stat-label">백엔드 BaaS</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">TypeScript</span>
+                    <span class="stat-label">언어</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">Render</span>
+                    <span class="stat-label">배포 플랫폼</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <a href="index.html" class="nav-button">← 문서 센터</a>
+            <a href="../menu-structure/index.html" class="nav-button">📋 메뉴 구조도</a>
+            <a href="../system-flows/index.html" class="nav-button">⚙️ 시스템 플로우</a>
+            <a href="#" class="nav-button active">📋 현재: 기술 명세서</a>
+        </div>
+
+        <div class="spec-container">
+            <div class="spec-header">
+                <h2>🎯 기술 명세서 개요</h2>
+                <p>
+                    편의점 종합 솔루션 v2.0의 전체 시스템 아키텍처와 기술 스택을 시각적으로 정리한 종합 명세서입니다.<br>
+                    Canva를 통해 제작되어 직관적이고 이해하기 쉬운 형태로 구성되었습니다.
+                </p>
+            </div>
+
+            <div class="controls">
+                <a href="https://www.canva.com/design/DAGwZQZr15A/WqKrvSjT4uBf9wnc7cEAxg/view" target="_blank" class="btn">🔗 Canva 원본 보기</a>
+                <button onclick="toggleFullscreen()" class="btn btn-secondary">🔍 전체화면</button>
+                <button onclick="refreshEmbed()" class="btn btn-success">🔄 새로고침</button>
+            </div>
+
+            <div class="canva-embed-container" id="canva-container">
+                <div class="loading-message" id="loading-message">
+                    📋 기술 명세서를 불러오는 중입니다...
+                </div>
+                
+                <div class="canva-embed-wrapper" id="canva-wrapper" style="display: none;">
+                    <iframe 
+                        id="canva-iframe"
+                        loading="lazy" 
+                        class="canva-embed-iframe"
+                        src="https://www.canva.com/design/DAGwZQZr15A/WqKrvSjT4uBf9wnc7cEAxg/view?embed=true&autoplay=false" 
+                        allowfullscreen="allowfullscreen" 
+                        allow="fullscreen"
+                        frameborder="0">
+                    </iframe>
+                </div>
+                
+                <!-- 원본 Canva HTML 임베드 방식 -->
+                <div id="canva-original-embed" style="display: none;">
+                    <div style="position: relative; width: 100%; height: 0; padding-top: 100.0000%;
+                     padding-bottom: 0; box-shadow: 0 2px 8px 0 rgba(63,69,81,0.16); margin-top: 1.6em; margin-bottom: 0.9em; overflow: hidden;
+                     border-radius: 8px; will-change: transform;">
+                      <iframe loading="lazy" style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; border: none; padding: 0;margin: 0;"
+                        src="https://www.canva.com/design/DAGwZQZr15A/WqKrvSjT4uBf9wnc7cEAxg/view?embed" allowfullscreen="allowfullscreen" allow="fullscreen">
+                      </iframe>
+                    </div>
+                </div>
+                
+                <div class="canva-credit">
+                    📋 u-19540125 님의 <a href="https://www.canva.com/design/DAGwZQZr15A/WqKrvSjT4uBf9wnc7cEAxg/view" target="_blank" rel="noopener">편의점 종합 솔루션 v2.0</a> 기술 명세서
+                </div>
+            </div>
+        </div>
+
+        <div class="spec-info">
+            <h3 style="text-align: center; color: #2c3e50; margin-bottom: 20px;">📚 기술 명세서 주요 내용</h3>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-title">🏗️ 시스템 아키텍처</div>
+                    <div class="info-content">
+                        프론트엔드, 백엔드, 데이터베이스의 전체적인 구조와 각 컴포넌트 간의 관계를 시각화
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-title">🛠️ 기술 스택</div>
+                    <div class="info-content">
+                        React 19, TypeScript, Supabase, Tailwind CSS 등 사용된 모든 기술의 상세 정보
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-title">🗄️ 데이터베이스 구조</div>
+                    <div class="info-content">
+                        22개 핵심 테이블과 관계형 구조, RLS 정책 등 데이터베이스 설계의 핵심 요소
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-title">🔐 보안 체계</div>
+                    <div class="info-content">
+                        인증 시스템, 권한 관리, 데이터 보안 정책 등 전체 보안 아키텍처
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-title">📱 사용자 인터페이스</div>
+                    <div class="info-content">
+                        고객/점주/본사용 각각의 UI/UX 설계 원칙과 주요 컴포넌트 구조
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-title">🚀 배포 및 운영</div>
+                    <div class="info-content">
+                        Render 기반 배포 전략, CI/CD 파이프라인, 모니터링 체계
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px; padding: 20px; background: white; border-radius: 10px;">
+                <h4 style="color: #2c3e50; margin-bottom: 15px;">📋 문서 활용 가이드</h4>
+                <p style="color: #666; line-height: 1.8;">
+                    <strong>🎯 프로젝트 매니저:</strong> 전체 시스템 이해와 진행 상황 파악<br>
+                    <strong>💻 개발자:</strong> 기술 스택 이해와 구현 가이드라인 참고<br>
+                    <strong>🎨 디자이너:</strong> UI/UX 구조와 디자인 시스템 이해<br>
+                    <strong>📊 비즈니스 분석가:</strong> 시스템 기능과 비즈니스 로직 파악
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isFullscreen = false;
+
+        let iframeLoaded = false;
+        
+        // iframe 로딩 완료 처리
+        document.getElementById('canva-iframe').addEventListener('load', function() {
+            // iframe이 실제로 콘텐츠를 로드했는지 확인
+            try {
+                // iframe이 로드되었지만 빈 페이지나 오류 페이지일 수 있음
+                iframeLoaded = true;
+                document.getElementById('loading-message').style.display = 'none';
+                document.getElementById('canva-wrapper').style.display = 'block';
+            } catch (e) {
+                showFallbackContent();
+            }
+        });
+
+        // iframe 로딩 오류 처리
+        document.getElementById('canva-iframe').addEventListener('error', function() {
+            showFallbackContent();
+        });
+
+        // 대체 콘텐츠 표시 함수
+        function showFallbackContent() {
+            document.getElementById('loading-message').innerHTML = `
+                <div style="text-align: center; padding: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white;">
+                    <h3 style="margin-bottom: 20px;">📋 기술 명세서 접근 안내</h3>
+                    <p style="margin-bottom: 25px; line-height: 1.6; opacity: 0.9;">
+                        로컬 개발 환경에서는 Canva 임베드가 제한될 수 있습니다.<br>
+                        프로덕션 환경이나 직접 링크를 통해 확인해주세요.
+                    </p>
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 30px;">
+                        <a href="https://www.canva.com/design/DAGwZQZr15A/WqKrvSjT4uBf9wnc7cEAxg/view" target="_blank" 
+                           style="display: inline-block; padding: 15px 30px; background: white; color: #667eea; text-decoration: none; border-radius: 25px; font-weight: bold; font-size: 16px; transition: all 0.3s ease;"
+                           onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 5px 15px rgba(0,0,0,0.2)';"
+                           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                            🔗 Canva에서 기술 명세서 보기
+                        </a>
+                        <button onclick="tryDirectEmbed()" 
+                                style="padding: 12px 24px; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 25px; cursor: pointer; transition: all 0.3s ease;"
+                                onmouseover="this.style.background='rgba(255,255,255,0.3)';"
+                                onmouseout="this.style.background='rgba(255,255,255,0.2)';">
+                            🔄 다른 방식으로 시도
+                        </button>
+                        <a href="https://convi-final.onrender.com/wireframes/docs/technical-specs.html" target="_blank"
+                           style="display: inline-block; padding: 12px 24px; background: rgba(255,255,255,0.2); color: white; text-decoration: none; border-radius: 25px; border: 1px solid rgba(255,255,255,0.3); transition: all 0.3s ease;"
+                           onmouseover="this.style.background='rgba(255,255,255,0.3)';"
+                           onmouseout="this.style.background='rgba(255,255,255,0.2)';">
+                            🚀 프로덕션 환경에서 보기
+                        </a>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 30px; padding: 30px; background: white; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    <h4 style="color: #2c3e50; margin-bottom: 20px; text-align: center;">📝 기술 명세서 v2.0 주요 내용</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                        <div style="padding: 20px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid #667eea;">
+                            <h5 style="color: #2c3e50; margin-bottom: 10px;">🏗️ 시스템 아키텍처</h5>
+                            <p style="color: #666; font-size: 14px; line-height: 1.6; margin: 0;">
+                                전체 시스템의 구조적 설계와 컴포넌트 간의 상호작용을 시각적으로 표현
+                            </p>
+                        </div>
+                        <div style="padding: 20px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid #764ba2;">
+                            <h5 style="color: #2c3e50; margin-bottom: 10px;">🛠️ 기술 스택</h5>
+                            <p style="color: #666; font-size: 14px; line-height: 1.6; margin: 0;">
+                                React 19, TypeScript, Supabase, Tailwind CSS 등 사용 기술의 상세 정보
+                            </p>
+                        </div>
+                        <div style="padding: 20px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid #28a745;">
+                            <h5 style="color: #2c3e50; margin-bottom: 10px;">🗄️ 데이터베이스</h5>
+                            <p style="color: #666; font-size: 14px; line-height: 1.6; margin: 0;">
+                                22개 핵심 테이블과 관계형 구조, RLS 정책 등의 데이터베이스 설계
+                            </p>
+                        </div>
+                        <div style="padding: 20px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid #e67e22;">
+                            <h5 style="color: #2c3e50; margin-bottom: 10px;">🔐 보안 체계</h5>
+                            <p style="color: #666; font-size: 14px; line-height: 1.6; margin: 0;">
+                                인증 시스템, 권한 관리, 데이터 보안 정책 등의 보안 아키텍처
+                            </p>
+                        </div>
+                        <div style="padding: 20px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid #e74c3c;">
+                            <h5 style="color: #2c3e50; margin-bottom: 10px;">📱 사용자 인터페이스</h5>
+                            <p style="color: #666; font-size: 14px; line-height: 1.6; margin: 0;">
+                                고객/점주/본사용 각각의 UI/UX 설계 원칙과 컴포넌트 구조
+                            </p>
+                        </div>
+                        <div style="padding: 20px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid #17a2b8;">
+                            <h5 style="color: #2c3e50; margin-bottom: 10px;">🚀 배포 & 운영</h5>
+                            <p style="color: #666; font-size: 14px; line-height: 1.6; margin: 0;">
+                                Render 기반 배포 전략, CI/CD 파이프라인, 모니터링 체계
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 30px; padding: 20px; background: #667eea; color: white; border-radius: 10px;">
+                        <h5 style="margin-bottom: 15px;">💡 문서 활용 가이드</h5>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; font-size: 14px;">
+                            <div><strong>🎯 PM:</strong> 전체 시스템 이해</div>
+                            <div><strong>💻 개발자:</strong> 기술 스택 참고</div>
+                            <div><strong>🎨 디자이너:</strong> UI/UX 구조 파악</div>
+                            <div><strong>📊 분석가:</strong> 비즈니스 로직 이해</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 전체화면 토글
+        function toggleFullscreen() {
+            const container = document.getElementById('canva-container');
+            const iframe = document.getElementById('canva-iframe');
+            
+            if (!isFullscreen) {
+                // 전체화면 모드
+                container.style.position = 'fixed';
+                container.style.top = '0';
+                container.style.left = '0';
+                container.style.width = '100vw';
+                container.style.height = '100vh';
+                container.style.zIndex = '9999';
+                container.style.background = 'white';
+                container.style.borderRadius = '0';
+                
+                document.getElementById('canva-wrapper').style.paddingTop = '100vh';
+                document.getElementById('canva-wrapper').style.borderRadius = '0';
+                
+                document.querySelector('[onclick="toggleFullscreen()"]').textContent = '❌ 전체화면 종료';
+                isFullscreen = true;
+            } else {
+                // 일반 모드
+                container.style.position = 'static';
+                container.style.width = 'auto';
+                container.style.height = 'auto';
+                container.style.zIndex = 'auto';
+                container.style.background = 'transparent';
+                container.style.borderRadius = '15px';
+                
+                document.getElementById('canva-wrapper').style.paddingTop = '100.0000%';
+                document.getElementById('canva-wrapper').style.borderRadius = '8px';
+                
+                document.querySelector('[onclick="toggleFullscreen()"]').textContent = '🔍 전체화면';
+                isFullscreen = false;
+            }
+        }
+
+        // 임베드 새로고침
+        function refreshEmbed() {
+            const iframe = document.getElementById('canva-iframe');
+            const loadingMessage = document.getElementById('loading-message');
+            const wrapper = document.getElementById('canva-wrapper');
+            
+            // 로딩 상태로 변경
+            loadingMessage.style.display = 'block';
+            loadingMessage.textContent = '🔄 기술 명세서를 새로고침하는 중...';
+            wrapper.style.display = 'none';
+            
+            // iframe 소스 재설정
+            iframe.src = iframe.src;
+        }
+
+        // ESC 키로 전체화면 종료
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && isFullscreen) {
+                toggleFullscreen();
+            }
+        });
+
+        // 다른 방식으로 임베드 시도 (원본 Canva HTML 방식)
+        function tryDirectEmbed() {
+            const loadingMessage = document.getElementById('loading-message');
+            const canvaWrapper = document.getElementById('canva-wrapper');
+            const originalEmbed = document.getElementById('canva-original-embed');
+            
+            // 로딩 메시지 업데이트
+            loadingMessage.innerHTML = `
+                <div style="text-align: center; padding: 40px;">
+                    <h3 style="color: #495057; margin-bottom: 20px;">🔄 원본 Canva 임베드 방식으로 시도 중...</h3>
+                    <p style="color: #666;">원본 HTML 코드를 사용합니다.</p>
+                </div>
+            `;
+            
+            // 기존 iframe 숨기고 원본 임베드 표시
+            setTimeout(() => {
+                loadingMessage.style.display = 'none';
+                canvaWrapper.style.display = 'none';
+                originalEmbed.style.display = 'block';
+                
+                // 원본 임베드의 iframe에 로드 이벤트 추가
+                const originalIframe = originalEmbed.querySelector('iframe');
+                originalIframe.addEventListener('load', function() {
+                    console.log('원본 Canva 임베드 로드 완료');
+                });
+                
+                originalIframe.addEventListener('error', function() {
+                    // 원본 방식도 실패한 경우
+                    setTimeout(() => {
+                        showFallbackContent();
+                    }, 5000);
+                });
+            }, 1000);
+        }
+
+        // 페이지 로드 시 로딩 타임아웃 설정 (8초)
+        setTimeout(function() {
+            if (!iframeLoaded) {
+                showFallbackContent();
+            }
+        }, 8000);
+    </script>
+</body>
+</html>

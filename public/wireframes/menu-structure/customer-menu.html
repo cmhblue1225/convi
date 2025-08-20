@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>고객 메뉴구조도 - 편의점 종합 솔루션</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin: 0 0 10px 0;
+            font-size: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .header .subtitle {
+            color: #7f8c8d;
+            margin: 10px 0;
+            font-size: 1.1rem;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            background: rgba(52, 152, 219, 0.1);
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: 2px solid #3498db;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2980b9;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #34495e;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 5px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .btn-print {
+            background: #27ae60;
+        }
+
+        .btn-print:hover {
+            background: #229954;
+        }
+
+        .btn-back {
+            background: #e74c3c;
+        }
+
+        .btn-back:hover {
+            background: #c0392b;
+        }
+
+        .diagram-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            overflow: auto;
+            margin-bottom: 30px;
+        }
+
+        #menu-diagram {
+            width: 100%;
+            min-height: 600px;
+        }
+
+        .description {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .description h3 {
+            color: #2c3e50;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .menu-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .feature-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+        }
+
+        .feature-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .feature-desc {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .controls, .description {
+                display: none;
+            }
+            .header, .diagram-container {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .toggle-btn.active {
+            background: #2980b9 !important;
+            transform: translateY(-2px);
+        }
+
+        .view-toggle {
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 25px;
+            overflow: hidden;
+            display: inline-flex;
+        }
+
+        .view-toggle .btn {
+            border-radius: 0 !important;
+            margin: 0 !important;
+            border-right: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .view-toggle .btn:last-child {
+            border-right: none;
+        }
+
+        #original-image {
+            transition: transform 0.3s ease;
+            cursor: zoom-in;
+        }
+
+        #original-image.zoomed {
+            cursor: grab;
+        }
+
+        #original-image.zoomed:active {
+            cursor: grabbing;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            .menu-features {
+                grid-template-columns: 1fr;
+            }
+            .view-toggle {
+                display: flex;
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>👤 고객 메뉴구조도</h1>
+            <p class="subtitle">Customer Menu Structure - 고객용 애플리케이션 네비게이션 구조</p>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number">5</div>
+                    <div class="stat-label">주요 섹션</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">20+</div>
+                    <div class="stat-label">세부 기능</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">3</div>
+                    <div class="stat-label">뎁스</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-back" onclick="window.location.href='index.html'">← 메뉴구조도 메인</button>
+            
+            <!-- 뷰 토글 버튼 -->
+            <div class="view-toggle" style="display: inline-block; margin: 0 20px;">
+                <button class="btn toggle-btn active" data-view="diagram" onclick="toggleView('diagram')">📊 다이어그램</button>
+                <button class="btn toggle-btn" data-view="image" onclick="toggleView('image')">🖼️ 원본 이미지</button>
+            </div>
+            
+            <button class="btn" onclick="zoomIn()">🔍 확대</button>
+            <button class="btn" onclick="zoomOut()">🔍 축소</button>
+            <button class="btn" onclick="resetZoom()">↻ 원래크기</button>
+            <button class="btn btn-print" onclick="printDiagram()">🖨️ 인쇄하기</button>
+            <button class="btn" onclick="downloadSVG()">💾 SVG 다운로드</button>
+        </div>
+
+        <div class="diagram-container">
+            <!-- Mermaid 다이어그램 -->
+            <div id="menu-diagram">
+                <div class="mermaid">
+flowchart TD
+    A["👤 고객"] --> B["🏠 홈"]
+    A --> C["🛒 쇼핑"]
+    A --> D["📋 주문관리"]
+    A --> E["👨‍💼 내 정보"]
+    A --> F["📞 고객 지원"]
+    
+    %% 홈 섹션
+    B --> B1["📍 지점 선택"]
+    B --> B2["🎯 추천 상품"]
+    B --> B3["🏪 프로모션 상품"]
+    B --> B4["📊 베스트 상품"]
+    
+    B1 --> B11["📍 내 주변 지점"]
+    B1 --> B12["🗺️ 지점 검색"]
+    
+    %% 쇼핑 섹션
+    C --> C1["🛒 장바구니"]
+    C --> C2["🔍 상품 카탈로그"]
+    C --> C3["📝 프로모션 상품"]
+    C --> C4["📂 카테고리별 상품"]
+    
+    C2 --> C21["🔍 상품 상세"]
+    C2 --> C22["🏷️ 상품 검색"]
+    C4 --> C41["🍔 상품 상세"]
+    C4 --> C42["🍰 상품 검색"]
+    
+    %% 주문관리 섹션
+    D --> D1["🛒 주문하기"]
+    D --> D2["💳 결제/교환"]
+    D --> D3["📋 주문 내역"]
+    D --> D4["🔄 결제 관리"]
+    
+    D1 --> D11["🛒 주문 신청"]
+    D1 --> D12["💳 결제 신청"]
+    D2 --> D21["🔄 주문 취소"]
+    D2 --> D22["💰 결제 내역"]
+    D3 --> D31["📋 결제 실패 확인"]
+    D4 --> D41["🔄 환불 상태 확인"]
+    
+    %% 내 정보 섹션
+    E --> E1["👨‍💼 프로필 관리"]
+    E --> E2["💎 포인트 관리"]
+    E --> E3["🛒 주소 관리"]
+    E --> E4["💾 결제 수단 관리"]
+    E --> E5["⚙️ 알림 설정"]
+    
+    %% 고객 지원 섹션
+    F --> F1["❓ FAQ"]
+    F --> F2["📞 1:1문의"]
+    F --> F3["📖 이용약관"]
+    F --> F4["🔒 사용자 매뉴얼"]
+    
+    %% 스타일링
+    classDef homeStyle fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
+    classDef shoppingStyle fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    classDef orderStyle fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
+    classDef profileStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
+    classDef supportStyle fill:#ffebee,stroke:#d32f2f,stroke-width:2px,color:#000
+    classDef rootStyle fill:#fff,stroke:#333,stroke-width:3px,color:#000
+    
+    class A rootStyle
+    class B,B1,B2,B3,B4,B11,B12 homeStyle
+    class C,C1,C2,C3,C4,C21,C22,C41,C42 shoppingStyle
+    class D,D1,D2,D3,D4,D11,D12,D21,D22,D31,D41 orderStyle
+    class E,E1,E2,E3,E4,E5 profileStyle
+    class F,F1,F2,F3,F4 supportStyle
+                </div>
+            </div>
+            
+            <!-- 원본 이미지 -->
+            <div id="menu-image" class="hidden">
+                <img id="original-image" src="https://esbjgvnlqzseomhbsimz.supabase.co/storage/v1/object/public/menu-structures/customer-menu.png" 
+                     alt="고객 메뉴구조도 원본 이미지" 
+                     style="width: 100%; height: auto; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+                <div class="image-controls" style="text-align: center; margin-top: 15px;">
+                    <button class="btn" onclick="zoomImageIn()">🔍 이미지 확대</button>
+                    <button class="btn" onclick="zoomImageOut()">🔍 이미지 축소</button>
+                    <button class="btn" onclick="resetImageZoom()">↻ 이미지 원래크기</button>
+                    <button class="btn" onclick="downloadOriginalImage()">💾 원본 다운로드</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="description">
+            <h3>📱 고객용 애플리케이션 주요 기능</h3>
+            <div class="menu-features">
+                <div class="feature-item">
+                    <div class="feature-title">🏠 홈</div>
+                    <div class="feature-desc">지점 선택, 추천 상품, 프로모션 등 메인 대시보드</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-title">🛒 쇼핑</div>
+                    <div class="feature-desc">상품 검색, 카탈로그, 장바구니 등 구매 관련 기능</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-title">📋 주문관리</div>
+                    <div class="feature-desc">주문, 결제, 교환, 환불 등 주문 프로세스 관리</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-title">👨‍💼 내 정보</div>
+                    <div class="feature-desc">프로필, 포인트, 주소, 결제수단 등 개인정보 관리</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-title">📞 고객 지원</div>
+                    <div class="feature-desc">FAQ, 1:1문의, 이용약관 등 고객 서비스</div>
+                </div>
+            </div>
+            
+            <h3 style="margin-top: 30px;">🎯 네비게이션 특징</h3>
+            <ul style="margin-left: 20px; line-height: 1.8;">
+                <li><strong>직관적인 구조:</strong> 고객의 구매 여정에 따른 논리적 메뉴 배치</li>
+                <li><strong>3단계 구조:</strong> 주요 섹션 → 카테고리 → 세부 기능</li>
+                <li><strong>모바일 최적화:</strong> 터치 인터페이스에 최적화된 메뉴 구조</li>
+                <li><strong>빠른 접근:</strong> 자주 사용하는 기능에 대한 단축 경로 제공</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Mermaid 초기화
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+
+        let currentZoom = 1;
+        let imageZoom = 1;
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let imageTranslateX = 0;
+        let imageTranslateY = 0;
+
+        // 뷰 토글 기능
+        function toggleView(viewType) {
+            const diagramContainer = document.getElementById('menu-diagram');
+            const imageContainer = document.getElementById('menu-image');
+            const toggleButtons = document.querySelectorAll('.toggle-btn');
+            
+            // 모든 토글 버튼 비활성화
+            toggleButtons.forEach(btn => btn.classList.remove('active'));
+            
+            if (viewType === 'diagram') {
+                diagramContainer.classList.remove('hidden');
+                imageContainer.classList.add('hidden');
+                document.querySelector('[data-view="diagram"]').classList.add('active');
+            } else {
+                diagramContainer.classList.add('hidden');
+                imageContainer.classList.remove('hidden');
+                document.querySelector('[data-view="image"]').classList.add('active');
+            }
+        }
+
+        // 다이어그램 줌 기능
+        function zoomIn() {
+            currentZoom += 0.1;
+            applyZoom();
+        }
+
+        function zoomOut() {
+            currentZoom = Math.max(0.5, currentZoom - 0.1);
+            applyZoom();
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            applyZoom();
+        }
+
+        function applyZoom() {
+            const diagram = document.getElementById('menu-diagram');
+            diagram.style.transform = `scale(${currentZoom})`;
+            diagram.style.transformOrigin = 'top left';
+        }
+
+        // 이미지 줌 기능
+        function zoomImageIn() {
+            imageZoom = Math.min(3, imageZoom + 0.2);
+            applyImageTransform();
+        }
+
+        function zoomImageOut() {
+            imageZoom = Math.max(0.5, imageZoom - 0.2);
+            applyImageTransform();
+        }
+
+        function resetImageZoom() {
+            imageZoom = 1;
+            imageTranslateX = 0;
+            imageTranslateY = 0;
+            applyImageTransform();
+        }
+
+        function applyImageTransform() {
+            const image = document.getElementById('original-image');
+            image.style.transform = `scale(${imageZoom}) translate(${imageTranslateX}px, ${imageTranslateY}px)`;
+            
+            if (imageZoom > 1) {
+                image.classList.add('zoomed');
+            } else {
+                image.classList.remove('zoomed');
+            }
+        }
+
+        // 이미지 드래그 기능
+        function setupImageDrag() {
+            const image = document.getElementById('original-image');
+            
+            image.addEventListener('mousedown', (e) => {
+                if (imageZoom > 1) {
+                    isDragging = true;
+                    dragStartX = e.clientX - imageTranslateX;
+                    dragStartY = e.clientY - imageTranslateY;
+                    e.preventDefault();
+                }
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging && imageZoom > 1) {
+                    imageTranslateX = e.clientX - dragStartX;
+                    imageTranslateY = e.clientY - dragStartY;
+                    applyImageTransform();
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+        }
+
+        // 원본 이미지 다운로드
+        function downloadOriginalImage() {
+            const link = document.createElement('a');
+            link.href = 'https://esbjgvnlqzseomhbsimz.supabase.co/storage/v1/object/public/menu-structures/customer-menu.png';
+            link.download = '고객_메뉴구조도_원본.png';
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function printDiagram() {
+            window.print();
+        }
+
+        function downloadSVG() {
+            const svgElement = document.querySelector('#menu-diagram svg');
+            if (svgElement) {
+                const svgData = new XMLSerializer().serializeToString(svgElement);
+                const blob = new Blob([svgData], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = '고객_메뉴구조도_v2.0.svg';
+                link.click();
+                URL.revokeObjectURL(url);
+            } else {
+                alert('SVG 요소를 찾을 수 없습니다. 다이어그램이 완전히 로드된 후 다시 시도해주세요.');
+            }
+        }
+
+        // 다이어그램 로딩 완료 후 스타일 적용
+        setTimeout(() => {
+            const diagram = document.querySelector('#menu-diagram .mermaid');
+            if (diagram) {
+                diagram.style.textAlign = 'center';
+            }
+        }, 1000);
+
+        // 이미지 드래그 기능 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            setupImageDrag();
+        });
+    </script>
+</body>
+</html>
