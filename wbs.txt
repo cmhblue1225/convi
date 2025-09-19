@@ -1,0 +1,59 @@
+Level	No	Task	작업자	산출물		시작	완료	소요기간
+								
+				산출물 명	구분			
+								
+1	1	기획	전체	기획서	문서	2025-07-18	2025-07-18	1일
+2	1.1	게임 컨셉 및 조작방식 구상	전체	컨셉 시안	문서	2025-07-18	2025-07-18	1일
+2	1.2	기능 목록 정의 및 역할 분배	조민혁	역할 분담표, 기능 명세표	문서	2025-07-18	2025-07-18	1일
+1	2	환경 설정	전체	기본 폴더 구조, index.html	파일/코드	2025-07-18	2025-07-18	1일
+2	2.1	GitHub 저장소 및 브랜치 구성	전체	GitHub_Repository_Setup_Guide.md, Git_Branching_Strategy.md	설정	2025-07-18	2025-07-18	1일
+2	2.2	기본 페이지 구성	조민혁	main.js, style.css	코드	2025-07-18	2025-07-18	1일
+1	3	허브 네트워크 처리 및 SDK화	전체	hub.js, GameSDK.js 외	코드	2025-07-18	2025-07-23	4일
+2	3.1	방 생성 및 입장 처리 로직	안지민	SessionManager.js, index.js, Session_Flow_Diagram.png	코드	2025-07-18	2025-07-21	2일
+2	3.2	WebSocket 메시지 설계	이재원	WebSocket_Message_Protocol_Specification.md, index.js	통신설계	2025-07-18	2025-07-21	2일
+2	3.3	대기방 UI 및 상태 동기화	이재원	games/[game_id]/index.html, games/[game_id]/script.js, games/[game_id]/style.css	화면	2025-07-21	2025-07-22	2일
+2	3.4	허브 통신 이벤트 처리	이재원	SessionSDK.js, sensor.html, games/[game_id]/script.js	네트워크	2025-07-21	2025-07-22	2일
+2	3.5	모의 서버 및 테스트 스크립트	이재원	mock_server.js, network_test_script.js, session_manager_unit_test.js	테스트	2025-07-21	2025-07-22	2일
+2	3.6	SDK 기능 분리 및 통합화	조민혁	SessionSDK.js, QRCodeGenerator.js, SensorCollector.js	SDK	2025-07-21	2025-07-23	3일
+1	4	핵심 기능 구현	안지민, 이재원	sensor.js 외 기능 모듈	코드	2025-07-22	2025-07-23	2일
+2	4.1	센서 데이터 처리	이재원	SensorCollector.js, sensor.html, index.js, games/[game_id]/script.js	코드	2025-07-22	2025-07-23	2일
+2	4.2	조준점 이동 및 UI 연동	안지민	sensor-manager.js, 	코드	2025-07-22	2025-07-23	2일
+2	4.3	타겟 생성 및 충돌 처리	안지민	target.js, collision.js	코드	2025-07-22	2025-07-23	2일
+2	4.4	자동 발사 및 점수 시스템	안지민	shooting-system.js, scoring-system.js, score-panel-widget.js	코드	2025-07-22	2025-07-23	2일
+1	5	개발자 문서 작성 및 배포 문서화	전체	README, 가이드, 튜토리얼	문서	2025-07-22	2025-07-23	2일
+2	5.1	모듈별 API 문서화	조민혁	SessionManager.js, SessionSDK.js, AIAssistant.js, API_Documentation_Generated.html	문서/코드	2025-07-22	2025-07-23	2일
+2	5.2	튜토리얼 및 예제 코드 작성	조민혁	DEVELOPER_GUIDE.md, example_game_logic.js, sensor_data_processing_example.js	문서/코드	2025-07-22	2025-07-23	2일
+2	5.3	GitHub Pages 배포	조민혁	deploy.yml, index.html	배포	2025-07-22	2025-07-23	2일
+2	5.4	사용자 매뉴얼 작성	조민혁	README.md, 사용자_매뉴얼.pdf, GAME_TEMPLATE.html	문서	2025-07-22	2025-07-23	2일
+1	6	게임 개발 세부사항	전체	각 게임별 구조 및 기능 모듈	게임 개발	2025-07-23	2025-07-25	3일
+2	6.1	Quick Draw 개발	이재원	quick-draw/	게임 개발	2025-07-23	2025-07-25	3일
+3	6.1.1	게임 기본 구조 및 설정	이재원	quick-draw/index.html, quick-draw/script.js, quick-draw/game.json	아키텍처	2025-07-23	2025-07-24	2일
+3	6.1.2	게임 엔티티 구현	이재원	quick-draw/entities/	게임오브젝트	2025-07-23	2025-07-24	2일
+3	6.1.3	핵심 기능 모듈 개발	이재원	quick-draw/features/	기능구현	2025-07-23	2025-07-24	2일
+4	6.1.3.1	센서 관리 및 조준점 연동	이재원	sensor-manager.js	센서처리	2025-07-24	2025-07-24	1일
+4	6.1.3.2	발사 및 사운드 시스템	이재원	features/shooting-, features/sound-system.js	게임로직	2025-07-24	2025-07-24	1일
+4	6.1.3.3	점수 시스템	이재원	features/scoring-system.js, quick-draw/shared/utils.js	게임로직	2025-07-24	2025-07-25	2일
+3	6.1.4	UI 페이지 및 위젯 개발	이재원	quick-draw/index.html, quick-draw/widgets/	UI/UX	2025-07-24	2025-07-25	2일
+4	6.1.4.1	대기방 및 스코어 패널 UI	이재원	quick-draw/index.html, quick-draw/widgets/waiting-ro, quick-draw/widgets/score-pane	UI/UX	2025-07-24	2025-07-25	2일
+2	6.2	Cake Delivery 개발	조민혁	cake-delivery/	게임 개발	2025-07-23	2025-07-25	3일
+3	6.2.1	게임 기본 구조 및 설정	조민혁	cake-delivery/index.html, cake-delivery/game.json	아키텍처	2025-07-23	2025-07-24	2일
+3	6.2.2	게임 엔티티 구현	조민혁	cake-delivery/entities/	게임오브젝트	2025-07-23	2025-07-24	2일
+3	6.2.3	핵심 기능 모듈 개발	조민혁	cake-delivery/features/	기능구현	2025-07-24	2025-07-24	1일
+4	6.2.3.1	센서 관리 및 조준점 연동	조민혁	sensor-manager.js	센서처리	2025-07-24	2025-07-24	1일
+4	6.2.3.2	발사 및 사운드 시스템	조민혁	cake-delivery/index.html, cake-delivery/assets/bgm.mp3, cake-delivery/assets/success.mp3,  cake-delivery/assets/fail.mp3	게임로직	2025-07-24	2025-07-24	1일
+4	6.2.3.3	점수 시스템	조민혁	cake-delivery/index.html	게임로직	2025-07-24	2025-07-25	2일
+3	6.2.4	UI 페이지 및 위젯 개발	조민혁	cake-delivery/index.html, cake-delivery/widgets/	UI/UX	2025-07-24	2025-07-25	2일
+4	6.2.4.1	대기방 및 스코어 패널 UI	조민혁	waiting-room-widget.js, score-panel-widget.js	UI/UX	2025-07-24	2025-07-25	2일
+2	6.3	Shot Target 개발	안지민	shot-target/	게임 개발	2025-07-23	2025-07-25	3일
+3	6.3.1	게임 기본 구조 및 설정	안지민	shot-target/index.html, shot-target/app/shot-target-game.js, shot-target/pages/game-page.js, shot-target/pages/game-page.js	아키텍처	2025-07-23	2025-07-23	1일
+3	6.3.2	게임 엔티티 구현	안지민	shot-target/entities/	게임오브젝트	2025-07-23	2025-07-23	1일
+3	6.3.3	핵심 기능 모듈 개발	안지민	shot-target/features/	기능구현	2025-07-23	2025-07-23	1일
+4	6.3.3.1	센서 관리 및 조준점 연동	안지민	sensor-manager.js	센서처리	2025-07-23	2025-07-24	2일
+4	6.3.3.2	발사 및 사운드 시스템	안지민	shot-target/features/shooting-system.js, shot-target/features/sound-system.js, shot-target/bgm/action-trap-aggressive-sport-racing-beat-257032.mp3	게임로직	2025-07-23	2025-07-24	2일
+4	6.3.3.3	점수 시스템	안지민	shot-target/features/scoring-system.js, shot-target/pages/game-page.js	게임로직	2025-07-24	2025-07-24	1일
+3	6.3.4	UI 페이지 및 위젯 개발	안지민	shot-target/index.html, shot-target/widgets/	UI/UX	2025-07-24	2025-07-25	2일
+4	6.3.4.1	대기방 및 스코어 패널 UI	안지민	shot-target/index.html, shot-target/pages/game-page.js, shot-target/widgets/	UI/UX	2025-07-24	2025-07-25	2일
+1	7	기능/네트워크 테스트	전체	테스트 결과, 수정 내역	문서	2025-07-28	2025-07-28	1일
+2	7.1	센서 반응 테스트 (기울기 정확도)	전체	센서 테스트 결과	테스트	2025-07-28	2025-07-28	1일
+2	7.2	멀티플레이 연결/오류 시나리오 확인	전체	hub 연결 로그	테스트	2025-07-28	2025-07-28	1일
+1	8	발표 준비 및 시연 자료	전체	발표자료(PPT), 시연 영상	발표자료	2025-07-28	2025-07-28	1일
