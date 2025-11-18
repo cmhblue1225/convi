@@ -42,7 +42,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 // 점주 계정 정보 (이메일과 UUID 매핑)
 const storeOwners = [
   {
-    email: 'shopowner@test.com',
+    email: 'shopowner@example.com',
     name: '강남점',
     address: '서울특별시 강남구 강남대로 123',
     phone: '02-1234-5678',
@@ -51,7 +51,7 @@ const storeOwners = [
     userId: null
   },
   {
-    email: 'shopowner2@test.com',
+    email: 'shopowner2@example.com',
     name: '홍대점',
     address: '서울특별시 마포구 홍대로 456',
     phone: '02-2345-6789',
@@ -59,7 +59,7 @@ const storeOwners = [
     userId: null
   },
   {
-    email: 'shopowner3@test.com',
+    email: 'shopowner3@example.com',
     name: '잠실점',
     address: '서울특별시 송파구 올림픽로 789',
     phone: '02-3456-7890',

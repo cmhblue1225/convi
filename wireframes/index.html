@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>편의점 종합 솔루션 - 와이어프레임</title>
+    <link rel="stylesheet" href="styles/wireframe.css">
+    <link rel="stylesheet" href="styles/responsive.css">
+    <style>
+        .wireframe-navigation {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+        
+        .wireframe-section {
+            margin-bottom: 32px;
+        }
+        
+        .wireframe-section h3 {
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .wireframe-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        
+        .wireframe-link {
+            display: block;
+            padding: 16px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #495057;
+            transition: all 0.2s;
+        }
+        
+        .wireframe-link:hover {
+            border-color: #adb5bd;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .wireframe-link-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 4px;
+            color: #212529;
+        }
+        
+        .wireframe-link-desc {
+            font-size: 14px;
+            color: #6c757d;
+        }
+        
+        .wireframe-stats {
+            background: linear-gradient(135deg, #e9ecef 0%, #f8f9fa 100%);
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        .wireframe-stats h2 {
+            color: #343a40;
+            margin-bottom: 16px;
+        }
+        
+        .wireframe-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+        }
+        
+        .wireframe-stat-item {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 16px;
+        }
+        
+        .wireframe-stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .wireframe-stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="wireframe-container">
+        <!-- 헤더 -->
+        <div class="wireframe-header">
+            <h1>🏪 편의점 종합 솔루션 v2.0 - 와이어프레임</h1>
+            <div class="wireframe-alert info" style="margin-top: 12px;">
+                📋 이 페이지는 실제 구현된 UI를 기반으로 제작된 와이어프레임 모음입니다. 각 링크를 클릭하여 개별 와이어프레임을 확인할 수 있습니다.
+            </div>
+        </div>
+
+        <!-- 통계 정보 -->
+        <div class="wireframe-stats">
+            <h2>와이어프레임 현황</h2>
+            <div class="wireframe-stat-grid">
+                <div class="wireframe-stat-item">
+                    <div class="wireframe-stat-number">33</div>
+                    <div class="wireframe-stat-label">총 페이지</div>
+                </div>
+                <div class="wireframe-stat-item">
+                    <div class="wireframe-stat-number">3</div>
+                    <div class="wireframe-stat-label">사용자 역할</div>
+                </div>
+                <div class="wireframe-stat-item">
+                    <div class="wireframe-stat-number">7</div>
+                    <div class="wireframe-stat-label">카테고리</div>
+                </div>
+                <div class="wireframe-stat-item">
+                    <div class="wireframe-stat-number">100%</div>
+                    <div class="wireframe-stat-label">완성도</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 네비게이션 가이드 -->
+        <div class="wireframe-navigation">
+            <h2>📖 와이어프레임 탐색 가이드</h2>
+            <p style="margin-bottom: 16px; color: #6c757d;">
+                각 카테고리별로 구성된 와이어프레임을 확인할 수 있습니다. 
+                실제 시스템의 UI 구조와 기능을 반영하여 제작되었습니다.
+            </p>
+            <div class="wireframe-grid cols-3">
+                <div class="wireframe-card">
+                    <div class="wireframe-card-header">🎯 목적</div>
+                    <div class="wireframe-card-content">
+                        실제 개발된 UI의 구조와<br>
+                        기능을 시각적으로 문서화
+                    </div>
+                </div>
+                <div class="wireframe-card">
+                    <div class="wireframe-card-header">📱 대응</div>
+                    <div class="wireframe-card-content">
+                        모바일, 태블릿, 데스크톱<br>
+                        모든 화면 크기 지원
+                    </div>
+                </div>
+                <div class="wireframe-card">
+                    <div class="wireframe-card-header">🔄 활용</div>
+                    <div class="wireframe-card-content">
+                        개발 가이드, 기획 검토,<br>
+                        사용자 테스트 용도
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 와이어프레임 섹션들 -->
+        <div class="wireframe-section">
+            <h3>🔐 인증 시스템 (2개)</h3>
+            <div class="wireframe-links">
+                <a href="auth/landing-page.html" class="wireframe-link">
+                    <div class="wireframe-link-title">랜딩 페이지</div>
+                    <div class="wireframe-link-desc">서비스 소개 및 로그인 유도</div>
+                </a>
+                <a href="auth/auth-page.html" class="wireframe-link">
+                    <div class="wireframe-link-title">로그인/회원가입</div>
+                    <div class="wireframe-link-desc">사용자 인증 및 계정 생성</div>
+                </a>
+            </div>
+        </div>
+
+        <div class="wireframe-section">
+            <h3>👤 고객 앱 (11개)</h3>
+            <div class="wireframe-links">
+                <a href="customer/customer-home.html" class="wireframe-link">
+                    <div class="wireframe-link-title">고객 홈</div>
+                    <div class="wireframe-link-desc">개인화된 대시보드 및 빠른 접근</div>
+                </a>
+                <a href="customer/store-selection.html" class="wireframe-link">
+                    <div class="wireframe-link-title">매장 선택</div>
+                    <div class="wireframe-link-desc">주변 편의점 검색 및 선택</div>
+                </a>
+                <a href="customer/product-catalog.html" class="wireframe-link">
+                    <div class="wireframe-link-title">상품 카탈로그</div>
+                    <div class="wireframe-link-desc">카테고리별 상품 탐색</div>
+                </a>
+                <a href="customer/cart-page.html" class="wireframe-link">
+                    <div class="wireframe-link-title">장바구니</div>
+                    <div class="wireframe-link-desc">선택한 상품 관리 및 수량 조절</div>
+                </a>
+                <a href="customer/checkout.html" class="wireframe-link">
+                    <div class="wireframe-link-title">주문/결제</div>
+                    <div class="wireframe-link-desc">주문 정보 입력 및 결제 처리</div>
+                </a>
+                <a href="customer/order-tracking.html" class="wireframe-link">
+                    <div class="wireframe-link-title">주문 추적</div>
+                    <div class="wireframe-link-desc">실시간 주문 상태 확인</div>
+                </a>
+                <a href="customer/customer-orders.html" class="wireframe-link">
+                    <div class="wireframe-link-title">주문 내역</div>
+                    <div class="wireframe-link-desc">과거 주문 이력 및 재주문</div>
+                </a>
+                <a href="customer/customer-profile.html" class="wireframe-link">
+                    <div class="wireframe-link-title">고객 프로필</div>
+                    <div class="wireframe-link-desc">개인정보 및 설정 관리</div>
+                </a>
+                <a href="customer/customer-refunds.html" class="wireframe-link">
+                    <div class="wireframe-link-title">환불 내역</div>
+                    <div class="wireframe-link-desc">환불 요청 및 처리 현황</div>
+                </a>
+                <a href="customer/create-refund.html" class="wireframe-link">
+                    <div class="wireframe-link-title">환불 신청</div>
+                    <div class="wireframe-link-desc">환불 요청서 작성 및 제출</div>
+                </a>
+                <a href="customer/promotion-products.html" class="wireframe-link">
+                    <div class="wireframe-link-title">행사 상품</div>
+                    <div class="wireframe-link-desc">할인 및 프로모션 상품 모음</div>
+                </a>
+            </div>
+        </div>
+
+        <div class="wireframe-section">
+            <h3>🏪 점주 앱 (7개)</h3>
+            <div class="wireframe-links">
+                <a href="store/store-dashboard.html" class="wireframe-link">
+                    <div class="wireframe-link-title">점주 대시보드</div>
+                    <div class="wireframe-link-desc">매장 운영 현황 및 주요 지표</div>
+                </a>
+                <a href="store/store-orders.html" class="wireframe-link">
+                    <div class="wireframe-link-title">주문 관리</div>
+                    <div class="wireframe-link-desc">실시간 주문 처리 및 상태 관리</div>
+                </a>
+                <a href="store/store-inventory.html" class="wireframe-link">
+                    <div class="wireframe-link-title">재고 관리</div>
+                    <div class="wireframe-link-desc">상품별 재고 현황 및 관리</div>
+                </a>
+                <a href="store/store-supply.html" class="wireframe-link">
+                    <div class="wireframe-link-title">물류 요청</div>
+                    <div class="wireframe-link-desc">본사 대상 상품 공급 요청</div>
+                </a>
+                <a href="store/store-analytics.html" class="wireframe-link">
+                    <div class="wireframe-link-title">매출 분석</div>
+                    <div class="wireframe-link-desc">매출 통계 및 성과 분석</div>
+                </a>
+                <a href="store/store-profile.html" class="wireframe-link">
+                    <div class="wireframe-link-title">점주 프로필</div>
+                    <div class="wireframe-link-desc">매장 정보 및 점주 계정 관리</div>
+                </a>
+                <a href="store/store-refunds.html" class="wireframe-link">
+                    <div class="wireframe-link-title">환불 관리</div>
+                    <div class="wireframe-link-desc">고객 환불 요청 처리</div>
+                </a>
+            </div>
+        </div>
+
+        <div class="wireframe-section">
+            <h3>🏢 본사 앱 (7개)</h3>
+            <div class="wireframe-links">
+                <a href="hq/hq-dashboard.html" class="wireframe-link">
+                    <div class="wireframe-link-title">본사 대시보드</div>
+                    <div class="wireframe-link-desc">전체 네트워크 현황 및 통계</div>
+                </a>
+                <a href="hq/hq-stores.html" class="wireframe-link">
+                    <div class="wireframe-link-title">매장 관리</div>
+                    <div class="wireframe-link-desc">가맹점 승인 및 관리</div>
+                </a>
+                <a href="hq/hq-products.html" class="wireframe-link">
+                    <div class="wireframe-link-title">상품 관리</div>
+                    <div class="wireframe-link-desc">전체 상품 카탈로그 관리</div>
+                </a>
+                <a href="hq/hq-supply.html" class="wireframe-link">
+                    <div class="wireframe-link-title">물류 승인</div>
+                    <div class="wireframe-link-desc">매장 물류 요청 검토 및 승인</div>
+                </a>
+                <a href="hq/hq-analytics.html" class="wireframe-link">
+                    <div class="wireframe-link-title">전체 분석</div>
+                    <div class="wireframe-link-desc">네트워크 전체 성과 분석</div>
+                </a>
+                <a href="hq/hq-members.html" class="wireframe-link">
+                    <div class="wireframe-link-title">회원 관리</div>
+                    <div class="wireframe-link-desc">전체 사용자 계정 관리</div>
+                </a>
+                <a href="hq/hq-profile.html" class="wireframe-link">
+                    <div class="wireframe-link-title">본사 프로필</div>
+                    <div class="wireframe-link-desc">본사 계정 및 시스템 설정</div>
+                </a>
+            </div>
+        </div>
+
+        <div class="wireframe-section">
+            <h3>💳 결제 시스템 (2개)</h3>
+            <div class="wireframe-links">
+                <a href="payment/payment-success.html" class="wireframe-link">
+                    <div class="wireframe-link-title">결제 성공</div>
+                    <div class="wireframe-link-desc">결제 완료 및 주문 확인</div>
+                </a>
+                <a href="payment/payment-fail.html" class="wireframe-link">
+                    <div class="wireframe-link-title">결제 실패</div>
+                    <div class="wireframe-link-desc">결제 실패 안내 및 재시도</div>
+                </a>
+            </div>
+        </div>
+
+        <div class="wireframe-section">
+            <h3>🆘 지원 페이지 (4개)</h3>
+            <div class="wireframe-links">
+                <a href="support/customer-support.html" class="wireframe-link">
+                    <div class="wireframe-link-title">고객 지원</div>
+                    <div class="wireframe-link-desc">고객 문의 및 지원 요청</div>
+                </a>
+                <a href="support/faq-support.html" class="wireframe-link">
+                    <div class="wireframe-link-title">자주 묻는 질문</div>
+                    <div class="wireframe-link-desc">FAQ 및 도움말</div>
+                </a>
+                <a href="support/qa-support.html" class="wireframe-link">
+                    <div class="wireframe-link-title">Q&A 지원</div>
+                    <div class="wireframe-link-desc">질문과 답변 커뮤니티</div>
+                </a>
+                <a href="support/manual-main.html" class="wireframe-link">
+                    <div class="wireframe-link-title">사용자 매뉴얼</div>
+                    <div class="wireframe-link-desc">서비스 이용 가이드</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- 푸터 정보 -->
+        <div style="margin-top: 48px; padding-top: 24px; border-top: 2px solid #dee2e6; text-align: center; color: #6c757d;">
+            <p><strong>편의점 종합 솔루션 v2.0</strong> - 와이어프레임 문서</p>
+            <p style="font-size: 14px; margin-top: 8px;">
+                📅 최종 업데이트: 2025-08-17 | 
+                🎨 총 33개 페이지 와이어프레임 | 
+                📱 완전 반응형 지원
+            </p>
+            <div class="wireframe-alert info" style="margin-top: 16px; text-align: left;">
+                <strong>💡 사용 팁:</strong><br>
+                • 각 와이어프레임은 실제 구현된 UI 구조를 반영합니다<br>
+                • 브라우저 개발자 도구로 다양한 화면 크기를 테스트할 수 있습니다<br>
+                • 와이어프레임을 캡처하여 프로젝트 문서에 활용하세요
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 페이지 로드 시 통계 애니메이션
+        document.addEventListener('DOMContentLoaded', function() {
+            const statNumbers = document.querySelectorAll('.wireframe-stat-number');
+            statNumbers.forEach(stat => {
+                const finalValue = stat.textContent;
+                stat.textContent = '0';
+                
+                const isPercent = finalValue.includes('%');
+                const numValue = parseInt(finalValue);
+                
+                let current = 0;
+                const increment = numValue / 50;
+                
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= numValue) {
+                        stat.textContent = finalValue;
+                        clearInterval(timer);
+                    } else {
+                        stat.textContent = Math.floor(current) + (isPercent ? '%' : '');
+                    }
+                }, 30);
+            });
+        });
+
+        // 링크 클릭 시 로딩 효과
+        document.querySelectorAll('.wireframe-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                // 실제 파일이 없을 수도 있으니 경고 메시지 표시
+                if (!confirm('이 와이어프레임을 열시겠습니까?\n\n일부 파일은 아직 생성 중일 수 있습니다.')) {
+                    e.preventDefault();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

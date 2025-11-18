@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인/회원가입 - 와이어프레임</title>
+    <link rel="stylesheet" href="../styles/wireframe.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+    <style>
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 20px;
+        }
+        
+        .auth-card {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 12px;
+            padding: 32px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .auth-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        .auth-logo {
+            width: 80px;
+            height: 80px;
+            background: #e9ecef;
+            border: 2px solid #dee2e6;
+            border-radius: 50%;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+        
+        .auth-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #212529;
+            margin-bottom: 8px;
+        }
+        
+        .auth-subtitle {
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        .auth-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+        
+        .auth-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: #6c757d;
+            transition: all 0.2s;
+        }
+        
+        .auth-tab.active {
+            background: white;
+            color: #495057;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .auth-form {
+            display: none;
+        }
+        
+        .auth-form.active {
+            display: block;
+        }
+        
+        .role-selector {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .role-selector-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 12px;
+        }
+        
+        .role-options {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .role-option {
+            flex: 1;
+            padding: 8px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        
+        .role-option:hover,
+        .role-option.selected {
+            border-color: #adb5bd;
+            background: #e9ecef;
+            font-weight: bold;
+        }
+        
+        .forgot-links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 16px;
+            font-size: 12px;
+        }
+        
+        .forgot-links a {
+            color: #6c757d;
+            text-decoration: none;
+        }
+        
+        .forgot-links a:hover {
+            color: #495057;
+            text-decoration: underline;
+        }
+        
+        .social-login {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        .social-login-title {
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        
+        .social-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .social-button {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            background: white;
+            text-align: center;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .social-button:hover {
+            background: #f8f9fa;
+            border-color: #adb5bd;
+        }
+        
+        @media (max-width: 767px) {
+            .auth-card {
+                padding: 24px;
+                margin: 10px;
+            }
+            
+            .role-options {
+                flex-direction: column;
+            }
+            
+            .social-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <!-- 헤더 -->
+            <div class="auth-header">
+                <div class="auth-logo">🏪</div>
+                <h1 class="auth-title">편의점 솔루션</h1>
+                <p class="auth-subtitle">스마트한 편의점 운영을 시작하세요</p>
+            </div>
+
+            <!-- 탭 메뉴 -->
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchTab('login')">로그인</button>
+                <button class="auth-tab" onclick="switchTab('signup')">회원가입</button>
+            </div>
+
+            <!-- 로그인 폼 -->
+            <div id="login-form" class="auth-form active">
+                <div class="wireframe-form" style="background: transparent; border: none; padding: 0;">
+                    <div class="wireframe-form-group">
+                        <label class="wireframe-form-label">이메일</label>
+                        <input type="email" class="wireframe-form-input" placeholder="이메일을 입력하세요">
+                    </div>
+                    <div class="wireframe-form-group">
+                        <label class="wireframe-form-label">비밀번호</label>
+                        <input type="password" class="wireframe-form-input" placeholder="비밀번호를 입력하세요">
+                    </div>
+                    <div class="wireframe-form-group" style="margin-bottom: 8px;">
+                        <label style="display: flex; align-items: center; font-size: 14px; color: #6c757d;">
+                            <input type="checkbox" style="margin-right: 8px;">
+                            로그인 상태 유지
+                        </label>
+                    </div>
+                    <button class="wireframe-button primary" style="width: 100%; padding: 12px; font-size: 16px; margin-bottom: 0;">
+                        로그인
+                    </button>
+                </div>
+
+                <div class="forgot-links">
+                    <a href="#forgot-password">비밀번호 찾기</a>
+                    <a href="#forgot-email">이메일 찾기</a>
+                </div>
+
+                <!-- 소셜 로그인 -->
+                <div class="social-login">
+                    <div class="social-login-title">또는 간편 로그인</div>
+                    <div class="social-buttons">
+                        <button class="social-button">
+                            <div style="color: #4285f4;">G 구글</div>
+                        </button>
+                        <button class="social-button">
+                            <div style="color: #1877f2;">f 페이스북</div>
+                        </button>
+                        <button class="social-button">
+                            <div style="color: #fe2d00;">N 네이버</div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 회원가입 폼 -->
+            <div id="signup-form" class="auth-form">
+                <!-- 역할 선택 -->
+                <div class="role-selector">
+                    <div class="role-selector-title">가입 유형 선택</div>
+                    <div class="role-options">
+                        <div class="role-option selected" data-role="customer">
+                            <div style="margin-bottom: 4px;">👤</div>
+                            <div>고객</div>
+                        </div>
+                        <div class="role-option" data-role="store">
+                            <div style="margin-bottom: 4px;">🏪</div>
+                            <div>점주</div>
+                        </div>
+                        <div class="role-option" data-role="hq">
+                            <div style="margin-bottom: 4px;">🏢</div>
+                            <div>본사</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="wireframe-form" style="background: transparent; border: none; padding: 0;">
+                    <!-- 기본 정보 -->
+                    <div class="wireframe-form-group">
+                        <label class="wireframe-form-label">이메일</label>
+                        <input type="email" class="wireframe-form-input" placeholder="이메일을 입력하세요">
+                    </div>
+                    <div class="wireframe-form-group">
+                        <label class="wireframe-form-label">비밀번호</label>
+                        <input type="password" class="wireframe-form-input" placeholder="8자 이상 입력하세요">
+                    </div>
+                    <div class="wireframe-form-group">
+                        <label class="wireframe-form-label">비밀번호 확인</label>
+                        <input type="password" class="wireframe-form-input" placeholder="비밀번호를 다시 입력하세요">
+                    </div>
+                    
+                    <!-- 개인정보 -->
+                    <div class="wireframe-form-group">
+                        <label class="wireframe-form-label">이름</label>
+                        <input type="text" class="wireframe-form-input" placeholder="이름을 입력하세요">
+                    </div>
+                    <div class="wireframe-form-group">
+                        <label class="wireframe-form-label">전화번호</label>
+                        <input type="tel" class="wireframe-form-input" placeholder="010-0000-0000">
+                    </div>
+
+                    <!-- 점주 전용 필드 (숨겨짐/표시됨) -->
+                    <div id="store-fields" style="display: none;">
+                        <div class="wireframe-alert info" style="margin-bottom: 16px;">
+                            <strong>📋 점주 회원가입</strong><br>
+                            매장 정보와 사업자등록증이 필요합니다.
+                        </div>
+                        <div class="wireframe-form-group">
+                            <label class="wireframe-form-label">매장명</label>
+                            <input type="text" class="wireframe-form-input" placeholder="매장명을 입력하세요">
+                        </div>
+                        <div class="wireframe-form-group">
+                            <label class="wireframe-form-label">매장 주소</label>
+                            <input type="text" class="wireframe-form-input" placeholder="주소를 입력하세요">
+                        </div>
+                        <div class="wireframe-form-group">
+                            <label class="wireframe-form-label">사업자등록번호</label>
+                            <input type="text" class="wireframe-form-input" placeholder="000-00-00000">
+                        </div>
+                        <div class="wireframe-form-group">
+                            <label class="wireframe-form-label">사업자등록증 첨부</label>
+                            <input type="file" class="wireframe-form-input" accept="image/*,.pdf">
+                        </div>
+                    </div>
+
+                    <!-- 본사 전용 필드 (숨겨짐/표시됨) -->
+                    <div id="hq-fields" style="display: none;">
+                        <div class="wireframe-alert warning" style="margin-bottom: 16px;">
+                            <strong>🏢 본사 계정</strong><br>
+                            본사 계정은 별도 승인이 필요합니다.
+                        </div>
+                        <div class="wireframe-form-group">
+                            <label class="wireframe-form-label">부서</label>
+                            <select class="wireframe-form-select">
+                                <option>부서를 선택하세요</option>
+                                <option>운영팀</option>
+                                <option>마케팅팀</option>
+                                <option>IT팀</option>
+                                <option>관리팀</option>
+                            </select>
+                        </div>
+                        <div class="wireframe-form-group">
+                            <label class="wireframe-form-label">직급</label>
+                            <input type="text" class="wireframe-form-input" placeholder="직급을 입력하세요">
+                        </div>
+                        <div class="wireframe-form-group">
+                            <label class="wireframe-form-label">승인 코드</label>
+                            <input type="text" class="wireframe-form-input" placeholder="승인 코드를 입력하세요">
+                        </div>
+                    </div>
+
+                    <!-- 약관 동의 -->
+                    <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 16px; margin: 20px 0;">
+                        <div style="margin-bottom: 12px; font-weight: bold; color: #495057;">약관 동의</div>
+                        <label style="display: flex; align-items: flex-start; margin-bottom: 8px; font-size: 14px; color: #6c757d;">
+                            <input type="checkbox" style="margin-right: 8px; margin-top: 2px;">
+                            <span>[필수] 서비스 이용약관에 동의합니다 <a href="#terms" style="color: #007bff;">보기</a></span>
+                        </label>
+                        <label style="display: flex; align-items: flex-start; margin-bottom: 8px; font-size: 14px; color: #6c757d;">
+                            <input type="checkbox" style="margin-right: 8px; margin-top: 2px;">
+                            <span>[필수] 개인정보 처리방침에 동의합니다 <a href="#privacy" style="color: #007bff;">보기</a></span>
+                        </label>
+                        <label style="display: flex; align-items: flex-start; margin-bottom: 8px; font-size: 14px; color: #6c757d;">
+                            <input type="checkbox" style="margin-right: 8px; margin-top: 2px;">
+                            <span>[선택] 마케팅 정보 수신에 동의합니다</span>
+                        </label>
+                        <div style="margin-top: 12px;">
+                            <button type="button" onclick="toggleAllTerms()" class="wireframe-button" style="font-size: 12px; padding: 6px 12px;">
+                                전체 동의
+                            </button>
+                        </div>
+                    </div>
+
+                    <button class="wireframe-button primary" style="width: 100%; padding: 12px; font-size: 16px;">
+                        회원가입
+                    </button>
+                </div>
+            </div>
+
+            <!-- 하단 링크 -->
+            <div style="text-align: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid #dee2e6;">
+                <p style="font-size: 12px; color: #6c757d;">
+                    계정이 있으신가요? 
+                    <a href="#" onclick="switchTab('login')" style="color: #007bff; text-decoration: none;">로그인하기</a>
+                </p>
+                <div style="margin-top: 8px;">
+                    <a href="../index.html" style="font-size: 12px; color: #6c757d; text-decoration: none;">← 와이어프레임 목록으로</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 탭 전환
+        function switchTab(tab) {
+            // 탭 버튼 활성화 상태 변경
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // 폼 표시/숨김
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+            document.getElementById(tab + '-form').classList.add('active');
+        }
+
+        // 역할 선택
+        document.querySelectorAll('.role-option').forEach(option => {
+            option.addEventListener('click', function() {
+                // 선택 상태 변경
+                document.querySelectorAll('.role-option').forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                // 역할별 필드 표시/숨김
+                const role = this.dataset.role;
+                document.getElementById('store-fields').style.display = role === 'store' ? 'block' : 'none';
+                document.getElementById('hq-fields').style.display = role === 'hq' ? 'block' : 'none';
+            });
+        });
+
+        // 전체 약관 동의
+        function toggleAllTerms() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            
+            checkboxes.forEach(cb => {
+                cb.checked = !allChecked;
+            });
+        }
+
+        // 비밀번호 강도 체크 (시뮬레이션)
+        document.querySelector('input[type="password"]').addEventListener('input', function() {
+            const password = this.value;
+            let strength = 0;
+            
+            if (password.length >= 8) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+            
+            // 강도 표시 (시각적 피드백)
+            const colors = ['#dc3545', '#fd7e14', '#ffc107', '#28a745'];
+            const labels = ['약함', '보통', '강함', '매우 강함'];
+            
+            if (password.length > 0) {
+                this.style.borderColor = colors[strength - 1] || '#dc3545';
+            } else {
+                this.style.borderColor = '#ccc';
+            }
+        });
+
+        // 이메일 중복 체크 시뮬레이션
+        document.querySelector('input[type="email"]').addEventListener('blur', function() {
+            const email = this.value;
+            if (email && email.includes('@')) {
+                // 시뮬레이션: 일부 이메일은 이미 사용 중
+                const usedEmails = ['test@example.com', 'admin@test.com'];
+                if (usedEmails.includes(email)) {
+                    this.style.borderColor = '#dc3545';
+                    // 실제로는 에러 메시지 표시
+                } else {
+                    this.style.borderColor = '#28a745';
+                }
+            }
+        });
+
+        // 소셜 로그인 시뮬레이션
+        document.querySelectorAll('.social-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const provider = this.textContent.trim().split(' ')[1];
+                alert(`${provider} 로그인을 시도합니다.\n\n(이것은 와이어프레임 시뮬레이션입니다)`);
+            });
+        });
+    </script>
+</body>
+</html>

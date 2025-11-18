@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>고객 홈 - 와이어프레임</title>
+    <link rel="stylesheet" href="../styles/wireframe.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+    <style>
+        .mobile-header {
+            background: white;
+            border-bottom: 1px solid #dee2e6;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .mobile-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .mobile-header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .greeting-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 24px 16px;
+            margin-bottom: 20px;
+        }
+        
+        .greeting-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #212529;
+            margin-bottom: 4px;
+        }
+        
+        .greeting-subtitle {
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        .store-selector {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 0 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .store-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .store-icon {
+            width: 40px;
+            height: 40px;
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        
+        .promotion-section {
+            margin: 0 16px 20px;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #212529;
+        }
+        
+        .section-link {
+            font-size: 14px;
+            color: #007bff;
+            text-decoration: none;
+        }
+        
+        .promotion-card {
+            background: linear-gradient(135deg, #4287f5 0%, #6c5ce7 100%);
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+            margin-bottom: 16px;
+        }
+        
+        .promotion-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .promotion-text h3 {
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+        
+        .promotion-text p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .promotion-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .quick-categories {
+            margin: 0 16px 20px;
+        }
+        
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        
+        .category-item {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.2s;
+        }
+        
+        .category-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .category-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .category-name {
+            font-size: 12px;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .quick-actions {
+            margin: 0 16px 20px;
+        }
+        
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        
+        .action-item {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.2s;
+        }
+        
+        .action-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .action-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        
+        .recent-orders {
+            margin: 0 16px 20px;
+        }
+        
+        .order-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .order-store {
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .order-status {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .order-details {
+            font-size: 14px;
+            color: #6c757d;
+            margin-bottom: 4px;
+        }
+        
+        .order-date {
+            font-size: 12px;
+            color: #adb5bd;
+        }
+        
+        .support-section {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 0 16px 20px;
+        }
+        
+        .support-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        
+        .support-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #dee2e6;
+            padding: 8px 0;
+            display: flex;
+            justify-content: space-around;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px;
+            text-decoration: none;
+            color: #6c757d;
+            font-size: 12px;
+            transition: color 0.2s;
+        }
+        
+        .nav-item.active {
+            color: #007bff;
+        }
+        
+        .nav-icon {
+            font-size: 20px;
+        }
+        
+        .badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #dc3545;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            min-width: 18px;
+            text-align: center;
+        }
+        
+        .content-wrapper {
+            padding-bottom: 80px; /* 하단 네비게이션 공간 */
+        }
+        
+        @media (max-width: 767px) {
+            .category-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .action-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body style="background: #f8f9fa;">
+    <!-- 모바일 헤더 -->
+    <div class="mobile-header">
+        <div class="mobile-header-left">
+            <div style="font-size: 18px; font-weight: bold; color: #495057;">🏪 편의점</div>
+        </div>
+        <div class="mobile-header-right">
+            <div style="position: relative;">
+                <div style="font-size: 20px; color: #6c757d;">🔔</div>
+                <div class="badge">3</div>
+            </div>
+            <div style="position: relative;">
+                <div style="font-size: 20px; color: #6c757d;">🛒</div>
+                <div class="badge">2</div>
+            </div>
+            <div style="font-size: 20px; color: #6c757d;">👤</div>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <!-- 인사말 섹션 -->
+        <div class="greeting-section">
+            <h1 class="greeting-title">좋은 오후에요, 김고객님!</h1>
+            <p class="greeting-subtitle">편리한 편의점 쇼핑을 시작해보세요</p>
+        </div>
+
+        <!-- 현재 선택된 지점 -->
+        <div class="store-selector">
+            <div class="store-info">
+                <div class="store-icon">📍</div>
+                <div>
+                    <div style="font-size: 12px; color: #6c757d;">현재 선택 지점</div>
+                    <div style="font-weight: bold; color: #495057;">GS25 강남점</div>
+                </div>
+            </div>
+            <button class="wireframe-button" style="font-size: 12px; padding: 6px 12px;">변경</button>
+        </div>
+
+        <!-- 행사 상품 섹션 -->
+        <div class="promotion-section">
+            <div class="section-header">
+                <h2 class="section-title">🎉 행사 상품</h2>
+                <a href="#" class="section-link">전체보기</a>
+            </div>
+            
+            <div class="promotion-card">
+                <div class="promotion-content">
+                    <div class="promotion-text">
+                        <h3>1+1 & 2+1 행사 진행중!</h3>
+                        <p>다양한 상품들이 특별한 할인으로 준비되어 있어요</p>
+                    </div>
+                    <div class="promotion-badge">최대 50% 할인</div>
+                </div>
+            </div>
+
+            <!-- 행사 상품 리스트 -->
+            <div style="background: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 16px;">
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                    <button class="wireframe-button primary" style="font-size: 12px; padding: 6px 12px;">전체</button>
+                    <button class="wireframe-button" style="font-size: 12px; padding: 6px 12px;">1+1 행사</button>
+                    <button class="wireframe-button" style="font-size: 12px; padding: 6px 12px;">2+1 행사</button>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                    <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="background: #e3f2fd; color: #1976d2; font-size: 10px; padding: 2px 6px; border-radius: 8px; font-weight: bold;">1+1</span>
+                            <button style="background: none; border: none; color: #007bff; font-size: 12px; cursor: pointer;">장바구니+</button>
+                        </div>
+                        <div style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">농심 육개장사발면</div>
+                        <div style="font-size: 14px; font-weight: bold; color: #dc3545;">1,500원</div>
+                        <div style="font-size: 10px; color: #6c757d;">할인율: 50%</div>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="background: #e8f5e8; color: #2e7d32; font-size: 10px; padding: 2px 6px; border-radius: 8px; font-weight: bold;">2+1</span>
+                            <button style="background: none; border: none; color: #007bff; font-size: 12px; cursor: pointer;">장바구니+</button>
+                        </div>
+                        <div style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">LBS 맥스 옐로우</div>
+                        <div style="font-size: 14px; font-weight: bold; color: #dc3545;">2,800원</div>
+                        <div style="font-size: 10px; color: #6c757d;">할인율: 33%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 빠른 쇼핑 -->
+        <div class="quick-categories">
+            <div class="section-header">
+                <h2 class="section-title">빠른 쇼핑</h2>
+            </div>
+            <div class="category-grid">
+                <a href="#" class="category-item">
+                    <div class="category-icon">🥤</div>
+                    <div class="category-name">음료</div>
+                </a>
+                <a href="#" class="category-item">
+                    <div class="category-icon">🍪</div>
+                    <div class="category-name">과자</div>
+                </a>
+                <a href="#" class="category-item">
+                    <div class="category-icon">🍜</div>
+                    <div class="category-name">라면</div>
+                </a>
+                <a href="#" class="category-item">
+                    <div class="category-icon">❄️</div>
+                    <div class="category-name">냉동식품</div>
+                </a>
+                <a href="#" class="category-item">
+                    <div class="category-icon">🧴</div>
+                    <div class="category-name">생활용품</div>
+                </a>
+                <a href="#" class="category-item">
+                    <div class="category-icon">🍱</div>
+                    <div class="category-name">도시락</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- 빠른 기능 -->
+        <div class="quick-actions">
+            <div class="section-header">
+                <h2 class="section-title">빠른 기능</h2>
+            </div>
+            <div class="action-grid">
+                <a href="#" class="action-item">
+                    <div class="action-icon" style="background: #e8f5e8; color: #2e7d32;">📦</div>
+                    <div>
+                        <div style="font-weight: bold; font-size: 14px; color: #495057;">전체 카테고리</div>
+                        <div style="font-size: 12px; color: #6c757d;">모든 상품 보기</div>
+                    </div>
+                </a>
+                <a href="#" class="action-item">
+                    <div class="action-icon" style="background: #fff3e0; color: #f57c00;">🛍️</div>
+                    <div>
+                        <div style="font-weight: bold; font-size: 14px; color: #495057;">주문 내역</div>
+                        <div style="font-size: 12px; color: #6c757d;">주문 현황 확인</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- 최근 주문 내역 -->
+        <div class="recent-orders">
+            <div class="section-header">
+                <h2 class="section-title">최근 주문</h2>
+                <a href="#" class="section-link">전체보기</a>
+            </div>
+            
+            <div class="order-card">
+                <div class="order-header">
+                    <div class="order-store">CU 역삼점</div>
+                    <div class="order-status">완료</div>
+                </div>
+                <div class="order-details">3개 상품 • 8,500원</div>
+                <div class="order-date">오늘</div>
+            </div>
+            
+            <div class="order-card">
+                <div class="order-header">
+                    <div class="order-store">GS25 강남점</div>
+                    <div class="order-status">완료</div>
+                </div>
+                <div class="order-details">2개 상품 • 5,200원</div>
+                <div class="order-date">어제</div>
+            </div>
+        </div>
+
+        <!-- 고객 지원 -->
+        <div class="support-section">
+            <h3 style="font-size: 16px; font-weight: bold; color: #495057; margin-bottom: 12px;">고객 지원</h3>
+            <div class="support-grid">
+                <div class="support-item">
+                    <div>📞</div>
+                    <span>고객센터</span>
+                </div>
+                <div class="support-item">
+                    <div>❓</div>
+                    <span>자주 묻는 질문</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 하단 네비게이션 -->
+    <div class="bottom-nav">
+        <a href="#" class="nav-item active">
+            <div class="nav-icon">🏠</div>
+            <span>홈</span>
+        </a>
+        <a href="#" class="nav-item">
+            <div class="nav-icon">🔍</div>
+            <span>검색</span>
+        </a>
+        <a href="#" class="nav-item">
+            <div style="position: relative;" class="nav-icon">
+                🛒
+                <div class="badge" style="position: absolute; top: -8px; right: -8px;">2</div>
+            </div>
+            <span>장바구니</span>
+        </a>
+        <a href="#" class="nav-item">
+            <div class="nav-icon">📋</div>
+            <span>주문내역</span>
+        </a>
+        <a href="#" class="nav-item">
+            <div class="nav-icon">👤</div>
+            <span>마이페이지</span>
+        </a>
+    </div>
+
+    <!-- 와이어프레임 네비게이션 -->
+    <div style="position: fixed; top: 50%; right: 20px; transform: translateY(-50%); background: rgba(0,0,0,0.8); border-radius: 25px; padding: 8px;">
+        <a href="../index.html" style="color: white; text-decoration: none; font-size: 20px; display: block; padding: 8px;">🏠</a>
+    </div>
+
+    <script>
+        // 네비게이션 탭 활성화
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // 매장 변경 버튼
+        document.querySelector('.store-selector button').addEventListener('click', function() {
+            alert('매장 선택 페이지로 이동합니다.\n\n(와이어프레임 시뮬레이션)');
+        });
+
+        // 장바구니 추가 버튼
+        document.querySelectorAll('button').forEach(button => {
+            if (button.textContent.includes('장바구니')) {
+                button.addEventListener('click', function() {
+                    // 장바구니 개수 업데이트
+                    const badges = document.querySelectorAll('.badge');
+                    badges.forEach(badge => {
+                        if (badge.textContent === '2') {
+                            badge.textContent = '3';
+                        }
+                    });
+                    
+                    // 피드백 표시
+                    this.textContent = '추가됨!';
+                    this.style.color = '#28a745';
+                    setTimeout(() => {
+                        this.textContent = '장바구니+';
+                        this.style.color = '#007bff';
+                    }, 1000);
+                });
+            }
+        });
+
+        // 스크롤 시 헤더 그림자 효과
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.mobile-header');
+            if (window.scrollY > 10) {
+                header.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+            } else {
+                header.style.boxShadow = 'none';
+            }
+        });
+
+        // 프로모션 필터 버튼
+        document.querySelectorAll('.promotion-section button').forEach(button => {
+            button.addEventListener('click', function() {
+                // 활성화 상태 변경
+                document.querySelectorAll('.promotion-section button').forEach(btn => {
+                    btn.classList.remove('primary');
+                    btn.classList.add('wireframe-button');
+                });
+                this.classList.add('primary');
+                
+                // 필터링 시뮬레이션
+                alert(`"${this.textContent}" 필터가 적용되었습니다.\n\n(와이어프레임 시뮬레이션)`);
+            });
+        });
+    </script>
+</body>
+</html>

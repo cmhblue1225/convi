@@ -1,11 +1,12 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '../components/common/Button';
 import { useAuthStore } from '../stores/common/authStore';
+import SystemDemo from '../components/demo/SystemDemo';
 
 const LandingPage: React.FC = () => {
   const { isAuthenticated, user, profile, signOut } = useAuthStore();
-  const navigate = useNavigate();
+  const [showDemo, setShowDemo] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -14,12 +15,14 @@ const LandingPage: React.FC = () => {
         // 로그아웃 성공 시 페이지 새로고침하여 상태 업데이트
         window.location.reload();
       } else {
-        console.error('로그아웃 실패:', result.error);
-        alert('로그아웃 중 오류가 발생했습니다.');
+        // 에러가 있어도 로컬 상태는 정리되었으므로 페이지 새로고침
+        console.warn('로그아웃 중 일부 오류:', result.error);
+        window.location.reload();
       }
     } catch (error) {
-      console.error('로그아웃 중 오류:', error);
-      alert('로그아웃 중 오류가 발생했습니다.');
+      // 예외가 발생해도 페이지를 새로고침하여 상태 정리
+      console.warn('로그아웃 중 예외 발생, 페이지 새로고침:', error);
+      window.location.reload();
     }
   };
 
@@ -96,7 +99,17 @@ const LandingPage: React.FC = () => {
                   무료로 시작하기
                 </Button>
               </Link>
-              <Button variant="outline" size="lg" className="w-full sm:w-auto">
+              <Link to="/manual">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto">
+                  📋 사용자 매뉴얼 보기
+                </Button>
+              </Link>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="w-full sm:w-auto"
+                onClick={() => setShowDemo(true)}
+              >
                 데모 보기
               </Button>
             </div>
@@ -207,33 +220,129 @@ const LandingPage: React.FC = () => {
             <div>
               <h4 className="font-semibold mb-4">제품</h4>
               <ul className="space-y-2 text-gray-400">
-                <li>고객 앱</li>
-                <li>점주 대시보드</li>
-                <li>본사 관리 시스템</li>
+                <li>
+                  <button
+                  className="p-0 text-left text-gray-400 hover:underline"
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                    window.location.href = '/auth';
+                    return;
+                    }
+                    if (user?.role === 'customer') {
+                    window.location.href = '/customer';
+                    } else {
+                    alert('계정을 확인해주세요!');
+                    }
+                  }}
+                  >
+                  고객 앱
+                  </button>
+                </li>
+                <li>
+                  <button
+                  className="p-0 text-left text-gray-400 hover:underline"
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                    window.location.href = '/auth';
+                    return;
+                    }
+                    if (user?.role === 'store_owner') {
+                    window.location.href = '/store';
+                    } else {
+                    alert('계정을 확인해주세요!');
+                    }
+                  }}
+                  >
+                  점주 대시보드
+                  </button>
+                </li>
+                <li>
+                  <button
+                  className="p-0 text-left text-gray-400 hover:underline"
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                    window.location.href = '/auth';
+                    return;
+                    }
+                    if (user?.role === 'headquarters' || user?.role === 'hq_admin') {
+                    window.location.href = '/hq';
+                    } else {
+                    alert('계정을 확인해주세요!');
+                    }
+                  }}
+                  >
+                  본사 관리 시스템
+                  </button>
+                </li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4">지원</h4>
               <ul className="space-y-2 text-gray-400">
-                <li>고객센터</li>
-                <li>문의하기</li>
-                <li>FAQ</li>
+                <li>
+                  <button
+                  className="p-0 text-left text-gray-400 hover:underline"
+                  onClick={() => window.location.href = '/support/customer'}
+                  >
+                  고객센터
+                  </button>
+                </li>
+                <li>
+                  <button
+                  className="p-0 text-left text-gray-400 hover:underline"
+                  onClick={() => window.location.href = '/support/qa'}
+                  >
+                  문의하기
+                  </button>
+                </li>
+                <li>
+                  <button
+                  className="p-0 text-left text-gray-400 hover:underline"
+                  onClick={() => window.location.href = '/support/faq'}
+                  >
+                  FAQ
+                  </button>
+                </li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4">회사</h4>
               <ul className="space-y-2 text-gray-400">
-                <li>소개</li>
-                <li>채용</li>
-                <li>개인정보처리방침</li>
+                <li>
+                  <button
+                  className="p-0 text-left text-gray-400 hover:underline"
+                  onClick={() => window.location.href = '/company/about'}
+                  >
+                  소개
+                  </button>
+                </li>
+                <li>
+                  <button
+                  className="p-0 text-left text-gray-400 hover:underline"
+                  onClick={() => window.location.href = '/company/careers'}
+                  >
+                  채용
+                  </button>
+                </li>
+                <li>
+                  <button
+                  className="p-0 text-left text-gray-400 hover:underline"
+                  onClick={() => window.location.href = '/company/privacy'}
+                  >
+                  개인정보처리방침
+                  </button>
+                </li>
               </ul>
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 편의점 솔루션. All rights reserved.</p>
+            <p>&copy; 2025 편의점 솔루션. All rights reserved.</p>
           </div>
         </div>
       </footer>
+
+      {/* Demo Modal */}
+      <SystemDemo isOpen={showDemo} onClose={() => setShowDemo(false)} />
     </div>
   );
 };

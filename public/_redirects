@@ -1,0 +1,10 @@
+# SPA 라우팅을 위한 redirects
+/payment/*    /index.html   200
+/customer/*   /index.html   200
+/store/*      /index.html   200
+/hq/*         /index.html   200
+/auth         /index.html   200
+/test-*       /index.html   200
+
+# 모든 다른 경로를 index.html로 리다이렉트
+/*            /index.html   200

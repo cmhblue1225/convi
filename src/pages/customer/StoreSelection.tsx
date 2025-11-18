@@ -3,18 +3,46 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase/client';
 import type { Store } from '../../types/common';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import Location from '../../components/map/MapLocation';
+import { geocodeAddress, getDistanceFromCoordinates } from '../../lib/geocoding/geocoding';
 
 const StoreSelection: React.FC = () => {
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [storeCoordinates, setStoreCoordinates] = useState<Record<string, {lat: number, lng: number}>>({});
   const navigate = useNavigate();
 
   useEffect(() => {
     console.log('🚀 useEffect 실행');
+    
+    // localStorage에서 이전 지점 정보 정리
+    localStorage.removeItem('selectedStore');
+    console.log('🧹 이전 지점 정보 정리 완료');
+    
     fetchStores();
     getUserLocation();
+
+    // 실시간 구독 설정
+    const subscription = supabase
+      .channel('stores_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'stores' }, 
+        (payload) => {
+          console.log('🔄 지점 데이터 변경 감지:', payload);
+          // 즉시 데이터 새로고침
+          setTimeout(() => {
+            fetchStores();
+          }, 100);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('🔕 지점 실시간 구독 해제');
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchStores = async () => {
@@ -25,7 +53,8 @@ const StoreSelection: React.FC = () => {
       
       console.log('📡 데이터베이스에서 활성 지점 조회...');
       
-      // 실제 데이터베이스에서 활성화된 지점들 조회
+      // 실제 데이터베이스에서 활성화된 지점들 조회 (캐시 무시)
+      const timestamp = Date.now();
       const { data, error } = await supabase
         .from('stores')
         .select('*')
@@ -42,31 +71,54 @@ const StoreSelection: React.FC = () => {
         console.log('✅ 지점 조회 성공:', data.length, '개 지점');
         
         // 데이터베이스 결과를 Store 타입으로 변환
-        const storesData: Store[] = data.map(store => ({
-          id: store.id,
-          name: store.name,
-          address: store.address,
-          phone: store.phone,
-          business_hours: store.business_hours || {
-            monday: { open: '06:00', close: '24:00' },
-            tuesday: { open: '06:00', close: '24:00' },
-            wednesday: { open: '06:00', close: '24:00' },
-            thursday: { open: '06:00', close: '24:00' },
-            friday: { open: '06:00', close: '24:00' },
-            saturday: { open: '06:00', close: '24:00' },
-            sunday: { open: '06:00', close: '24:00' }
-          },
-          delivery_available: store.delivery_available || true,
-          pickup_available: store.pickup_available || true,
-          delivery_radius: store.delivery_radius || 3000,
-          min_order_amount: store.min_order_amount || 15000,
-          delivery_fee: store.delivery_fee || 3000,
-          is_active: store.is_active,
-          created_at: store.created_at,
-          updated_at: store.updated_at
-        }));
+        const storesData: Store[] = data.map(store => {
+          const storeData = {
+            id: store.id,
+            name: store.name,
+            address: store.address,
+            phone: store.phone,
+            business_hours: store.business_hours || {
+              monday: { open: '06:00', close: '24:00' },
+              tuesday: { open: '06:00', close: '24:00' },
+              wednesday: { open: '06:00', close: '24:00' },
+              thursday: { open: '06:00', close: '24:00' },
+              friday: { open: '06:00', close: '24:00' },
+              saturday: { open: '06:00', close: '24:00' },
+              sunday: { open: '06:00', close: '24:00' }
+            },
+            delivery_available: store.delivery_available || false,
+            pickup_available: store.pickup_available || false,
+            delivery_radius: store.delivery_radius || 3000,
+            min_order_amount: store.min_order_amount || 15000,
+            delivery_fee: store.delivery_fee || 3000,
+            is_active: store.is_active,
+            created_at: store.created_at,
+            updated_at: store.updated_at
+          };
+          
+          console.log(`📋 지점 정보: ${storeData.name} - 배송: ${storeData.delivery_available}, 픽업: ${storeData.pickup_available}`);
+          return storeData;
+        });
         
         setStores(storesData);
+        
+        // 각 지점의 주소를 좌표로 변환
+        const coordinatesMap: Record<string, {lat: number, lng: number}> = {};
+        
+        for (const store of storesData) {
+          const geocodingResult = await geocodeAddress(store.address);
+          
+          if (geocodingResult.success && geocodingResult.coordinates) {
+            coordinatesMap[store.id] = geocodingResult.coordinates;
+            console.log(`✅ ${store.name} 좌표 변환 성공:`, geocodingResult.coordinates);
+          } else {
+            console.warn(`⚠️ ${store.name} 주소 변환 실패: ${geocodingResult.error}`);
+            console.warn(`   주소: ${store.address}`);
+            // 좌표 변환에 실패한 경우 coordinatesMap에 추가하지 않음 (거리 계산 안함)
+          }
+        }
+        
+        setStoreCoordinates(coordinatesMap);
       } else {
         console.log('⚠️ 활성화된 지점이 없습니다.');
         setStores([]);
@@ -81,6 +133,7 @@ const StoreSelection: React.FC = () => {
     }
   };
 
+  // devices에서 위치 정보 가져오기
   const getUserLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -110,10 +163,62 @@ const StoreSelection: React.FC = () => {
     return R * c;
   };
 
-  const selectStore = (store: Store) => {
-    // 선택한 지점을 로컬 스토리지에 저장
-    localStorage.setItem('selectedStore', JSON.stringify(store));
-    navigate('/customer/products');
+  const selectStore = async (store: Store) => {
+    try {
+      console.log('🏪 지점 선택:', store.name);
+      
+      // 최신 지점 정보를 데이터베이스에서 다시 조회
+      const { data: latestStore, error } = await supabase
+        .from('stores')
+        .select('*')
+        .eq('id', store.id)
+        .single();
+      
+      if (error) {
+        console.error('❌ 최신 지점 정보 조회 실패:', error);
+        alert('지점 정보를 불러오는데 실패했습니다.');
+        return;
+      }
+      
+      if (!latestStore.is_active) {
+        alert('이 지점은 현재 운영 중단 상태입니다.');
+        return;
+      }
+      
+      // 최신 정보로 업데이트된 Store 객체 생성
+      const updatedStore: Store = {
+        id: latestStore.id,
+        name: latestStore.name,
+        address: latestStore.address,
+        phone: latestStore.phone,
+        business_hours: latestStore.business_hours || {
+          monday: { open: '06:00', close: '24:00' },
+          tuesday: { open: '06:00', close: '24:00' },
+          wednesday: { open: '06:00', close: '24:00' },
+          thursday: { open: '06:00', close: '24:00' },
+          friday: { open: '06:00', close: '24:00' },
+          saturday: { open: '06:00', close: '24:00' },
+          sunday: { open: '06:00', close: '24:00' }
+        },
+        delivery_available: latestStore.delivery_available || false,
+        pickup_available: latestStore.pickup_available || false,
+        delivery_radius: latestStore.delivery_radius || 3000,
+        min_order_amount: latestStore.min_order_amount || 15000,
+        delivery_fee: latestStore.delivery_fee || 3000,
+        is_active: latestStore.is_active,
+        created_at: latestStore.created_at,
+        updated_at: latestStore.updated_at
+      };
+      
+      console.log('✅ 최신 지점 정보:', updatedStore);
+      
+      // 최신 정보를 로컬 스토리지에 저장
+      localStorage.setItem('selectedStore', JSON.stringify(updatedStore));
+      navigate('/customer/products');
+    } catch (error) {
+      console.error('❌ 지점 선택 중 오류:', error);
+      alert('지점 선택 중 오류가 발생했습니다.');
+    }
   };
 
   const formatBusinessHours = (businessHours: any) => {
@@ -153,6 +258,7 @@ const StoreSelection: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
+        <Location width="100%" height="600px" />
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">지점 선택</h1>
           <p className="text-gray-600">가까운 편의점을 선택해주세요</p>
@@ -160,17 +266,11 @@ const StoreSelection: React.FC = () => {
         
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
           {stores.map((store) => {
-            // 위치 정보가 있을 경우 거리 계산 (임시로 서울 중심 좌표 사용)
+            // 실제 주소로부터 변환된 좌표를 사용하여 거리 계산
             let distance = null;
-            if (userLocation) {
-              // 임시 좌표 (실제로는 store.location에서 파싱해야 함)
-              const storeCoords = {
-                lat: store.name.includes('강남') ? 37.4979 : 
-                     store.name.includes('홍대') ? 37.5563 : 37.5133,
-                lng: store.name.includes('강남') ? 127.0276 : 
-                     store.name.includes('홍대') ? 126.9240 : 127.0982
-              };
-              distance = calculateDistance(
+            if (userLocation && storeCoordinates[store.id]) {
+              const storeCoords = storeCoordinates[store.id];
+              distance = getDistanceFromCoordinates(
                 userLocation.lat, userLocation.lng,
                 storeCoords.lat, storeCoords.lng
               );

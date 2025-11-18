@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export type PaymentMethod = 'card' | 'cash' | 'mobile' | 'toss' | 'kakao' | 'naver' | 'payco';
+export type PaymentMethod = 'card' | 'cash' | 'mobile' | 'toss' | 'naver' | 'payco';
 
 interface PaymentMethodSelectorProps {
   selectedMethod: PaymentMethod;
@@ -30,14 +30,7 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
       color: 'bg-blue-50 border-blue-200 text-blue-800',
       selectedColor: 'bg-blue-100 border-blue-400'
     },
-    {
-      id: 'kakao' as PaymentMethod,
-      name: '카카오페이',
-      icon: '💛',
-      description: '카카오톡으로 간편결제',
-      color: 'bg-yellow-50 border-yellow-200 text-yellow-800',
-      selectedColor: 'bg-yellow-100 border-yellow-400'
-    },
+    
     {
       id: 'naver' as PaymentMethod,
       name: '네이버페이',
@@ -123,11 +116,6 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
                 {method.id === 'card' && (
                   <p className="text-xs text-gray-500 mt-1">
                     * 모든 국내 카드사 및 해외카드 사용 가능
-                  </p>
-                )}
-                {method.id === 'kakao' && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    * 카카오톡 앱이 설치되어 있어야 합니다
                   </p>
                 )}
                 {(method.id === 'toss' || method.id === 'naver' || method.id === 'payco') && (

@@ -260,33 +260,157 @@ const OrderTracking: React.FC = () => {
             {/* 결제 정보 */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-lg font-semibold mb-4">결제 정보</h2>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span>상품 금액</span>
-                  <span>{order.subtotal.toLocaleString()}원</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>부가세</span>
-                  <span>{order.taxAmount.toLocaleString()}원</span>
-                </div>
-                {order.deliveryFee > 0 && (
+              <div className="space-y-3 text-sm">
+                {/* 주문 금액 계산 */}
+                <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                  <h3 className="text-xs font-medium text-gray-700 uppercase tracking-wide">주문 금액</h3>
                   <div className="flex justify-between">
-                    <span>배송비</span>
-                    <span>{order.deliveryFee.toLocaleString()}원</span>
+                    <span>상품 금액</span>
+                    <span>{order.subtotal.toLocaleString()}원</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>부가세</span>
+                    <span>{order.taxAmount.toLocaleString()}원</span>
+                  </div>
+                  {order.deliveryFee > 0 && (
+                    <div className="flex justify-between">
+                      <span>배송비</span>
+                      <span>{order.deliveryFee.toLocaleString()}원</span>
+                    </div>
+                  )}
+                  <div className="border-t border-gray-200 pt-2 flex justify-between font-medium">
+                    <span>소계</span>
+                    <span>{(order.subtotal + order.taxAmount + (order.deliveryFee || 0)).toLocaleString()}원</span>
+                  </div>
+                </div>
+
+                {/* 할인 및 혜택 적용 */}
+                {(order.couponDiscount > 0 || order.pointsUsed > 0) && (
+                  <div className="bg-green-50 rounded-lg p-3 space-y-2">
+                    <h3 className="text-xs font-medium text-green-700 uppercase tracking-wide">할인 혜택</h3>
+                    {order.couponDiscount > 0 && (
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center">
+                          <span className="text-green-600">🎫</span>
+                          <span className="ml-1">쿠폰 할인</span>
+                        </div>
+                        <span className="text-green-600 font-medium">-{order.couponDiscount.toLocaleString()}원</span>
+                      </div>
+                    )}
+                    {order.pointsUsed > 0 && (
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center">
+                          <span className="text-green-600">⭐</span>
+                          <span className="ml-1">포인트 사용</span>
+                        </div>
+                        <span className="text-green-600 font-medium">-{order.pointsUsed.toLocaleString()}P</span>
+                      </div>
+                    )}
+                    <div className="border-t border-green-200 pt-2 flex justify-between font-medium text-green-700">
+                      <span>총 할인 금액</span>
+                      <span>-{((order.couponDiscount || 0) + (order.pointsUsed || 0)).toLocaleString()}원</span>
+                    </div>
                   </div>
                 )}
-                <div className="border-t pt-2 flex justify-between font-semibold">
-                  <span>총 결제 금액</span>
-                  <span className="text-blue-600">{order.totalAmount.toLocaleString()}원</span>
-                </div>
-                <div className="mt-3 pt-3 border-t">
+
+                {/* 실제 결제 금액 */}
+                <div className="bg-blue-50 rounded-lg p-3 space-y-2">
+                  <h3 className="text-xs font-medium text-blue-700 uppercase tracking-wide">실제 결제</h3>
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">최종 결제 금액</span>
+                    <span className="text-blue-600 font-bold text-lg">{order.totalAmount.toLocaleString()}원</span>
+                  </div>
                   <div className="flex justify-between text-sm">
                     <span>결제 방법</span>
-                    <span>
-                      {order.paymentMethod === 'card' && '💳 신용카드'}
-                      {order.paymentMethod === 'mobile' && '📱 모바일'}
-                      {order.paymentMethod === 'cash' && '💵 현금'}
+                    <span className="flex items-center">
+                      {/* 디버깅을 위한 로그 */}
+                      {(() => {
+                        console.log('🔍 결제 방법 확인:', {
+                          paymentMethod: order.paymentMethod,
+                          type: typeof order.paymentMethod,
+                          originalOrder: order
+                        });
+                        return null;
+                      })()}
+                      
+                      {/* 실제 데이터베이스에 저장된 매핑 값들 기준으로 수정 */}
+                      {order.paymentMethod === 'card' && (
+                        <>
+                          <span className="mr-1">💳</span>
+                          <span>카드 결제</span>
+                        </>
+                      )}
+                      {order.paymentMethod === 'cash' && (
+                        <>
+                          <span className="mr-1">💵</span>
+                          <span>현금</span>
+                        </>
+                      )}
+                      {order.paymentMethod === 'toss_pay' && (
+                        <>
+                          <span className="mr-1">💰</span>
+                          <span>토스페이먼츠</span>
+                        </>
+                      )}
+                      {order.paymentMethod === 'kakao_pay' && (
+                        <>
+                          <span className="mr-1">💛</span>
+                          <span>카카오페이</span>
+                        </>
+                      )}
+                      {order.paymentMethod === 'naver_pay' && (
+                        <>
+                          <span className="mr-1">💚</span>
+                          <span>네이버페이</span>
+                        </>
+                      )}
+                      
+                      {/* 알 수 없는 결제 방법이거나 값이 없는 경우 */}
+                      {!order.paymentMethod && (
+                        <span className="text-gray-500">결제 방법 미확인</span>
+                      )}
+                      
+                      {/* 매핑되지 않은 결제 방법이 있는 경우 원본 값 표시 */}
+                      {order.paymentMethod && 
+                       !['card', 'cash', 'toss_pay', 'kakao_pay', 'naver_pay'].includes(order.paymentMethod) && (
+                        <>
+                          <span className="mr-1">💳</span>
+                          <span>{order.paymentMethod}</span>
+                        </>
+                      )}
                     </span>
+                  </div>
+                  {order.paymentStatus && (
+                    <div className="flex justify-between text-sm">
+                      <span>결제 상태</span>
+                      <span className={`font-medium ${
+                        order.paymentStatus === 'paid' ? 'text-green-600' : 
+                        order.paymentStatus === 'pending' ? 'text-yellow-600' : 'text-red-600'
+                      }`}>
+                        {order.paymentStatus === 'paid' && '✅ 결제 완료'}
+                        {order.paymentStatus === 'pending' && '⏳ 결제 대기'}
+                        {order.paymentStatus === 'failed' && '❌ 결제 실패'}
+                        {order.paymentStatus === 'refunded' && '🔄 환불 완료'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* 결제 요약 */}
+                <div className="border-t border-gray-200 pt-3 space-y-1 text-xs text-gray-600">
+                  <div className="flex justify-between">
+                    <span>주문 총액</span>
+                    <span>{(order.subtotal + order.taxAmount + (order.deliveryFee || 0)).toLocaleString()}원</span>
+                  </div>
+                  {(order.couponDiscount > 0 || order.pointsUsed > 0) && (
+                    <div className="flex justify-between text-green-600">
+                      <span>혜택 할인</span>
+                      <span>-{((order.couponDiscount || 0) + (order.pointsUsed || 0)).toLocaleString()}원</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-medium text-sm text-gray-900 pt-1 border-t border-gray-100">
+                    <span>실제 지불</span>
+                    <span>{order.totalAmount.toLocaleString()}원</span>
                   </div>
                 </div>
               </div>

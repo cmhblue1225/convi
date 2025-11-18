@@ -40,7 +40,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 // 점주 계정 정보
 const storeOwners = [
   {
-    email: 'shopowner@test.com',
+    email: 'shopowner@example.com',
     password: 'password123',
     name: '강남점',
     address: '서울특별시 강남구 강남대로 123',
@@ -48,7 +48,7 @@ const storeOwners = [
     location: 'POINT(127.0276 37.4979)'
   },
   {
-    email: 'shopowner2@test.com',
+    email: 'shopowner2@example.com',
     password: 'password123',
     name: '홍대점',
     address: '서울특별시 마포구 홍대로 456',
@@ -56,7 +56,7 @@ const storeOwners = [
     location: 'POINT(126.9236 37.5563)'
   },
   {
-    email: 'shopowner3@test.com',
+    email: 'shopowner3@example.com',
     password: 'password123',
     name: '잠실점',
     address: '서울특별시 송파구 올림픽로 789',

@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { requestCardPayment, requestEasyPayment, requestTossPayment } from '../../lib/payment/tossPayments';
-import { openKakaoPayment } from '../../lib/payment/kakaoPay';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import TossPaymentWindow from './TossPaymentWidget';
 
 // 결제 방법 타입 정의 (orderStore와 통일)
-type PaymentMethod = 'card' | 'cash' | 'mobile' | 'toss' | 'kakao' | 'naver' | 'payco';
+type PaymentMethod = 'card' | 'cash' | 'mobile' | 'toss' | 'naver' | 'payco';
 
 // 토스페이먼츠 결제 정보 타입 정의 (로컬에서 정의)
 interface PaymentInfo {
@@ -19,15 +18,6 @@ interface PaymentInfo {
   failUrl?: string;
 }
 
-// 카카오페이 결제 정보 타입 정의 (로컬에서 정의)
-interface KakaoPaymentInfo {
-  orderId: string;
-  orderName: string;
-  amount: number;
-  customerName?: string;
-  customerEmail?: string;
-  customerPhone?: string;
-}
 
 interface PaymentProcessorProps {
   paymentMethod: PaymentMethod;
@@ -65,9 +55,6 @@ const PaymentProcessor: React.FC<PaymentProcessorProps> = ({
           break;
         case 'toss':
           await handleTossPayment();
-          break;
-        case 'kakao':
-          await handleKakaoPayment();
           break;
         case 'naver':
         case 'payco':
@@ -127,38 +114,20 @@ const PaymentProcessor: React.FC<PaymentProcessorProps> = ({
   };
 
   const handleTossPayment = async () => {
+    console.log('🏦 토스페이 결제 처리 시작...');
+    
+    // 이미 토스 위젯이 표시되어 있으면 중복 실행 방지
+    if (showTossWidget) {
+      console.log('⚠️ 토스페이 위젯이 이미 표시되어 있습니다.');
+      return;
+    }
+    
     // 토스페이 결제창 표시
     setShowTossWidget(true);
   };
 
-  const handleKakaoPayment = async () => {
-    setProcessingMessage('카카오페이 결제를 처리하고 있습니다...');
-    
-    // 카카오페이 결제 시뮬레이션
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const result = {
-          paymentKey: `kakao_payment_${Date.now()}`,
-          orderId: orderInfo.orderId,
-          orderName: orderInfo.orderName,
-          amount: orderInfo.amount,
-          method: '카카오페이',
-          status: 'DONE',
-          requestedAt: new Date().toISOString(),
-          approvedAt: new Date().toISOString(),
-          useEscrow: false,
-          easyPay: {
-            provider: 'KAKAOPAY',
-            amount: orderInfo.amount,
-            discountAmount: 0
-          }
-        };
-        
-        console.log('✅ 카카오페이 결제 시뮬레이션 성공:', result);
-        onPaymentSuccess(result);
-      }, 3000);
-    });
-  };
+
+  
 
   const handleOtherPayment = async () => {
     setProcessingMessage(`${getPaymentMethodName(paymentMethod)} 결제를 처리하고 있습니다...`);
@@ -265,7 +234,6 @@ const PaymentProcessor: React.FC<PaymentProcessorProps> = ({
     const methodNames: Record<PaymentMethod, string> = {
       card: '카드',
       toss: '토스페이',
-      kakao: '카카오페이',
       naver: '네이버페이',
       payco: '페이코',
       mobile: '휴대폰 결제',
@@ -278,7 +246,6 @@ const PaymentProcessor: React.FC<PaymentProcessorProps> = ({
     const icons: Record<PaymentMethod, string> = {
       card: '💳',
       toss: '💚',
-      kakao: '💛',
       naver: '🟢',
       payco: '🔵',
       mobile: '📱',

@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '../../stores/cartStore';
+import { useToast } from '../../hooks/useToast';
+import { useConfirm } from '../../hooks/useConfirm';
+import ConfirmModal from '../common/ConfirmModal';
 
 interface CartProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
+const Cart: React.FC<CartProps> = React.memo(({ isOpen, onClose }) => {
   const navigate = useNavigate();
+  const { showWarning } = useToast();
+  const { confirmState, showConfirm, closeConfirm, handleCancel } = useConfirm();
   const {
     items,
     orderType,
@@ -41,15 +46,21 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
     removeItem(productId);
   };
 
-  const handleClearCart = () => {
-    if (window.confirm('장바구니를 비우시겠습니까?')) {
+  const handleClearCart = async () => {
+    const confirmed = await showConfirm({
+      title: '장바구니 비우기',
+      message: '장바구니를 비우시겠습니까?',
+      type: 'warning'
+    });
+    
+    if (confirmed) {
       clearCart();
     }
   };
 
   const handleCheckout = () => {
     if (items.length === 0) {
-      alert('장바구니가 비어있습니다.');
+      showWarning('빈 장바구니', '장바구니가 비어있습니다.');
       return;
     }
     
@@ -92,7 +103,7 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
               <div className="text-center py-8">
                 <div className="text-gray-400 mb-4">
                   <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v5a2 2 0 01-2 2H9a2 2 0 01-2-2v-5m6-5V6a2 2 0 00-2-2H9a2 2 0 00-2 2v2" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                   </svg>
                 </div>
                 <p className="text-gray-500">장바구니가 비어있습니다</p>
@@ -100,10 +111,11 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
             ) : (
               <div className="space-y-4">
                 {items.map((item) => {
-                  const hasDiscount = item.storeProduct.discount_rate > 0;
+                  const discountRate = item.storeProduct.discount_rate || 0;
+                  const hasDiscount = discountRate > 0;
                   const originalPrice = item.storeProduct.price;
                   const discountedPrice = hasDiscount 
-                    ? originalPrice * (1 - item.storeProduct.discount_rate)
+                    ? originalPrice * (1 - discountRate)
                     : originalPrice;
 
                   return (
@@ -267,8 +279,20 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
           )}
         </div>
       </div>
+      
+      {/* Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmState.isOpen}
+        onClose={handleCancel}
+        onConfirm={confirmState.onConfirm}
+        title={confirmState.title}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        type={confirmState.type}
+      />
     </div>
   );
-};
+});
 
 export default Cart;

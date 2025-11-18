@@ -8,6 +8,7 @@ export interface CartItem {
   storeProduct: StoreProduct;
   quantity: number;
   subtotal: number;
+  options?: Record<string, any>; // 상품 옵션 정보 (색상, 사이즈 등)
 }
 
 interface CartStore {
@@ -19,8 +20,16 @@ interface CartStore {
   taxAmount: number;
   deliveryFee: number;
   totalAmount: number;
+  reorderHistory: Array<{
+    orderId: string;
+    orderNumber: string;
+    reorderDate: string;
+    itemCount: number;
+    totalAmount: number;
+  }>;
   
   // Actions
+  calculatePromotionPrice: (storeProduct: any, quantity: number) => number;
   addItem: (product: Product, storeProduct: StoreProduct, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
@@ -28,6 +37,10 @@ interface CartStore {
   calculateTotals: () => void;
   getItemCount: () => number;
   setOrderType: (type: 'pickup' | 'delivery') => void;
+  reorderFromOrder: (orderItems: any[], storeId: string, storeName: string, orderType?: 'pickup' | 'delivery', deliveryAddress?: any, orderInfo?: { orderId: string; orderNumber: string }) => Promise<{ success: boolean; message: string; unavailableItems?: string[]; itemCount?: number; totalAmount?: number }>;
+  addToReorderHistory: (orderInfo: { orderId: string; orderNumber: string; reorderDate: string; itemCount: number; totalAmount: number }) => void;
+  getReorderHistory: () => Array<{ orderId: string; orderNumber: string; reorderDate: string; itemCount: number; totalAmount: number }>;
+  cleanupReorderHistory: () => void;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -41,6 +54,35 @@ export const useCartStore = create<CartStore>()(
       taxAmount: 0,
       deliveryFee: 0,
       totalAmount: 0,
+      reorderHistory: [],
+
+      // 행사 가격 계산 함수
+      calculatePromotionPrice: (storeProduct: any, quantity: number) => {
+        // 기본 할인율 적용
+        const basePrice = (storeProduct.discount_rate || 0) > 0 
+          ? storeProduct.price * (1 - (storeProduct.discount_rate || 0))
+          : storeProduct.price;
+
+        // 행사 타입이 없으면 기본 가격 계산
+        if (!storeProduct.promotionType) {
+          return basePrice * quantity;
+        }
+
+        // 행사 가격 계산
+        if (storeProduct.promotionType === 'buy_one_get_one') {
+          // 1+1: 2개를 담으면 1개 가격으로 계산
+          const promotionGroups = Math.floor(quantity / 2);
+          const remainingItems = quantity % 2;
+          return (basePrice * promotionGroups) + (basePrice * remainingItems);
+        } else if (storeProduct.promotionType === 'buy_two_get_one') {
+          // 2+1: 3개를 담으면 2개 가격으로 계산
+          const promotionGroups = Math.floor(quantity / 3);
+          const remainingItems = quantity % 3;
+          return (basePrice * 2 * promotionGroups) + (basePrice * remainingItems);
+        }
+
+        return basePrice * quantity;
+      },
 
       addItem: (product, storeProduct, quantity = 1) => {
         let { items, storeId } = get();
@@ -83,14 +125,13 @@ export const useCartStore = create<CartStore>()(
             return;
           }
           
-          const finalPrice = storeProduct.discount_rate > 0 
-            ? storeProduct.price * (1 - storeProduct.discount_rate)
-            : storeProduct.price;
+          // 행사 가격 계산
+          const finalPrice = get().calculatePromotionPrice(storeProduct, newQuantity);
             
           updatedItems[existingItemIndex] = {
             ...updatedItems[existingItemIndex],
             quantity: newQuantity,
-            subtotal: finalPrice * newQuantity
+            subtotal: finalPrice
           };
           set({ items: updatedItems });
         } else {
@@ -100,17 +141,15 @@ export const useCartStore = create<CartStore>()(
             return;
           }
           
-          // 새 상품 추가
-          const finalPrice = storeProduct.discount_rate > 0 
-            ? storeProduct.price * (1 - storeProduct.discount_rate)
-            : storeProduct.price;
+          // 행사 가격 계산
+          const finalPrice = get().calculatePromotionPrice(storeProduct, quantity);
             
           const newItem: CartItem = {
             id: `${product.id}-${Date.now()}`,
             product,
             storeProduct,
             quantity,
-            subtotal: finalPrice * quantity
+            subtotal: finalPrice
           };
           set({
             items: [...items, newItem],
@@ -143,14 +182,12 @@ export const useCartStore = create<CartStore>()(
               return item;
             }
             
-            const finalPrice = item.storeProduct.discount_rate > 0 
-              ? item.storeProduct.price * (1 - item.storeProduct.discount_rate)
-              : item.storeProduct.price;
+            const finalPrice = get().calculatePromotionPrice(item.storeProduct, quantity);
               
             return {
               ...item,
               quantity,
-              subtotal: finalPrice * quantity
+              subtotal: finalPrice
             };
           }
           return item;
@@ -198,6 +235,165 @@ export const useCartStore = create<CartStore>()(
         console.log('🚚 주문 타입 변경:', type);
         set({ orderType: type });
         get().calculateTotals(); // 배송비 재계산
+      },
+
+      reorderFromOrder: async (orderItems, storeId, storeName, orderType = 'pickup', deliveryAddress = null, orderInfo = null) => {
+        console.log('🔄 재주문 시작:', { orderItems, storeId, storeName, orderType, deliveryAddress });
+        
+        try {
+          // Supabase에서 현재 재고 상태 확인
+          const { supabase } = await import('../lib/supabase/client');
+          
+          const unavailableItems: string[] = [];
+          const availableItems: any[] = [];
+          
+          // 각 상품의 재고 상태 확인
+          for (const item of orderItems) {
+            const { data: storeProduct, error } = await supabase
+              .from('store_products')
+              .select(`
+                *,
+                products (*)
+              `)
+              .eq('store_id', storeId)
+              .eq('product_id', item.productId)
+              .single();
+            
+            if (error || !storeProduct) {
+              console.warn(`⚠️ 상품 정보 조회 실패: ${item.productName}`, error);
+              unavailableItems.push(`${item.productName} (상품 정보 없음)`);
+              continue;
+            }
+            
+            // 재고 확인
+            if (storeProduct.stock_quantity < item.quantity) {
+              unavailableItems.push(`${item.productName} (재고 부족: ${storeProduct.stock_quantity}/${item.quantity})`);
+              continue;
+            }
+            
+            // 상품이 비활성화되었는지 확인
+            if (!storeProduct.is_available) {
+              unavailableItems.push(`${item.productName} (판매 중단)`);
+              continue;
+            }
+            
+            availableItems.push({
+              product: storeProduct.products,
+              storeProduct,
+              quantity: item.quantity,
+              originalOptions: item.options || {} // 원본 옵션 정보 보존
+            });
+          }
+          
+          // 사용 불가능한 상품이 있으면 에러 반환
+          if (unavailableItems.length > 0) {
+            const message = `다음 상품들은 재주문이 불가능합니다:\n\n${unavailableItems.join('\n')}`;
+            return {
+              success: false,
+              message,
+              unavailableItems
+            };
+          }
+          
+          // 장바구니 초기화 (다른 지점이거나 기존 장바구니가 있는 경우)
+          const currentStoreId = get().storeId;
+          if (currentStoreId && currentStoreId !== storeId) {
+            const confirmed = window.confirm(
+              '다른 지점의 상품입니다. 기존 장바구니를 비우고 새로 담으시겠습니까?'
+            );
+            if (!confirmed) {
+              return {
+                success: false,
+                message: '재주문이 취소되었습니다.'
+              };
+            }
+          }
+          
+          // 장바구니 초기화 및 새 상품들 추가
+          set({
+            items: [],
+            storeId,
+            storeName,
+            orderType,
+            subtotal: 0,
+            taxAmount: 0,
+            deliveryFee: 0,
+            totalAmount: 0
+          });
+          
+          // 배송 주소가 있으면 설정
+          if (deliveryAddress && orderType === 'delivery') {
+            // 배송 주소 정보를 로컬 스토리지에 저장 (체크아웃 페이지에서 사용)
+            localStorage.setItem('reorder-delivery-address', JSON.stringify(deliveryAddress));
+            console.log('📍 재주문 배송 주소 복원:', deliveryAddress);
+          }
+          
+          // 사용 가능한 상품들을 장바구니에 추가
+          for (const item of availableItems) {
+            // 할인율 계산 (store_products의 discount_rate 사용)
+            const discountRate = item.storeProduct.discount_rate || 0;
+            const finalPrice = discountRate > 0 
+              ? item.storeProduct.price * (1 - discountRate)
+              : item.storeProduct.price;
+              
+            const newItem: CartItem = {
+              id: `${item.product.id}-${Date.now()}-${Math.random()}`,
+              product: item.product,
+              storeProduct: item.storeProduct,
+              quantity: item.quantity,
+              subtotal: finalPrice * item.quantity,
+              options: item.originalOptions // 원본 옵션 정보 복원
+            };
+            
+            set((state) => ({
+              items: [...state.items, newItem]
+            }));
+          }
+          
+          // 총액 계산
+          get().calculateTotals();
+          
+          // 재주문 히스토리에 추가
+          const reorderInfo = {
+            orderId: orderInfo?.orderId || 'unknown',
+            orderNumber: orderInfo?.orderNumber || 'unknown',
+            reorderDate: new Date().toISOString(),
+            itemCount: availableItems.length,
+            totalAmount: get().totalAmount
+          };
+          get().addToReorderHistory(reorderInfo);
+          
+          console.log('✅ 재주문 완료:', availableItems.length, '개 상품');
+          return {
+            success: true,
+            message: `${availableItems.length}개 상품이 장바구니에 담겼습니다.${orderType === 'delivery' ? ' 배송 정보도 복원되었습니다.' : ''}`,
+            itemCount: availableItems.length,
+            totalAmount: get().totalAmount
+          };
+          
+        } catch (error) {
+          console.error('❌ 재주문 실패:', error);
+          return {
+            success: false,
+            message: '재주문 처리 중 오류가 발생했습니다. 다시 시도해주세요.'
+          };
+        }
+      },
+
+      addToReorderHistory: (orderInfo) => {
+        set((state) => ({
+          reorderHistory: [...state.reorderHistory, orderInfo]
+        }));
+      },
+
+      getReorderHistory: () => {
+        return get().reorderHistory;
+      },
+
+      cleanupReorderHistory: () => {
+        set((state) => ({
+          reorderHistory: state.reorderHistory.filter(item => item.orderNumber !== 'unknown')
+        }));
       }
     }),
     {
@@ -210,7 +406,8 @@ export const useCartStore = create<CartStore>()(
         subtotal: state.subtotal,
         taxAmount: state.taxAmount,
         deliveryFee: state.deliveryFee,
-        totalAmount: state.totalAmount
+        totalAmount: state.totalAmount,
+        reorderHistory: state.reorderHistory
       })
     }
   )

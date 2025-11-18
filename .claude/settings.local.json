@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(npm run server:*)",
+      "Bash(curl:*)",
+      "Bash(pkill:*)",
+      "Bash(NAVER_CLIENT_ID=w7wdlooyhk NAVER_CLIENT_SECRET=9UzooXWcNe0yVVq9FE0EcXX2ar6UydThxaUgDKJG node server.js)",
+      "Bash(cat:*)",
+      "Bash(true)",
+      "WebFetch(domain:guide.ncloud-docs.com)",
+      "WebFetch(domain:api.ncloud-docs.com)",
+      "WebFetch(domain:apidocs.ncloud.com)",
+      "Bash(node server.js)",
+      "mcp__supabase__apply_migration",
+      "Bash(npm install:*)",
+      "Bash(npm install:*)",
+      "Bash(mkdir:*)",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__list_tables",
+      "Bash(rm:*)",
+      "Bash(find:*)",
+      "Bash(open index.html)"
+    ],
+    "deny": []
+  }
+}

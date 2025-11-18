@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>상품 카탈로그 - 와이어프레임</title>
+    <link rel="stylesheet" href="../styles/wireframe.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+    <style>
+        .product-header {
+            background: white;
+            border-bottom: 1px solid #dee2e6;
+            padding: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .search-bar {
+            position: relative;
+            margin-bottom: 12px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 10px 16px 10px 40px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+        
+        .category-tabs {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+        
+        .category-tab {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .category-tab.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
+        .filter-section {
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .filter-btn {
+            background: white;
+            border: 1px solid #dee2e6;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .filter-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
+        .product-grid {
+            padding: 16px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        
+        .product-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .product-image {
+            height: 120px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: 12px;
+            position: relative;
+        }
+        
+        .product-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: #dc3545;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .product-badge.promotion {
+            background: #007bff;
+        }
+        
+        .product-badge.new {
+            background: #28a745;
+        }
+        
+        .product-info {
+            padding: 12px;
+        }
+        
+        .product-name {
+            font-size: 13px;
+            font-weight: bold;
+            color: #212529;
+            margin-bottom: 4px;
+            line-height: 1.3;
+            height: 32px;
+            overflow: hidden;
+        }
+        
+        .product-price {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+        
+        .current-price {
+            font-size: 14px;
+            font-weight: bold;
+            color: #dc3545;
+        }
+        
+        .original-price {
+            font-size: 11px;
+            color: #6c757d;
+            text-decoration: line-through;
+        }
+        
+        .discount-rate {
+            font-size: 10px;
+            background: #dc3545;
+            color: white;
+            padding: 1px 4px;
+            border-radius: 2px;
+        }
+        
+        .product-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .stock-status {
+            font-size: 10px;
+            color: #6c757d;
+        }
+        
+        .stock-status.low {
+            color: #fd7e14;
+        }
+        
+        .stock-status.out {
+            color: #dc3545;
+        }
+        
+        .add-cart-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        
+        .add-cart-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .floating-cart {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+            cursor: pointer;
+        }
+        
+        .cart-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #dc3545;
+            color: white;
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            min-width: 20px;
+            text-align: center;
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #dee2e6;
+            padding: 8px 0;
+            display: flex;
+            justify-content: space-around;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px;
+            text-decoration: none;
+            color: #6c757d;
+            font-size: 12px;
+        }
+        
+        .nav-item.active {
+            color: #007bff;
+        }
+        
+        .content-wrapper {
+            padding-bottom: 80px;
+        }
+    </style>
+</head>
+<body style="background: #f8f9fa;">
+    <!-- 헤더 -->
+    <div class="product-header">
+        <div style="display: flex; align-items: center; margin-bottom: 12px;">
+            <button onclick="history.back()" style="background: none; border: none; font-size: 20px; cursor: pointer; margin-right: 12px;">←</button>
+            <h1 style="font-size: 18px; font-weight: bold; color: #212529; margin: 0;">상품 카탈로그</h1>
+        </div>
+        
+        <!-- 검색바 -->
+        <div class="search-bar">
+            <div class="search-icon">🔍</div>
+            <input type="text" class="search-input" placeholder="상품명 검색">
+        </div>
+        
+        <!-- 카테고리 탭 -->
+        <div class="category-tabs">
+            <div class="category-tab active">전체</div>
+            <div class="category-tab">음료</div>
+            <div class="category-tab">과자</div>
+            <div class="category-tab">라면</div>
+            <div class="category-tab">냉동식품</div>
+            <div class="category-tab">생활용품</div>
+            <div class="category-tab">도시락</div>
+        </div>
+    </div>
+
+    <!-- 필터 섹션 -->
+    <div class="filter-section">
+        <div style="font-size: 14px; color: #495057;">총 <strong>248</strong>개 상품</div>
+        <div class="filter-buttons">
+            <button class="filter-btn active">인기순</button>
+            <button class="filter-btn">가격순</button>
+            <button class="filter-btn">신상품</button>
+            <button class="filter-btn">할인</button>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <!-- 상품 그리드 -->
+        <div class="product-grid">
+            <!-- 행사 상품 -->
+            <div class="product-card">
+                <div class="product-image">
+                    <div class="product-badge promotion">1+1</div>
+                    <div>📦 상품 이미지</div>
+                </div>
+                <div class="product-info">
+                    <div class="product-name">농심 육개장사발면 86g</div>
+                    <div class="product-price">
+                        <div class="current-price">1,500원</div>
+                        <div class="original-price">3,000원</div>
+                        <div class="discount-rate">50%</div>
+                    </div>
+                    <div class="product-actions">
+                        <div class="stock-status">재고 12개</div>
+                        <button class="add-cart-btn">담기</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 신상품 -->
+            <div class="product-card">
+                <div class="product-image">
+                    <div class="product-badge new">NEW</div>
+                    <div>📦 상품 이미지</div>
+                </div>
+                <div class="product-info">
+                    <div class="product-name">프리미엄 치킨샐러드</div>
+                    <div class="product-price">
+                        <div class="current-price">6,800원</div>
+                    </div>
+                    <div class="product-actions">
+                        <div class="stock-status">재고 5개</div>
+                        <button class="add-cart-btn">담기</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 일반 상품 -->
+            <div class="product-card">
+                <div class="product-image">
+                    <div>📦 상품 이미지</div>
+                </div>
+                <div class="product-info">
+                    <div class="product-name">코카콜라 355ml</div>
+                    <div class="product-price">
+                        <div class="current-price">1,800원</div>
+                    </div>
+                    <div class="product-actions">
+                        <div class="stock-status">재고 충분</div>
+                        <button class="add-cart-btn">담기</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 할인 상품 -->
+            <div class="product-card">
+                <div class="product-image">
+                    <div class="product-badge">30%</div>
+                    <div>📦 상품 이미지</div>
+                </div>
+                <div class="product-info">
+                    <div class="product-name">신라면 120g</div>
+                    <div class="product-price">
+                        <div class="current-price">980원</div>
+                        <div class="original-price">1,400원</div>
+                        <div class="discount-rate">30%</div>
+                    </div>
+                    <div class="product-actions">
+                        <div class="stock-status">재고 8개</div>
+                        <button class="add-cart-btn">담기</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 재고 부족 상품 -->
+            <div class="product-card">
+                <div class="product-image">
+                    <div>📦 상품 이미지</div>
+                </div>
+                <div class="product-info">
+                    <div class="product-name">삼각김밥 참치마요</div>
+                    <div class="product-price">
+                        <div class="current-price">1,200원</div>
+                    </div>
+                    <div class="product-actions">
+                        <div class="stock-status low">재고 2개</div>
+                        <button class="add-cart-btn">담기</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 품절 상품 -->
+            <div class="product-card" style="opacity: 0.6;">
+                <div class="product-image">
+                    <div>📦 상품 이미지</div>
+                </div>
+                <div class="product-info">
+                    <div class="product-name">바나나우유 240ml</div>
+                    <div class="product-price">
+                        <div class="current-price">1,500원</div>
+                    </div>
+                    <div class="product-actions">
+                        <div class="stock-status out">품절</div>
+                        <button class="add-cart-btn" disabled>품절</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 추가 상품들 (더 많은 상품들을 시뮬레이션) -->
+            <div class="product-card">
+                <div class="product-image">
+                    <div>📦 상품 이미지</div>
+                </div>
+                <div class="product-info">
+                    <div class="product-name">허니버터칩 60g</div>
+                    <div class="product-price">
+                        <div class="current-price">2,200원</div>
+                    </div>
+                    <div class="product-actions">
+                        <div class="stock-status">재고 15개</div>
+                        <button class="add-cart-btn">담기</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="product-card">
+                <div class="product-image">
+                    <div class="product-badge promotion">2+1</div>
+                    <div>📦 상품 이미지</div>
+                </div>
+                <div class="product-info">
+                    <div class="product-name">LBS 맥스 옐로우</div>
+                    <div class="product-price">
+                        <div class="current-price">2,800원</div>
+                        <div class="original-price">4,200원</div>
+                        <div class="discount-rate">33%</div>
+                    </div>
+                    <div class="product-actions">
+                        <div class="stock-status">재고 20개</div>
+                        <button class="add-cart-btn">담기</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 더 보기 버튼 -->
+        <div style="padding: 20px; text-align: center;">
+            <button class="wireframe-button" style="padding: 12px 32px;">더 많은 상품 보기</button>
+        </div>
+    </div>
+
+    <!-- 플로팅 장바구니 -->
+    <button class="floating-cart">
+        🛒
+        <div class="cart-badge" id="cart-count">0</div>
+    </button>
+
+    <!-- 하단 네비게이션 -->
+    <div class="bottom-nav">
+        <a href="customer-home.html" class="nav-item">
+            <div>🏠</div>
+            <span>홈</span>
+        </a>
+        <a href="#" class="nav-item active">
+            <div>🔍</div>
+            <span>검색</span>
+        </a>
+        <a href="cart-page.html" class="nav-item">
+            <div style="position: relative;">
+                🛒
+                <div class="cart-badge" style="position: absolute; top: -8px; right: -8px;">0</div>
+            </div>
+            <span>장바구니</span>
+        </a>
+        <a href="customer-orders.html" class="nav-item">
+            <div>📋</div>
+            <span>주문내역</span>
+        </a>
+        <a href="customer-profile.html" class="nav-item">
+            <div>👤</div>
+            <span>마이페이지</span>
+        </a>
+    </div>
+
+    <!-- 와이어프레임 네비게이션 -->
+    <div style="position: fixed; top: 50%; right: 20px; transform: translateY(-50%); background: rgba(0,0,0,0.8); border-radius: 25px; padding: 8px;">
+        <a href="../index.html" style="color: white; text-decoration: none; font-size: 20px; display: block; padding: 8px;">🏠</a>
+    </div>
+
+    <script>
+        let cartCount = 0;
+
+        // 카테고리 탭 클릭
+        document.querySelectorAll('.category-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                alert(`"${this.textContent}" 카테고리가 선택되었습니다.`);
+            });
+        });
+
+        // 필터 버튼 클릭
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                alert(`"${this.textContent}" 정렬이 적용되었습니다.`);
+            });
+        });
+
+        // 장바구니 담기
+        document.querySelectorAll('.add-cart-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (!this.disabled) {
+                    cartCount++;
+                    document.querySelectorAll('.cart-badge').forEach(badge => {
+                        badge.textContent = cartCount;
+                    });
+                    
+                    this.textContent = '담음!';
+                    this.style.background = '#28a745';
+                    setTimeout(() => {
+                        this.textContent = '담기';
+                        this.style.background = '#007bff';
+                    }, 1000);
+                }
+            });
+        });
+
+        // 검색 기능
+        document.querySelector('.search-input').addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            document.querySelectorAll('.product-card').forEach(card => {
+                const productName = card.querySelector('.product-name').textContent.toLowerCase();
+                card.style.display = productName.includes(query) ? 'block' : 'none';
+            });
+        });
+
+        // 플로팅 장바구니 클릭
+        document.querySelector('.floating-cart').addEventListener('click', function() {
+            alert(`장바구니에 ${cartCount}개 상품이 담겨있습니다.\n\n장바구니 페이지로 이동합니다.`);
+        });
+
+        // 네비게이션 탭 활성화
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                if (this.getAttribute('href') === '#') {
+                    e.preventDefault();
+                }
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

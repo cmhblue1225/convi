@@ -1,13 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { supabase } from '../../lib/supabase/client';
+import { validateInventoryAvailability, getRealTimeStock, type InventoryItem } from '../../lib/inventory/inventoryManager';
 import type { Product, Category, StoreProduct } from '../../types/common';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import Cart from '../../components/customer/Cart';
 import { useCartStore } from '../../stores/cartStore';
+import { WishlistButton } from '../../components/common/WishlistButton';
+import { useAuthStore } from '../../stores/common/authStore';
+import { ProductCard } from '../../components/product/ProductCard';
+import { useToast } from '../../hooks/useToast';
 
 interface ProductWithStock extends Product {
   store_products: StoreProduct[];
+  promotionInfo?: {
+    promotion_type: 'buy_one_get_one' | 'buy_two_get_one' | null;
+    promotion_name: string | null;
+  };
 }
 
 const ProductCatalog: React.FC = () => {
@@ -18,23 +27,66 @@ const ProductCatalog: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [wishlistedProducts, setWishlistedProducts] = useState<Record<string, boolean>>({});
+  const { user } = useAuthStore();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
   
   const { addItem, getItemCount, items } = useCartStore();
+  const { showWarning, showSuccess } = useToast();
 
   // 선택된 지점 정보 가져오기
   const selectedStore = JSON.parse(localStorage.getItem('selectedStore') || '{}');
 
+  // 찜 목록 로드
+  const loadWishlist = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('wishlists')
+        .select('product_id')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      const wishlistMap: Record<string, boolean> = {};
+      data.forEach(item => {
+        wishlistMap[item.product_id] = true;
+      });
+      setWishlistedProducts(wishlistMap);
+    } catch (error) {
+      console.error('찜 목록 로드 중 오류:', error);
+    }
+  };
+
   useEffect(() => {
     if (!selectedStore.id) {
       // 지점이 선택되지 않았으면 지점 선택 페이지로 이동
-      navigate('/customer');
+      navigate('/customer/store');
       return;
     }
     
-    fetchCategories();
+    // URL 파라미터에서 카테고리 정보 읽기
+    const categorySlug = searchParams.get('category');
+    const categoryName = location.state?.categoryName;
+
+    // 찜 목록 로드
+    loadWishlist();
+    
+    fetchCategories().then(() => {
+      // 카테고리 데이터 로드 후 URL 파라미터 처리
+      if (categorySlug) {
+        const category = categories.find(cat => cat.slug === categorySlug);
+        if (category) {
+          setSelectedCategory(category.id);
+        }
+      }
+    });
+    
     fetchProducts();
-  }, [selectedStore.id, selectedCategory, navigate]);
+  }, [selectedStore.id, selectedCategory, navigate, searchParams, location.state]);
 
   const fetchCategories = async () => {
     try {
@@ -50,6 +102,15 @@ const ProductCatalog: React.FC = () => {
       
       setCategories(data || []);
       console.log('📂 카테고리 데이터 로드 완료:', data?.length || 0, '개');
+      
+      // URL 파라미터에서 카테고리 정보 읽기 (카테고리 로드 후)
+      const categorySlug = searchParams.get('category');
+      if (categorySlug) {
+        const category = data?.find(cat => cat.slug === categorySlug);
+        if (category) {
+          setSelectedCategory(category.id);
+        }
+      }
       
     } catch (err) {
       console.error('Error fetching categories:', err);
@@ -82,9 +143,42 @@ const ProductCatalog: React.FC = () => {
       const { data, error } = await query;
       
       if (error) throw error;
+
+      // 행사 정보 가져오기 (전체 매장 행사 + 해당 지점 행사)
+      const { data: promotionData, error: promotionError } = await supabase
+        .from('promotion_products')
+        .select(`
+          product_id,
+          store_id,
+          promotions!inner(
+            name,
+            promotion_type
+          )
+        `)
+        .or(`store_id.is.null,store_id.eq.${selectedStore.id}`) // 전체 매장 행사 또는 해당 지점 행사
+        .eq('promotions.is_active', true);
+
+      if (promotionError) {
+        console.error('행사 정보 조회 오류:', promotionError);
+      }
+
+      // 행사 정보를 상품 데이터에 추가
+      const productsWithPromotion = (data || []).map((product: any) => {
+        const promotion = promotionData?.find(p => p.product_id === product.id);
+        return {
+          ...product,
+          promotionInfo: promotion ? {
+            promotion_type: promotion.promotions.promotion_type,
+            promotion_name: promotion.promotions.name
+          } : {
+            promotion_type: null,
+            promotion_name: null
+          }
+        };
+      });
       
-      setProducts(data || []);
-      console.log('🛍️ 상품 데이터 로드 완료:', data?.length || 0, '개');
+      setProducts(productsWithPromotion);
+      console.log('🛍️ 상품 데이터 로드 완료:', productsWithPromotion?.length || 0, '개');
       
     } catch (err) {
       console.error('Error fetching products:', err);
@@ -94,39 +188,100 @@ const ProductCatalog: React.FC = () => {
     }
   };
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = useMemo(() => {
+    return products.filter(product =>
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [products, searchTerm]);
 
-  const addToCart = (product: ProductWithStock) => {
+  const addToCart = useCallback(async (product: ProductWithStock) => {
     const storeProduct = product.store_products[0];
     
-    // 현재 장바구니에 담긴 수량 확인
-    const cartItem = items.find(item => item.product.id === product.id);
-    const cartQuantity = cartItem ? cartItem.quantity : 0;
-    const realTimeStock = storeProduct.stock_quantity - cartQuantity;
-    
-    if (realTimeStock <= 0) {
-      alert(`${product.name}은(는) 재고가 부족합니다. (남은 재고: ${realTimeStock}개)`);
-      return;
+    try {
+      // 1. 실시간 재고 확인
+      const realTimeStock = await getRealTimeStock(selectedStore.id, [product.id]);
+      const currentStock = realTimeStock[product.id] || 0;
+      
+      // 2. 현재 장바구니에 담긴 수량 확인
+      const cartItem = items.find(item => item.product.id === product.id);
+      const cartQuantity = cartItem ? cartItem.quantity : 0;
+      const availableStock = currentStock - cartQuantity;
+      
+      if (availableStock <= 0) {
+        showWarning('재고 부족', `${product.name}은(는) 재고가 부족합니다. (현재 재고: ${currentStock}개, 장바구니: ${cartQuantity}개)`);
+        return;
+      }
+      
+      // 3. 재고 가용성 검증 (추가로 1개 담을 수 있는지)
+      const inventoryValidation = await validateInventoryAvailability(
+        selectedStore.id,
+        [{ productId: product.id, productName: product.name, quantity: cartQuantity + 1 }]
+      );
+      
+      if (!inventoryValidation.isValid) {
+        showWarning('재고 부족', inventoryValidation.errors.join(', '));
+        return;
+      }
+      
+      // 4. 장바구니에 추가
+      const storeProductWithPromotion = {
+        ...storeProduct,
+        stock_quantity: currentStock, // 실시간 재고로 업데이트
+        promotionType: product.promotionInfo?.promotion_type || null,
+        promotionName: product.promotionInfo?.promotion_name || null
+      };
+      
+      console.log(`🛒 장바구니 추가: ${product.name} (실시간 재고: ${currentStock}개, 장바구니: ${cartQuantity} → ${cartQuantity + 1})`);
+      addItem(product, storeProductWithPromotion, 1);
+      
+      // 5. 행사 상품인 경우 알림
+      if (product.promotionInfo?.promotion_type) {
+        const isOneOnePromotion = product.promotionInfo.promotion_type === 'buy_one_get_one';
+        const promotionTitle = isOneOnePromotion ? '1+1 행사!' : '2+1 행사!';
+        const promotionMessage = isOneOnePromotion 
+          ? '2개 담으면 1개 가격! 🎉'
+          : '3개 담으면 2개 가격! 🎉';
+        
+        showSuccess(promotionTitle, promotionMessage);
+      }
+      
+    } catch (error) {
+      console.error('❌ 실시간 재고 확인 실패:', error);
+      showWarning('재고 확인 실패', '재고 정보를 확인할 수 없습니다. 잠시 후 다시 시도해주세요.');
     }
-    
-    console.log(`🛒 장바구니 추가: ${product.name} (재고: ${storeProduct.stock_quantity} → ${realTimeStock - 1})`);
-    addItem(product, storeProduct, 1);
-  };
+  }, [items, addItem, showWarning, showSuccess, selectedStore.id]);
 
   const goBackToStoreSelection = () => {
     console.log('🔄 지점 변경 버튼 클릭');
     localStorage.removeItem('selectedStore');
     
-    // 테스트 환경에서는 테스트 라우트로, 실제 환경에서는 customer 라우트로
-    const isTestEnvironment = window.location.pathname.includes('/test-');
-    const targetRoute = isTestEnvironment ? '/test-store-selection' : '/customer';
-    
+    // 지점 선택 페이지로 이동
+    const targetRoute = '/customer/store';
     console.log('🎯 이동할 경로:', targetRoute);
     navigate(targetRoute);
   };
+
+  const handleCategoryChange = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    
+    // URL 업데이트 (선택적)
+    if (categoryId === 'all') {
+      navigate('/customer/products', { replace: true });
+    } else {
+      const category = categories.find(cat => cat.id === categoryId);
+      if (category) {
+        navigate(`/customer/products?category=${category.slug}`, { replace: true });
+      }
+    }
+  };
+
+  // 현재 선택된 카테고리 이름 가져오기
+  const getCurrentCategoryName = useMemo(() => {
+    if (selectedCategory === 'all') return '전체 상품';
+    const category = categories.find(cat => cat.id === selectedCategory);
+    return category ? category.name : '전체 상품';
+  }, [selectedCategory, categories]);
 
   if (!selectedStore.id) {
     return (
@@ -175,6 +330,10 @@ const ProductCatalog: React.FC = () => {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{selectedStore.name}</h1>
               <p className="text-gray-600 text-sm">{selectedStore.address}</p>
+              {/* 현재 카테고리 표시 */}
+              <p className="text-blue-600 text-sm font-medium mt-1">
+                📂 {getCurrentCategoryName}
+              </p>
             </div>
             <div className="flex items-center space-x-3">
               {/* 장바구니 아이콘 */}
@@ -183,7 +342,7 @@ const ProductCatalog: React.FC = () => {
                 className="relative p-2 text-gray-600 hover:text-gray-900"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v5a2 2 0 01-2 2H9a2 2 0 01-2-2v-5m6-5V6a2 2 0 00-2-2H9a2 2 0 00-2 2v2" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                 </svg>
                 {getItemCount() > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
@@ -222,27 +381,28 @@ const ProductCatalog: React.FC = () => {
         </div>
         
         {/* 카테고리 필터 */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-          <div className="flex gap-2 overflow-x-auto pb-2">
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">카테고리</h2>
+          <div className="flex flex-wrap gap-3 overflow-x-auto pb-2">
             <button
-              className={`px-4 py-2 rounded-full whitespace-nowrap font-medium transition-colors ${
+              className={`px-6 py-3 rounded-full whitespace-nowrap font-medium transition-all duration-200 shadow-sm ${
                 selectedCategory === 'all'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-blue-500 text-white shadow-blue-200'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-md'
               }`}
-              onClick={() => setSelectedCategory('all')}
+              onClick={() => handleCategoryChange('all')}
             >
-              전체
+              🏪 전체
             </button>
             {categories.map((category) => (
               <button
                 key={category.id}
-                className={`px-4 py-2 rounded-full whitespace-nowrap font-medium transition-colors ${
+                className={`px-6 py-3 rounded-full whitespace-nowrap font-medium transition-all duration-200 shadow-sm ${
                   selectedCategory === category.id
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-blue-500 text-white shadow-blue-200'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-md'
                 }`}
-                onClick={() => setSelectedCategory(category.id)}
+                onClick={() => handleCategoryChange(category.id)}
               >
                 {category.name}
               </button>
@@ -259,10 +419,6 @@ const ProductCatalog: React.FC = () => {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredProducts.map((product) => {
               const storeProduct = product.store_products[0];
-              const hasDiscount = storeProduct.discount_rate > 0;
-              const discountedPrice = hasDiscount
-                ? storeProduct.price * (1 - storeProduct.discount_rate)
-                : storeProduct.price;
               
               // 장바구니에 담긴 수량 계산
               const cartItem = items.find(item => item.product.id === product.id);
@@ -270,132 +426,33 @@ const ProductCatalog: React.FC = () => {
               
               // 실시간 재고 계산 (원래 재고 - 장바구니 수량)
               const realTimeStock = storeProduct.stock_quantity - cartQuantity;
-              const isLowStock = realTimeStock <= storeProduct.safety_stock;
-              const isOutOfStock = realTimeStock <= 0;
+
+              // 상품 데이터를 ProductCard에 맞게 변환
+              const productWithStoreData = {
+                ...product,
+                base_price: storeProduct.price,
+                discount_rate: storeProduct.discount_rate,
+                stock_quantity: realTimeStock,
+                safety_stock: storeProduct.safety_stock,
+                price: storeProduct.price, // 기본 price 필드도 유지
+                promotionInfo: product.promotionInfo // 행사 정보 추가
+              };
 
               return (
-                <div 
-                  key={product.id} 
-                  className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow relative"
-                >
-                  {/* 프로모션 배지 */}
-                  {hasDiscount && (
-                    <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">
-                      {Math.round(storeProduct.discount_rate * 100)}% OFF
-                    </div>
-                  )}
-                  
-                  {/* 재고 상태 배지 */}
-                  {isOutOfStock && (
-                    <div className="absolute top-2 right-2 bg-gray-500 text-white text-xs px-2 py-1 rounded-full">
-                      품절
-                    </div>
-                  )}
-                  {isLowStock && !isOutOfStock && (
-                    <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
-                      재고부족
-                    </div>
-                  )}
-                  
-                  {/* 상품 이미지 */}
-                  <div className="w-full h-48 bg-gray-100 rounded-lg mb-3 flex items-center justify-center">
-                    {product.image_urls && product.image_urls.length > 0 ? (
-                      <img
-                        src={product.image_urls[0]}
-                        alt={product.name}
-                        className="w-full h-full object-cover rounded-lg"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          target.nextElementSibling?.classList.remove('hidden');
-                        }}
-                      />
-                    ) : null}
-                    <div className="text-gray-400 text-sm">
-                      📦 {product.name}
-                    </div>
-                  </div>
-                  
-                  {/* 상품 정보 */}
-                  <div className="space-y-2">
-                    <h3 className="font-semibold text-lg text-gray-900 line-clamp-2">
-                      {product.name}
-                    </h3>
-                    
-                    {product.description && (
-                      <p className="text-gray-600 text-sm line-clamp-2">
-                        {product.description}
-                      </p>
-                    )}
-                    
-                    {/* 브랜드 정보 */}
-                    {product.brand && (
-                      <p className="text-gray-500 text-xs">
-                        {product.brand}
-                      </p>
-                    )}
-                    
-                    {/* 가격 */}
-                    <div className="flex items-center justify-between">
-                      <div>
-                        {hasDiscount ? (
-                          <div className="space-y-1">
-                            <div className="text-lg font-bold text-red-600">
-                              {discountedPrice.toLocaleString()}원
-                            </div>
-                            <div className="text-sm text-gray-500 line-through">
-                              {storeProduct.price.toLocaleString()}원
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-lg font-bold text-gray-900">
-                            {storeProduct.price.toLocaleString()}원
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="text-right">
-                        <div className={`text-sm font-medium ${
-                          isOutOfStock ? 'text-red-600' : 
-                          isLowStock ? 'text-orange-600' : 
-                          'text-gray-500'
-                        }`}>
-                          {isOutOfStock ? '품절' : 
-                           isLowStock ? '재고 부족' : 
-                           '재고 있음'} {realTimeStock}개
-                          {cartQuantity > 0 && (
-                            <span className="text-xs text-blue-600 block">
-                              (장바구니: {cartQuantity}개)
-                            </span>
-                          )}
-                        </div>
-                        {product.requires_preparation && (
-                          <div className="text-xs text-blue-600">
-                            제조시간 {product.preparation_time}분
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* 단위 정보 */}
-                    <div className="text-xs text-gray-500">
-                      단위: {product.unit}
-                    </div>
-                    
-                    {/* 장바구니 버튼 */}
-                    <button
-                      className={`w-full py-2 rounded-lg font-medium transition-colors ${
-                        isOutOfStock
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-blue-500 text-white hover:bg-blue-600'
-                      }`}
-                      onClick={() => addToCart(product)}
-                      disabled={isOutOfStock}
-                    >
-                      {isOutOfStock ? '품절' : '장바구니 추가'}
-                    </button>
-                  </div>
-                </div>
+                <ProductCard
+                  key={product.id}
+                  product={productWithStoreData}
+                  showWishlist={!!user}
+                  isWishlisted={wishlistedProducts[product.id] || false}
+                  onWishlistToggle={(newState) => {
+                    setWishlistedProducts(prev => ({
+                      ...prev,
+                      [product.id]: newState
+                    }));
+                  }}
+                  showGallery={true}
+                  onAddToCart={() => addToCart(product)}
+                />
               );
             })}
           </div>
@@ -405,7 +462,7 @@ const ProductCatalog: React.FC = () => {
         {!loading && filteredProducts.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-500 mb-4">
-              {searchTerm ? '검색 결과가 없습니다.' : '등록된 상품이 없습니다.'}
+              {searchTerm ? '검색 결과가 없습니다.' : `${getCurrentCategoryName}에 등록된 상품이 없습니다.`}
             </div>
             {searchTerm && (
               <button 

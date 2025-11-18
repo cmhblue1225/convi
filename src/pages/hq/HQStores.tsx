@@ -292,9 +292,9 @@ const HQStores: React.FC = () => {
                       )}
                     </div>
                   </td>
-                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {store.created_at ? new Date(store.created_at).toLocaleDateString() : '-'}
-                    </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {store.created_at ? new Date(store.created_at).toLocaleDateString() : '-'}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
                       <button
